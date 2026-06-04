@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "change apk name(Windows)",
+      "type": "shell",
+      "command": "cp ${workspaceFolder}\\build\\app\\outputs\\apk\\release\\app-release.apk ${workspaceFolder}\\build\\app\\outputs\\apk\\release\\cn.qingyanyimei.customer$(date -Format \"yyyyMMddHHmmss\").apk",
+      "problemMatcher": []
+    },
+    {
+      "label": "open apk folder(Windows)",
+      "type": "shell",
+      "command": "start ${workspaceFolder}\\build\\app\\outputs\\apk\\release\\",
+      "problemMatcher": []
+    },
+    {
+      "label": "change apk name(macOS)",
+      "type": "shell",
+      "command": "cp ${workspaceFolder}/build/app/outputs/apk/release/app-release.apk ${workspaceFolder}/build/app/outputs/apk/release\\cn.qingyanyimei.customer$(date +%F).apk",
+      "problemMatcher": []
+    },
+    {
+      "label": "open apk folder(macOS)",
+      "type": "shell",
+      "command": "start ${workspaceFolder}\\build\\app\\outputs\\apk\\release\\",
+      "problemMatcher": []
+    }
+  ]
+}

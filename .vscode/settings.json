@@ -1,0 +1,47 @@
+{
+  // 保存自动格式化代码
+  "editor.formatOnSave": true,
+  // 配置 Tab 空格数
+  "editor.tabSize": 2,
+  // 字体大小
+  // "editor.fontSize": 14,
+  "[dart]": {
+    "editor.defaultFormatter": "Dart-Code.dart-code",
+    "editor.formatOnSave": true
+  },
+  "dart.flutterSdkPath": "/Users/zhuang/Documents/flutter/3.44.1",
+  "dart.debugExternalPackageLibraries": true,
+  "dart.devToolsLocation": {
+    "web": "external",
+    "mobile": "external"
+  },
+  "dart.devToolsReuseWindows": false,
+  "terminal.integrated.defaultProfile.windows": "Command Prompt",
+  "terminal.integrated.profiles.windows": {
+    "Command Prompt": {
+      "path": "cmd.exe",
+      "env": {
+        "JAVA_HOME": "C:\\Program Files\\Android\\Android Studio\\jre\\bin",
+        "ANDROID_HOME": "D:\\AndroidSDK",
+        "PATH": "C:\\Program Files\\Android\\Android Studio\\jre\\bin;${env:PATH}"
+      }
+    }
+  },
+  "terminal.integrated.defaultProfile.osx": "bash",
+  "terminal.integrated.profiles.osx": {
+    "bash": {
+      "path": "/usr/local/bin/bash",
+      "env": {
+        "JAVA_HOME": "/Library/Java/JavaVirtualMachines/jbr-17.0.12/Contents/Home",
+        "PATH": "/Users/zhuang/Documents/flutter/3.44.1/bin:/Users/zhuang/Library/Android/sdk/platform-tools:${env:PATH}"
+      }
+    },
+    "zsh": {
+      "path": "/bin/zsh",
+      "env": {
+        "JAVA_HOME": "/Library/Java/JavaVirtualMachines/jbr-17.0.12/Contents/Home"
+      }
+    }
+  },
+  "cmake.ignoreCMakeListsMissing": true
+}
