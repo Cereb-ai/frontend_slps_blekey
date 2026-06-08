@@ -34,6 +34,7 @@ class BleKeyController extends ChangeNotifier {
   Map<String, String?> _sdkVersions = const <String, String?>{};
   final Map<String, BleKeyDevice> _devicesByMac = <String, BleKeyDevice>{};
   final List<BleKeyLog> _logs = <BleKeyLog>[];
+  final List<String> _operationResults = <String>[];
 
   bool get initialized => _initialized;
   bool get scanning => _scanning;
@@ -41,6 +42,7 @@ class BleKeyController extends ChangeNotifier {
   Map<String, String?> get sdkVersions => Map.unmodifiable(_sdkVersions);
   List<BleKeyDevice> get devices => List.unmodifiable(_devicesByMac.values);
   List<BleKeyLog> get logs => List.unmodifiable(_logs);
+  List<String> get operationResults => List.unmodifiable(_operationResults);
 
   Future<void> preparePermissions() async {
     await _run('权限检查', () async {
@@ -101,8 +103,36 @@ class BleKeyController extends ChangeNotifier {
     });
   }
 
+  Future<void> executeVendorOperation({
+    required int index,
+    String? mac,
+    Map<String, Object?> args = const <String, Object?>{},
+  }) async {
+    await _run('执行厂家命令', () async {
+      final granted = await _requestBluetoothPermissions();
+      if (!granted) return;
+      final bluetoothReady = await _ensureBluetoothEnabled();
+      if (!bluetoothReady) return;
+      _eventSubscription ??= _sdk.events.listen(
+        _handleEvent,
+        onError: (Object error, StackTrace stackTrace) {
+          _addLog('事件通道异常：$error', isError: true);
+        },
+      );
+      final sent = await _sdk.executeOperation(
+        index: index,
+        mac: mac,
+        args: args,
+      );
+      _addOperationResult(
+        '${_vendorOperationName(index)}：${sent ? '已下发' : '下发失败'}',
+      );
+    });
+  }
+
   void clearLogs() {
     _logs.clear();
+    _operationResults.clear();
     notifyListeners();
   }
 
@@ -241,6 +271,15 @@ class BleKeyController extends ChangeNotifier {
               device;
         }
         _addLog('扫描完成，共 ${_devicesByMac.length} 台设备');
+      case 'operationResult':
+        final result = event.operationResult;
+        final ok = result?.ret == true || (result?.code ?? -1) >= 0;
+        _addOperationResult(
+          '${event.operationName ?? 'Operation'}：code=${result?.code ?? '-'}'
+          '${result?.msg == null ? '' : '，msg=${result!.msg}'}'
+          '${result?.obj == null ? '' : '，obj=${result!.obj}'}',
+          isError: !ok,
+        );
       default:
         _addLog('未知事件：${event.type}');
     }
@@ -257,9 +296,54 @@ class BleKeyController extends ChangeNotifier {
     }
   }
 
+  void _addOperationResult(String message, {bool isError = false}) {
+    _operationResults.insert(
+      0,
+      '${DateTime.now().toIso8601String().substring(11, 19)}  $message',
+    );
+    _addLog(message, isError: isError);
+    if (_operationResults.length > 100) {
+      _operationResults.removeRange(100, _operationResults.length);
+    }
+  }
+
+  String _vendorOperationName(int index) {
+    if (index < 0 || index >= vendorOperationNames.length) return '未知命令';
+    return vendorOperationNames[index];
+  }
+
   @override
   void dispose() {
     _eventSubscription?.cancel();
     super.dispose();
   }
 }
+
+const List<String> vendorOperationNames = <String>[
+  '连接钥匙蓝牙模块',
+  '断开钥匙蓝牙模块',
+  '读取钥匙信息',
+  '设置钥匙密钥',
+  '读取钥匙记录',
+  '清除钥匙记录',
+  '设置用户钥匙',
+  '用户钥匙在线授权',
+  '设置采集锁号钥匙',
+  '设置初始化钥匙',
+  '设置管理钥匙',
+  '设置事件钥匙',
+  '设置黑名单钥匙',
+  '设置空白钥匙',
+  '清除黑名单标记',
+  '钥匙校时',
+  '指纹授权',
+  '删除指纹',
+  '下载指纹',
+  '用户钥匙多人多锁',
+  '设置开关锁次数',
+  '用户钥匙（多时间块）',
+  '采集指纹',
+  '下载指纹(任务版)',
+  '下载任务(任务版)',
+  '删除任务(任务版)',
+];
