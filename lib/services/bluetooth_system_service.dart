@@ -12,4 +12,12 @@ class BluetoothSystemService {
   Future<bool> requestEnableBluetooth() async {
     return await _channel.invokeMethod<bool>('requestEnableBluetooth') ?? false;
   }
+
+  Future<int?> getAndroidSdkInt() async {
+    try {
+      return await _channel.invokeMethod<int>('getAndroidSdkInt');
+    } on MissingPluginException {
+      return null;
+    }
+  }
 }

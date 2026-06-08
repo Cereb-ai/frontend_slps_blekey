@@ -107,65 +107,55 @@ class BleKeyController extends ChangeNotifier {
   }
 
   Future<bool> _requestBluetoothPermissions() async {
-    final bluetoothPermissions = <Permission>[
-      Permission.bluetoothScan,
-      Permission.bluetoothConnect,
-    ];
+    final requiredPermissions = await _requiredAndroidPermissions();
     final preferences = await SharedPreferences.getInstance();
-    final hadDeniedBluetooth = bluetoothPermissions.any(
+    final hadDeniedAnyPermission = requiredPermissions.any(
       (permission) =>
           preferences.getBool(_permissionDeniedKey(permission)) == true,
     );
-    final bluetoothResults = await bluetoothPermissions.request();
-    final deniedBluetooth = bluetoothResults.entries
+    final permissionResults = await requiredPermissions.request();
+    final deniedPermissions = permissionResults.entries
         .where((entry) => !entry.value.isGranted && !entry.value.isLimited)
         .toList(growable: false);
 
-    if (deniedBluetooth.isNotEmpty) {
-      final permanentlyDenied = deniedBluetooth.any(
+    if (deniedPermissions.isNotEmpty) {
+      final permanentlyDenied = deniedPermissions.any(
         (entry) => entry.value.isPermanentlyDenied || entry.value.isRestricted,
       );
-      final names = deniedBluetooth
+      final names = deniedPermissions
           .map((entry) => _permissionLabel(entry.key))
           .join('、');
       _addLog('缺少权限：$names', isError: true);
       await _rememberDeniedPermissions(
         preferences,
-        deniedBluetooth.map((entry) => entry.key),
+        deniedPermissions.map((entry) => entry.key),
       );
-      if (permanentlyDenied || hadDeniedBluetooth) {
-        _addLog('权限再次请求失败，已打开应用设置，请手动允许附近设备权限', isError: true);
+      if (permanentlyDenied || hadDeniedAnyPermission) {
+        _addLog('权限再次请求失败，已打开应用设置，请手动允许蓝牙、WLAN 和定位权限', isError: true);
         await openAppSettings();
       }
       return false;
     }
-    await _clearDeniedPermissions(preferences, bluetoothPermissions);
+    await _clearDeniedPermissions(preferences, requiredPermissions);
 
-    final hadDeniedLocation =
-        preferences.getBool(
-          _permissionDeniedKey(Permission.locationWhenInUse),
-        ) ==
-        true;
-    final locationStatus = await Permission.locationWhenInUse.request();
-    if (!locationStatus.isGranted && !locationStatus.isLimited) {
-      _addLog('定位权限未授权。Android 11 及以下扫描蓝牙通常需要定位权限。', isError: true);
-      await _rememberDeniedPermissions(preferences, <Permission>[
-        Permission.locationWhenInUse,
-      ]);
-      if (locationStatus.isPermanentlyDenied ||
-          locationStatus.isRestricted ||
-          hadDeniedLocation) {
-        _addLog('定位权限再次请求失败，已打开应用设置，请手动允许定位权限', isError: true);
-        await openAppSettings();
-      }
-    } else {
-      await _clearDeniedPermissions(preferences, <Permission>[
-        Permission.locationWhenInUse,
-      ]);
+    _addLog('蓝牙、WLAN 与定位权限已授权');
+    return true;
+  }
+
+  Future<List<Permission>> _requiredAndroidPermissions() async {
+    final sdkInt = await _bluetoothSystemService.getAndroidSdkInt();
+    if (sdkInt == null) {
+      return <Permission>[];
     }
 
-    _addLog('蓝牙权限已授权');
-    return true;
+    return <Permission>[
+      if (sdkInt >= 31) ...<Permission>[
+        Permission.bluetoothScan,
+        Permission.bluetoothConnect,
+      ],
+      if (sdkInt >= 33) Permission.nearbyWifiDevices,
+      Permission.locationWhenInUse,
+    ];
   }
 
   Future<void> _rememberDeniedPermissions(
@@ -193,6 +183,7 @@ class BleKeyController extends ChangeNotifier {
   String _permissionLabel(Permission permission) {
     if (permission == Permission.bluetoothScan) return '附近设备-扫描';
     if (permission == Permission.bluetoothConnect) return '附近设备-连接';
+    if (permission == Permission.nearbyWifiDevices) return 'WLAN 权限';
     if (permission == Permission.locationWhenInUse) return '定位权限';
     return permission.toString();
   }
