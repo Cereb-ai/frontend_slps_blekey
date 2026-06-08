@@ -65,7 +65,14 @@ class BleKeyController extends ChangeNotifier {
       _platformVersion = await _sdk.getPlatformVersion();
       _initialized = await _sdk.init();
       _sdkVersions = await _sdk.getSdkVersions();
-      _addLog('SDK 初始化${_initialized ? '成功' : '失败'}');
+      final jarVersion = _sdkVersions['jar'];
+      final soVersion = _sdkVersions['so'];
+      _addLog(
+        _initialized
+            ? 'Java 库 init 调用成功，jar=${jarVersion ?? '未知'}，so=${soVersion ?? '未知'}'
+            : 'Java 库 init 调用失败',
+        isError: !_initialized,
+      );
     });
   }
 
@@ -77,7 +84,12 @@ class BleKeyController extends ChangeNotifier {
       if (!bluetoothReady) return;
       _devicesByMac.clear();
       _scanning = await _sdk.startScan(timeoutMs: timeoutMs);
-      _addLog('扫描已启动，超时 ${timeoutMs}ms');
+      _addLog(
+        _scanning
+            ? 'Java 库 startScan 调用成功，超时 ${timeoutMs}ms'
+            : 'Java 库 startScan 调用失败',
+        isError: !_scanning,
+      );
     });
   }
 
@@ -211,7 +223,10 @@ class BleKeyController extends ChangeNotifier {
     switch (event.type) {
       case 'scanStarted':
         _scanning = event.success == true;
-        _addLog('扫描回调：${event.success == true ? '已开始' : '启动失败'}');
+        _addLog(
+          event.success == true ? 'Java 库扫描回调：已开始' : 'Java 库扫描回调：启动失败',
+          isError: event.success != true,
+        );
       case 'device':
         final device = event.device;
         if (device != null) {
