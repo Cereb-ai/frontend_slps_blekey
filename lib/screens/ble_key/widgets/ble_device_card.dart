@@ -30,6 +30,14 @@ class BleDeviceCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(device.mac ?? '无 MAC 地址'),
+                if (device.keyId?.isNotEmpty == true) ...[
+                  const SizedBox(height: 4),
+                  SelectableText('keyId: ${device.keyId}'),
+                ],
+                if (device.scanRecord?.isNotEmpty == true) ...[
+                  const SizedBox(height: 4),
+                  SelectableText('scan: ${device.scanRecord}'),
+                ],
               ],
             ),
           ),

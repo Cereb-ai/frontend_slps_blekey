@@ -22,6 +22,10 @@ class _VendorBleKeyScreenState extends State<VendorBleKeyScreen> {
   final TextEditingController _newSecretController = TextEditingController(
     text: 'FFFFFFFFFFFFFFFFFFFF',
   );
+  final TextEditingController _signController = TextEditingController(text: '0');
+  final TextEditingController _licController = TextEditingController(
+    text: 'FFFFFFFFFFFFFFFF',
+  );
   final TextEditingController _lockIdsController = TextEditingController(
     text: '202307151005,202307150990,202401270221',
   );
@@ -48,6 +52,8 @@ class _VendorBleKeyScreenState extends State<VendorBleKeyScreen> {
   void dispose() {
     _secretController.dispose();
     _newSecretController.dispose();
+    _signController.dispose();
+    _licController.dispose();
     _lockIdsController.dispose();
     _switchCountController.dispose();
     _fingerIndexController.dispose();
@@ -146,6 +152,8 @@ class _VendorBleKeyScreenState extends State<VendorBleKeyScreen> {
                     operation: _selectedOperation,
                     secretController: _secretController,
                     newSecretController: _newSecretController,
+                    signController: _signController,
+                    licController: _licController,
                     lockIdsController: _lockIdsController,
                     switchCountController: _switchCountController,
                     fingerIndexController: _fingerIndexController,
@@ -199,6 +207,8 @@ class _VendorBleKeyScreenState extends State<VendorBleKeyScreen> {
         'secret': _secretController.text,
         'oldSecret': _secretController.text,
         'newSecret': _newSecretController.text,
+        'sign': int.tryParse(_signController.text) ?? 0,
+        'lic': _licController.text,
         'lockIds': _lockIdsController.text,
         'switchCount': int.tryParse(_switchCountController.text) ?? 1,
         'fingerIndex': int.tryParse(_fingerIndexController.text) ?? 1,
@@ -214,6 +224,8 @@ class _CommandFields extends StatelessWidget {
     required this.operation,
     required this.secretController,
     required this.newSecretController,
+    required this.signController,
+    required this.licController,
     required this.lockIdsController,
     required this.switchCountController,
     required this.fingerIndexController,
@@ -225,6 +237,8 @@ class _CommandFields extends StatelessWidget {
   final int operation;
   final TextEditingController secretController;
   final TextEditingController newSecretController;
+  final TextEditingController signController;
+  final TextEditingController licController;
   final TextEditingController lockIdsController;
   final TextEditingController switchCountController;
   final TextEditingController fingerIndexController;
@@ -240,6 +254,21 @@ class _CommandFields extends StatelessWidget {
         TextField(
           controller: secretController,
           decoration: const InputDecoration(labelText: '当前密钥'),
+        ),
+      );
+    }
+    if (operation == 0) {
+      fields.add(
+        TextField(
+          controller: signController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: '钥匙标识 sign'),
+        ),
+      );
+      fields.add(
+        TextField(
+          controller: licController,
+          decoration: const InputDecoration(labelText: '许可号 lic'),
         ),
       );
     }

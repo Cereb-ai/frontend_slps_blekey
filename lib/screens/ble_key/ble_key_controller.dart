@@ -262,7 +262,10 @@ class BleKeyController extends ChangeNotifier {
         if (device != null) {
           _devicesByMac[device.mac ?? device.key ?? device.name ?? 'unknown'] =
               device;
-          _addLog('发现设备：${device.name ?? '未命名'} ${device.mac ?? ''}');
+          _addLog(
+            '发现设备：${device.name ?? '未命名'} ${device.mac ?? ''}'
+            '${device.keyId == null ? '' : '，keyId=${device.keyId}'}',
+          );
         }
       case 'scanFinished':
         _scanning = false;
