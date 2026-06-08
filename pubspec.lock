@@ -81,7 +81,7 @@ packages:
   flutter_blekey_sdk:
     dependency: "direct main"
     description:
-      path: "/Users/zhuang/Documents/cereb/flutter_blekey_sdk"
+      path: "/Users/zhuang/Documents/cereb/flutter_blekey_sdk_upgraded"
       relative: false
     source: path
     version: "0.0.1"
