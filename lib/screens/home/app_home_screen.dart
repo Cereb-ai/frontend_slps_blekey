@@ -1307,6 +1307,22 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     }
   }
 
+  Future<void> _openLockControl(_LockItem item) async {
+    final updated = await Navigator.of(context).pushNamed(
+      Routes.lockControl,
+      arguments: <String, dynamic>{
+        'lockId': item.id,
+        'name': item.name,
+        'number': item.number,
+        'location': item.location,
+        'switchState': item.switchState,
+      },
+    );
+    if (updated == true) {
+      await _loadLocksFromApi();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1406,6 +1422,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                     final item = list[index] as _LockItem;
                     return _LockCard(
                       item: item,
+                      onTap: () => _openLockControl(item),
                       onEdit: () => _editLock(item),
                       onDelete: () => _deleteLock(item),
                     );
@@ -1531,43 +1548,51 @@ class _KeyCard extends StatelessWidget {
 class _LockCard extends StatelessWidget {
   const _LockCard({
     required this.item,
+    required this.onTap,
     required this.onEdit,
     required this.onDelete,
   });
 
   final _LockItem item;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    item.name,
-                    style: Theme.of(context).textTheme.titleMedium,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                   ),
-                ),
-                TextButton(onPressed: onEdit, child: const Text('编辑')),
-                TextButton(onPressed: onDelete, child: const Text('删除')),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text('编号: ${item.number}'),
-            const SizedBox(height: 2),
-            Text('位置: ${item.location}'),
-            const SizedBox(height: 2),
-            Text('开关状态: ${item.switchState == 'locked' ? '已上锁' : '已解锁'}'),
-            const SizedBox(height: 2),
-            Text('更新时间: ${_formatDate(item.updatedAt)}'),
-          ],
+                  TextButton(onPressed: onEdit, child: const Text('编辑')),
+                  TextButton(onPressed: onDelete, child: const Text('删除')),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text('编号: ${item.number}'),
+              const SizedBox(height: 2),
+              Text('位置: ${item.location}'),
+              const SizedBox(height: 2),
+              Text('开关状态: ${item.switchState == 'locked' ? '已上锁' : '已解锁'}'),
+              const SizedBox(height: 2),
+              Text('更新时间: ${_formatDate(item.updatedAt)}'),
+              const SizedBox(height: 6),
+              Text('点击卡片进入开关锁控制', style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
         ),
       ),
     );

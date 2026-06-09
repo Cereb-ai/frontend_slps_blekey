@@ -4,6 +4,7 @@ import 'screens/ble_key/online_switch_lock_screen.dart';
 import 'screens/ble_key/vendor_ble_key_screen.dart';
 import 'screens/home/app_home_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/home/lock_control_screen.dart';
 import 'screens/login/login_screen.dart';
 
 abstract final class Routes {
@@ -14,6 +15,7 @@ abstract final class Routes {
   static const currentTest = '/current-test';
   static const vendorTest = '/vendor-test';
   static const onlineSwitchLock = '/online-switch-lock';
+  static const lockControl = '/lock-control';
 }
 
 final Map<String, RouteHandler> routes = <String, RouteHandler>{
@@ -23,4 +25,5 @@ final Map<String, RouteHandler> routes = <String, RouteHandler>{
   Routes.currentTest: (context, {args}) => const BleKeyScreen(),
   Routes.vendorTest: (context, {args}) => const VendorBleKeyScreen(),
   Routes.onlineSwitchLock: (context, {args}) => const OnlineSwitchLockScreen(),
+  Routes.lockControl: (context, {args}) => LockControlScreen.fromArgs(args),
 };
