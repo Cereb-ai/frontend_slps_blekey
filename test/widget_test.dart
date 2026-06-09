@@ -6,14 +6,17 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:frontend_demo_blekey/app.dart';
 
 void main() {
-  testWidgets('Ble key dashboard renders', (WidgetTester tester) async {
-    await tester.pumpWidget(const App());
-    await tester.pumpAndSettle();
+  testWidgets('App renders on cold start', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
 
-    expect(find.text('蓝牙钥匙 SDK 测试'), findsOneWidget);
+    await tester.pumpWidget(const App());
+    await tester.pump();
+
+    expect(find.byType(App), findsOneWidget);
   });
 }

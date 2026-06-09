@@ -109,19 +109,68 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
 
   Future<void> _onAddPressed() async {
     if (_tabIndex == 0) {
-      final item = await _showKeyEditor();
-      if (item == null) return;
-      setState(() {
-        _keys.insert(0, item);
-      });
+      final result = await _showKeyEditor();
+      if (result == null) return;
+      await _createKey(result);
       return;
     }
     if (_tabIndex == 1) {
-      final item = await _showLockEditor();
-      if (item == null) return;
-      setState(() {
-        _locks.insert(0, item);
-      });
+      final result = await _showLockEditor();
+      if (result == null) return;
+      await _createLock(result);
+    }
+  }
+
+  String? _requireToken() {
+    final token = GlobalUser.instance.token;
+    if (token == null || token.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('登录状态已失效，请重新登录')));
+      return null;
+    }
+    return token;
+  }
+
+  Future<void> _createKey(_KeyEditorResult result) async {
+    final token = _requireToken();
+    if (token == null) return;
+    setState(() => _keyLoading = true);
+    try {
+      await Api.createLockKey(token: token, payload: result.createPayload);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('钥匙创建成功')));
+      await _loadKeysFromApi();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('钥匙创建失败: $error')));
+    } finally {
+      if (mounted) setState(() => _keyLoading = false);
+    }
+  }
+
+  Future<void> _createLock(_LockEditorResult result) async {
+    final token = _requireToken();
+    if (token == null) return;
+    setState(() => _lockLoading = true);
+    try {
+      await Api.createLockDevice(token: token, payload: result.createPayload);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('锁创建成功')));
+      await _loadLocksFromApi();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('锁创建失败: $error')));
+    } finally {
+      if (mounted) setState(() => _lockLoading = false);
     }
   }
 
@@ -144,9 +193,21 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       ),
     );
     if (confirmed != true) return;
-    setState(() {
-      _keys.removeWhere((element) => element.id == item.id);
-    });
+    final token = _requireToken();
+    if (token == null) return;
+    try {
+      await Api.deleteLockKey(token: token, id: item.id);
+      await _loadKeysFromApi();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('钥匙已删除')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('钥匙删除失败: $error')));
+    }
   }
 
   Future<void> _deleteLock(_LockItem item) async {
@@ -168,18 +229,34 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       ),
     );
     if (confirmed != true) return;
-    setState(() {
-      _locks.removeWhere((element) => element.id == item.id);
-    });
+    final token = _requireToken();
+    if (token == null) return;
+    try {
+      await Api.deleteLockDevice(token: token, id: item.id);
+      await _loadLocksFromApi();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('锁已删除')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('锁删除失败: $error')));
+    }
   }
 
-  Future<_KeyItem?> _showKeyEditor({_KeyItem? initial}) async {
+  Future<_KeyEditorResult?> _showKeyEditor({_KeyItem? initial}) async {
     final nameController = TextEditingController(text: initial?.name ?? '');
     final numberController = TextEditingController(text: initial?.number ?? '');
+    final ownerController = TextEditingController(
+      text: initial?.ownerUserId ?? '',
+    );
+    var keyType = initial?.keyType ?? 'standard';
     var status = initial?.status ?? 'active';
     var currentStep = 0;
 
-    return showModalBottomSheet<_KeyItem>(
+    return showModalBottomSheet<_KeyEditorResult>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -233,16 +310,26 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                           return;
                                         }
                                         Navigator.of(context).pop(
-                                          _KeyItem(
-                                            id:
-                                                initial?.id ??
-                                                DateTime.now()
-                                                    .microsecondsSinceEpoch
-                                                    .toString(),
-                                            name: name,
-                                            number: number,
-                                            status: status,
-                                            updatedAt: DateTime.now(),
+                                          _KeyEditorResult(
+                                            createPayload:
+                                                _buildKeyCreatePayload(
+                                                  name: name,
+                                                  vendorKeyId: number,
+                                                  keyType: keyType,
+                                                  status: status,
+                                                  ownerUserId: ownerController
+                                                      .text
+                                                      .trim(),
+                                                ),
+                                            updatePayload:
+                                                _buildKeyUpdatePayload(
+                                                  name: name,
+                                                  keyType: keyType,
+                                                  status: status,
+                                                  ownerUserId: ownerController
+                                                      .text
+                                                      .trim(),
+                                                ),
                                           ),
                                         );
                                       }
@@ -295,8 +382,56 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: numberController,
+                                  enabled: initial == null,
                                   decoration: const InputDecoration(
                                     labelText: '钥匙编号 / vendorKeyId',
+                                    helperText: '编辑时厂商编号不可修改',
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                DropdownButtonFormField<String>(
+                                  initialValue: keyType,
+                                  decoration: const InputDecoration(
+                                    labelText: '钥匙类型',
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'standard',
+                                      child: Text('standard / 普通'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'bluetooth',
+                                      child: Text('bluetooth / 蓝牙'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'fingerprint',
+                                      child: Text('fingerprint / 指纹'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'cellular',
+                                      child: Text('cellular / 4G'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'display',
+                                      child: Text('display / 屏显'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'emergency',
+                                      child: Text('emergency / 应急'),
+                                    ),
+                                  ],
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      setSheetState(() => keyType = value);
+                                    }
+                                  },
+                                ),
+                                const SizedBox(height: 8),
+                                TextField(
+                                  controller: ownerController,
+                                  decoration: const InputDecoration(
+                                    labelText: '归属用户 ID',
+                                    helperText: '只表示保管人，不代表开锁权限',
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -351,6 +486,12 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                     '钥匙编号: ${numberController.text.trim().isEmpty ? '-' : numberController.text.trim()}',
                                   ),
                                   const SizedBox(height: 4),
+                                  Text('类型: $keyType'),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '归属用户: ${ownerController.text.trim().isEmpty ? '-' : ownerController.text.trim()}',
+                                  ),
+                                  const SizedBox(height: 4),
                                   Text('状态: $status'),
                                 ],
                               ),
@@ -369,7 +510,53 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     );
   }
 
-  Future<_LockItem?> _showLockEditor({_LockItem? initial}) async {
+  JsonMap _buildKeyCreatePayload({
+    required String name,
+    required String vendorKeyId,
+    required String keyType,
+    required String status,
+    required String ownerUserId,
+  }) {
+    final normalizedOwner = ownerUserId.isEmpty ? null : ownerUserId;
+    return <String, dynamic>{
+      'vendorKeyId': vendorKeyId,
+      'keyType': keyType,
+      'name': name,
+      'assignedUserId': normalizedOwner,
+      'ownerUserId': normalizedOwner,
+      'status': status,
+      'metadata': <String, dynamic>{
+        'provisioningFlow': 'app_key_create',
+        'department': 'Cereb',
+        'source': 'android_app',
+        'capturedAt': DateTime.now().toIso8601String(),
+      },
+    };
+  }
+
+  JsonMap _buildKeyUpdatePayload({
+    required String name,
+    required String keyType,
+    required String status,
+    required String ownerUserId,
+  }) {
+    final normalizedOwner = ownerUserId.isEmpty ? null : ownerUserId;
+    return <String, dynamic>{
+      'name': name,
+      'keyType': keyType,
+      'assignedUserId': normalizedOwner,
+      'ownerUserId': normalizedOwner,
+      'status': status,
+      'metadata': <String, dynamic>{
+        'department': 'Cereb',
+        'source': 'android_app',
+        'updatedFrom': 'app_key_edit',
+        'capturedAt': DateTime.now().toIso8601String(),
+      },
+    };
+  }
+
+  Future<_LockEditorResult?> _showLockEditor({_LockItem? initial}) async {
     final nameController = TextEditingController(text: initial?.name ?? '');
     final numberController = TextEditingController(text: initial?.number ?? '');
     final locationController = TextEditingController(
@@ -378,7 +565,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     var switchState = initial?.switchState ?? 'locked';
     var currentStep = 0;
 
-    return showModalBottomSheet<_LockItem>(
+    return showModalBottomSheet<_LockEditorResult>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -436,17 +623,20 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                           return;
                                         }
                                         Navigator.of(context).pop(
-                                          _LockItem(
-                                            id:
-                                                initial?.id ??
-                                                DateTime.now()
-                                                    .microsecondsSinceEpoch
-                                                    .toString(),
-                                            name: name,
-                                            number: number,
-                                            location: location,
-                                            switchState: switchState,
-                                            updatedAt: DateTime.now(),
+                                          _LockEditorResult(
+                                            createPayload:
+                                                _buildLockCreatePayload(
+                                                  name: name,
+                                                  vendorLockId: number,
+                                                  location: location,
+                                                  switchState: switchState,
+                                                ),
+                                            updatePayload:
+                                                _buildLockUpdatePayload(
+                                                  name: name,
+                                                  location: location,
+                                                  switchState: switchState,
+                                                ),
                                           ),
                                         );
                                       }
@@ -505,8 +695,10 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: numberController,
+                                  enabled: initial == null,
                                   decoration: const InputDecoration(
                                     labelText: '锁编号',
+                                    helperText: '编辑时厂商锁号不可修改',
                                   ),
                                 ),
                               ],
@@ -602,26 +794,96 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     );
   }
 
+  JsonMap _buildLockCreatePayload({
+    required String name,
+    required String vendorLockId,
+    required String location,
+    required String switchState,
+  }) {
+    return <String, dynamic>{
+      'vendorLockId': vendorLockId,
+      'name': name,
+      'assetId': null,
+      'metadata': <String, dynamic>{
+        'provisioningFlow': 'app_lock_create',
+        'location': location,
+        'switchState': switchState,
+        'source': 'android_app',
+        'capturedAt': DateTime.now().toIso8601String(),
+      },
+    };
+  }
+
+  JsonMap _buildLockUpdatePayload({
+    required String name,
+    required String location,
+    required String switchState,
+  }) {
+    return <String, dynamic>{
+      'name': name,
+      'assetId': null,
+      'metadata': <String, dynamic>{
+        'location': location,
+        'switchState': switchState,
+        'source': 'android_app',
+        'updatedFrom': 'app_lock_edit',
+        'capturedAt': DateTime.now().toIso8601String(),
+      },
+    };
+  }
+
   Future<void> _editKey(_KeyItem item) async {
-    final updated = await _showKeyEditor(initial: item);
-    if (updated == null) return;
-    setState(() {
-      final index = _keys.indexWhere((element) => element.id == item.id);
-      if (index >= 0) {
-        _keys[index] = updated;
-      }
-    });
+    final result = await _showKeyEditor(initial: item);
+    if (result == null) return;
+    final token = _requireToken();
+    if (token == null) return;
+    setState(() => _keyLoading = true);
+    try {
+      await Api.updateLockKey(
+        token: token,
+        id: item.id,
+        payload: result.updatePayload,
+      );
+      await _loadKeysFromApi();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('钥匙已更新')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('钥匙更新失败: $error')));
+    } finally {
+      if (mounted) setState(() => _keyLoading = false);
+    }
   }
 
   Future<void> _editLock(_LockItem item) async {
-    final updated = await _showLockEditor(initial: item);
-    if (updated == null) return;
-    setState(() {
-      final index = _locks.indexWhere((element) => element.id == item.id);
-      if (index >= 0) {
-        _locks[index] = updated;
-      }
-    });
+    final result = await _showLockEditor(initial: item);
+    if (result == null) return;
+    final token = _requireToken();
+    if (token == null) return;
+    setState(() => _lockLoading = true);
+    try {
+      await Api.updateLockDevice(
+        token: token,
+        id: item.id,
+        payload: result.updatePayload,
+      );
+      await _loadLocksFromApi();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('锁已更新')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('锁更新失败: $error')));
+    } finally {
+      if (mounted) setState(() => _lockLoading = false);
+    }
   }
 
   @override
@@ -727,12 +989,17 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     final name = (json['name'] ?? json['vendorKeyId'] ?? id).toString();
     final number = (json['vendorKeyId'] ?? id).toString();
     final status = (json['status'] ?? 'active').toString();
+    final keyType = (json['keyType'] ?? 'standard').toString();
+    final ownerUserId = (json['ownerUserId'] ?? json['assignedUserId'] ?? '')
+        .toString();
     final updatedAtRaw = json['updatedAt']?.toString();
     final updatedAt = DateTime.tryParse(updatedAtRaw ?? '') ?? DateTime.now();
     return _KeyItem(
       id: id.isEmpty ? DateTime.now().microsecondsSinceEpoch.toString() : id,
       name: name,
       number: number,
+      keyType: keyType,
+      ownerUserId: ownerUserId,
       status: status,
       updatedAt: updatedAt,
     );
@@ -811,7 +1078,13 @@ class _KeyCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 2),
+            Text('类型: ${item.keyType}'),
+            const SizedBox(height: 2),
             Text('编号: ${item.number}'),
+            if (item.ownerUserId.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text('归属用户: ${item.ownerUserId}'),
+            ],
             const SizedBox(height: 2),
             Text('状态: ${item.status == 'active' ? '正常' : item.status}'),
             const SizedBox(height: 2),
@@ -1043,6 +1316,8 @@ class _KeyItem {
     required this.id,
     required this.name,
     required this.number,
+    required this.keyType,
+    required this.ownerUserId,
     required this.status,
     required this.updatedAt,
   });
@@ -1050,8 +1325,30 @@ class _KeyItem {
   final String id;
   final String name;
   final String number;
+  final String keyType;
+  final String ownerUserId;
   final String status;
   final DateTime updatedAt;
+}
+
+class _KeyEditorResult {
+  const _KeyEditorResult({
+    required this.createPayload,
+    required this.updatePayload,
+  });
+
+  final JsonMap createPayload;
+  final JsonMap updatePayload;
+}
+
+class _LockEditorResult {
+  const _LockEditorResult({
+    required this.createPayload,
+    required this.updatePayload,
+  });
+
+  final JsonMap createPayload;
+  final JsonMap updatePayload;
 }
 
 class _LockItem {
