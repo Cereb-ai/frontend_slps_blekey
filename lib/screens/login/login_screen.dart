@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../states/global_user.dart';
 import '../../routes.dart';
 
@@ -69,6 +70,16 @@ class _LoginScreenState extends State<LoginScreen>
       );
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _openCerebSite() async {
+    final url = Uri.parse('http://cereb.ai');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication) &&
+        mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('无法打开 Cereb.AI 官网')));
     }
   }
 
@@ -245,6 +256,36 @@ class _LoginScreenState extends State<LoginScreen>
                                     ),
                                   ),
                           ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'powered by ',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.45),
+                                fontSize: 12,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _openCerebSite,
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFF00D9FF),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                padding: EdgeInsets.zero,
+                              ),
+                              child: const Text(
+                                'Cereb.AI',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

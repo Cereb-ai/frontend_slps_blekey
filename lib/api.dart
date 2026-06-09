@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+typedef JsonMap = Map<String, dynamic>;
+
 abstract final class Api {
   static const String _baseUrl = 'https://dev-api.cereb.ai';
   static const String _tenantId = 'smart-lock-platform';
@@ -47,5 +49,65 @@ abstract final class Api {
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
     return response.data ?? <String, dynamic>{};
+  }
+
+  static Future<List<JsonMap>> listLockKeys({
+    required String token,
+    Map<String, dynamic> query = const <String, dynamic>{},
+  }) async {
+    final response = await dio.get<dynamic>(
+      '/slps/keys',
+      queryParameters: query,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+
+    final data = response.data;
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final items = map['items'] ?? map['list'] ?? map['data'];
+      if (items is List) {
+        return items
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    }
+    return const <JsonMap>[];
+  }
+
+  static Future<List<JsonMap>> listLockDevices({
+    required String token,
+    Map<String, dynamic> query = const <String, dynamic>{},
+  }) async {
+    final response = await dio.get<dynamic>(
+      '/slps/locks',
+      queryParameters: query,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+
+    final data = response.data;
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final items = map['items'] ?? map['list'] ?? map['data'];
+      if (items is List) {
+        return items
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    }
+    return const <JsonMap>[];
   }
 }
