@@ -656,6 +656,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Switch State'**
   String get lockWizardSwitchStateSummary;
+
+  /// No description provided for @keyStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'normal'**
+  String get keyStatusActive;
+
+  /// No description provided for @listUpdatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated At'**
+  String get listUpdatedAt;
+
+  /// No description provided for @lockStateLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get lockStateLocked;
+
+  /// No description provided for @lockStateUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked'**
+  String get lockStateUnlocked;
+
+  /// No description provided for @lockCardTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap card to open lock control'**
+  String get lockCardTapHint;
+
+  /// No description provided for @lockControlTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Control'**
+  String get lockControlTitle;
+
+  /// No description provided for @lockControlSelectMacFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please scan and select key MAC first'**
+  String get lockControlSelectMacFirst;
+
+  /// No description provided for @lockControlUnlockSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock command submitted'**
+  String get lockControlUnlockSubmitted;
+
+  /// No description provided for @lockControlLockSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock command submitted'**
+  String get lockControlLockSubmitted;
+
+  /// No description provided for @lockControlFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Control failed'**
+  String get lockControlFailed;
+
+  /// No description provided for @lockControlCurrentStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Status'**
+  String get lockControlCurrentStatus;
+
+  /// No description provided for @lockControlSdkConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'SDK Control Configuration'**
+  String get lockControlSdkConfig;
+
+  /// No description provided for @lockControlKeyCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} keys'**
+  String lockControlKeyCount(Object count);
+
+  /// No description provided for @lockControlStopScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Scan'**
+  String get lockControlStopScan;
+
+  /// No description provided for @lockControlKeyMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Key MAC'**
+  String get lockControlKeyMac;
+
+  /// No description provided for @lockControlUnlockAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get lockControlUnlockAction;
+
+  /// No description provided for @lockControlLockAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock'**
+  String get lockControlLockAction;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

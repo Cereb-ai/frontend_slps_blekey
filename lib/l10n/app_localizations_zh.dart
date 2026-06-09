@@ -288,6 +288,59 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get lockWizardSwitchStateSummary => '开关状态';
+
+  @override
+  String get keyStatusActive => '正常';
+
+  @override
+  String get listUpdatedAt => '更新时间';
+
+  @override
+  String get lockStateLocked => '已上锁';
+
+  @override
+  String get lockStateUnlocked => '已解锁';
+
+  @override
+  String get lockCardTapHint => '点击卡片进入开关锁控制';
+
+  @override
+  String get lockControlTitle => '锁控制';
+
+  @override
+  String get lockControlSelectMacFirst => '请先扫描并选择钥匙 MAC';
+
+  @override
+  String get lockControlUnlockSubmitted => '开锁指令已提交';
+
+  @override
+  String get lockControlLockSubmitted => '关锁指令已提交';
+
+  @override
+  String get lockControlFailed => '控制失败';
+
+  @override
+  String get lockControlCurrentStatus => '当前状态';
+
+  @override
+  String get lockControlSdkConfig => 'SDK 控制配置';
+
+  @override
+  String lockControlKeyCount(Object count) {
+    return '$count 台钥匙';
+  }
+
+  @override
+  String get lockControlStopScan => '停止扫描';
+
+  @override
+  String get lockControlKeyMac => '钥匙 MAC';
+
+  @override
+  String get lockControlUnlockAction => '开锁';
+
+  @override
+  String get lockControlLockAction => '关锁';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -574,6 +627,59 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get lockWizardSwitchStateSummary => '开关状态';
+
+  @override
+  String get keyStatusActive => '正常';
+
+  @override
+  String get listUpdatedAt => '更新时间';
+
+  @override
+  String get lockStateLocked => '已上锁';
+
+  @override
+  String get lockStateUnlocked => '已解锁';
+
+  @override
+  String get lockCardTapHint => '点击卡片进入开关锁控制';
+
+  @override
+  String get lockControlTitle => '锁控制';
+
+  @override
+  String get lockControlSelectMacFirst => '请先扫描并选择钥匙 MAC';
+
+  @override
+  String get lockControlUnlockSubmitted => '开锁指令已提交';
+
+  @override
+  String get lockControlLockSubmitted => '关锁指令已提交';
+
+  @override
+  String get lockControlFailed => '控制失败';
+
+  @override
+  String get lockControlCurrentStatus => '当前状态';
+
+  @override
+  String get lockControlSdkConfig => 'SDK 控制配置';
+
+  @override
+  String lockControlKeyCount(Object count) {
+    return '$count 台钥匙';
+  }
+
+  @override
+  String get lockControlStopScan => '停止扫描';
+
+  @override
+  String get lockControlKeyMac => '钥匙 MAC';
+
+  @override
+  String get lockControlUnlockAction => '开锁';
+
+  @override
+  String get lockControlLockAction => '关锁';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -860,4 +966,57 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get lockWizardSwitchStateSummary => '開關狀態';
+
+  @override
+  String get keyStatusActive => '正常';
+
+  @override
+  String get listUpdatedAt => '更新時間';
+
+  @override
+  String get lockStateLocked => '已上鎖';
+
+  @override
+  String get lockStateUnlocked => '已解鎖';
+
+  @override
+  String get lockCardTapHint => '點擊卡片進入開關鎖控制';
+
+  @override
+  String get lockControlTitle => '鎖控制';
+
+  @override
+  String get lockControlSelectMacFirst => '請先掃描並選擇鑰匙 MAC';
+
+  @override
+  String get lockControlUnlockSubmitted => '開鎖指令已提交';
+
+  @override
+  String get lockControlLockSubmitted => '關鎖指令已提交';
+
+  @override
+  String get lockControlFailed => '控制失敗';
+
+  @override
+  String get lockControlCurrentStatus => '當前狀態';
+
+  @override
+  String get lockControlSdkConfig => 'SDK 控制配置';
+
+  @override
+  String lockControlKeyCount(Object count) {
+    return '$count 台鑰匙';
+  }
+
+  @override
+  String get lockControlStopScan => '停止掃描';
+
+  @override
+  String get lockControlKeyMac => '鑰匙 MAC';
+
+  @override
+  String get lockControlUnlockAction => '開鎖';
+
+  @override
+  String get lockControlLockAction => '關鎖';
 }

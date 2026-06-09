@@ -2,27 +2,45 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "change apk name(Windows)",
+      "label": "rename apk (Windows)",
       "type": "shell",
-      "command": "cp ${workspaceFolder}\\build\\app\\outputs\\apk\\release\\app-release.apk ${workspaceFolder}\\build\\app\\outputs\\apk\\release\\cn.qingyanyimei.customer$(date -Format \"yyyyMMddHHmmss\").apk",
+      "command": "powershell -NoProfile -Command \"$ts=Get-Date -Format yyyyMMddHHmmss; $src='${workspaceFolder}\\build\\app\\outputs\\flutter-apk\\app-release.apk'; $dst='${workspaceFolder}\\build\\app\\outputs\\flutter-apk\\${workspaceFolderBasename}_'+$ts+'.apk'; Copy-Item $src $dst -Force\"",
       "problemMatcher": []
     },
     {
-      "label": "open apk folder(Windows)",
+      "label": "zip apk (Windows)",
       "type": "shell",
-      "command": "start ${workspaceFolder}\\build\\app\\outputs\\apk\\release\\",
+      "command": "powershell -NoProfile -Command \"$ts=Get-Date -Format yyyyMMddHHmmss; $src='${workspaceFolder}\\build\\app\\outputs\\flutter-apk\\app-release.apk'; $zip='${workspaceFolder}\\build\\app\\outputs\\flutter-apk\\${workspaceFolderBasename}_'+$ts+'.zip'; Compress-Archive -Path $src -DestinationPath $zip -Force\"",
       "problemMatcher": []
     },
     {
-      "label": "change apk name(macOS)",
+      "label": "rename apk (macOS)",
       "type": "shell",
-      "command": "cp ${workspaceFolder}/build/app/outputs/apk/release/app-release.apk ${workspaceFolder}/build/app/outputs/apk/release\\cn.qingyanyimei.customer$(date +%F).apk",
+      "command": "ts=$(date +%Y%m%d%H%M%S); src='${workspaceFolder}/build/app/outputs/flutter-apk/app-release.apk'; dst='${workspaceFolder}/build/app/outputs/flutter-apk/${workspaceFolderBasename}_'\"$ts\"'.apk'; cp \"$src\" \"$dst\"",
       "problemMatcher": []
     },
     {
-      "label": "open apk folder(macOS)",
+      "label": "zip apk (macOS)",
       "type": "shell",
-      "command": "start ${workspaceFolder}\\build\\app\\outputs\\apk\\release\\",
+      "command": "ts=$(date +%Y%m%d%H%M%S); src='${workspaceFolder}/build/app/outputs/flutter-apk/app-release.apk'; zipf='${workspaceFolder}/build/app/outputs/flutter-apk/${workspaceFolderBasename}_'\"$ts\"'.zip'; zip -j \"$zipf\" \"$src\"",
+      "problemMatcher": []
+    },
+    {
+      "label": "rename + zip apk (macOS)",
+      "type": "shell",
+      "command": "ts=$(date +%Y%m%d%H%M%S); src='${workspaceFolder}/build/app/outputs/flutter-apk/app-release.apk'; apk='${workspaceFolder}/build/app/outputs/flutter-apk/${workspaceFolderBasename}_'\"$ts\"'.apk'; zipf='${workspaceFolder}/build/app/outputs/flutter-apk/${workspaceFolderBasename}_'\"$ts\"'.zip'; cp \"$src\" \"$apk\" && zip -j \"$zipf\" \"$apk\"",
+      "problemMatcher": []
+    },
+    {
+      "label": "open apk folder (Windows)",
+      "type": "shell",
+      "command": "start \"\" \"${workspaceFolder}\\build\\app\\outputs\\flutter-apk\\\"",
+      "problemMatcher": []
+    },
+    {
+      "label": "open apk folder (macOS)",
+      "type": "shell",
+      "command": "open \"${workspaceFolder}/build/app/outputs/flutter-apk/\"",
       "problemMatcher": []
     }
   ]

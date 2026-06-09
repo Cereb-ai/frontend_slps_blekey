@@ -97,5 +97,27 @@
   "lockWizardLockNameSummary": "Lock Name",
   "lockWizardLockNumberSummary": "Lock Number",
   "lockWizardLocationSummary": "Location",
-  "lockWizardSwitchStateSummary": "Switch State"
+  "lockWizardSwitchStateSummary": "Switch State",
+  "keyStatusActive": "normal",
+  "listUpdatedAt": "Updated At",
+  "lockStateLocked": "Locked",
+  "lockStateUnlocked": "Unlocked",
+  "lockCardTapHint": "Tap card to open lock control",
+  "lockControlTitle": "Lock Control",
+  "lockControlSelectMacFirst": "Please scan and select key MAC first",
+  "lockControlUnlockSubmitted": "Unlock command submitted",
+  "lockControlLockSubmitted": "Lock command submitted",
+  "lockControlFailed": "Control failed",
+  "lockControlCurrentStatus": "Current Status",
+  "lockControlSdkConfig": "SDK Control Configuration",
+  "lockControlKeyCount": "{count} keys",
+  "@lockControlKeyCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "lockControlStopScan": "Stop Scan",
+  "lockControlKeyMac": "Key MAC",
+  "lockControlUnlockAction": "Unlock",
+  "lockControlLockAction": "Lock"
 }

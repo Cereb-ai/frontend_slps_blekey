@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../api.dart';
+import '../../l10n/app_localizations.dart';
 import '../ble_key/ble_key_controller.dart';
 import '../../states/global_user.dart';
 
@@ -69,11 +70,12 @@ class _LockControlScreenState extends State<LockControlScreen> {
   }
 
   Future<void> _setSwitchState(String nextState) async {
+    final l10n = AppLocalizations.of(context)!;
     if (_busy || nextState == _switchState) return;
     if (_selectedMac == null || _selectedMac!.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('请先扫描并选择钥匙 MAC')));
+      ).showSnackBar(SnackBar(content: Text(l10n.lockControlSelectMacFirst)));
       return;
     }
 
@@ -82,7 +84,7 @@ class _LockControlScreenState extends State<LockControlScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('登录状态已失效，请重新登录')));
+      ).showSnackBar(SnackBar(content: Text(l10n.sessionExpired)));
       return;
     }
 
@@ -140,15 +142,19 @@ class _LockControlScreenState extends State<LockControlScreen> {
       setState(() => _switchState = nextState);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(nextState == 'unlocked' ? '开锁指令已提交' : '关锁指令已提交'),
+          content: Text(
+            nextState == 'unlocked'
+                ? l10n.lockControlUnlockSubmitted
+                : l10n.lockControlLockSubmitted,
+          ),
         ),
       );
       Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('控制失败: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${l10n.lockControlFailed}: $error')),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -168,6 +174,7 @@ class _LockControlScreenState extends State<LockControlScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = context.watch<BleKeyController>();
     if (_selectedMac == null && controller.devices.isNotEmpty) {
       _selectedMac = controller.devices.first.mac;
@@ -175,7 +182,7 @@ class _LockControlScreenState extends State<LockControlScreen> {
     final isLocked = _switchState == 'locked';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('锁控制')),
+      appBar: AppBar(title: Text(l10n.lockControlTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -192,11 +199,17 @@ class _LockControlScreenState extends State<LockControlScreen> {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
-                    Text('编号: ${widget.number}'),
+                    Text(
+                      '${l10n.lockWizardLockNumberSummary}: ${widget.number}',
+                    ),
                     const SizedBox(height: 4),
-                    Text('位置: ${widget.location}'),
+                    Text(
+                      '${l10n.lockWizardLocationSummary}: ${widget.location}',
+                    ),
                     const SizedBox(height: 4),
-                    Text('当前状态: ${isLocked ? '已上锁' : '已解锁'}'),
+                    Text(
+                      '${l10n.lockControlCurrentStatus}: ${isLocked ? l10n.lockStateLocked : l10n.lockStateUnlocked}',
+                    ),
                   ],
                 ),
               ),
@@ -212,11 +225,13 @@ class _LockControlScreenState extends State<LockControlScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'SDK 控制配置',
+                            l10n.lockControlSdkConfig,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                         ),
-                        Text('${controller.devices.length} 台钥匙'),
+                        Text(
+                          l10n.lockControlKeyCount(controller.devices.length),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -231,19 +246,25 @@ class _LockControlScreenState extends State<LockControlScreen> {
                             ? Icons.bluetooth_disabled
                             : Icons.bluetooth_searching,
                       ),
-                      label: Text(controller.scanning ? '停止扫描' : '扫描钥匙'),
+                      label: Text(
+                        controller.scanning
+                            ? l10n.lockControlStopScan
+                            : l10n.keyWizardScanKey,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedMac,
-                      decoration: const InputDecoration(labelText: '钥匙 MAC'),
+                      decoration: InputDecoration(
+                        labelText: l10n.lockControlKeyMac,
+                      ),
                       items: controller.devices
                           .where((device) => (device.mac ?? '').isNotEmpty)
                           .map(
                             (device) => DropdownMenuItem<String>(
                               value: device.mac,
                               child: Text(
-                                '${device.name ?? '未命名'}  ${device.mac ?? ''}',
+                                '${device.name ?? l10n.unnamedDevice}  ${device.mac ?? ''}',
                               ),
                             ),
                           )
@@ -279,7 +300,7 @@ class _LockControlScreenState extends State<LockControlScreen> {
             FilledButton.icon(
               onPressed: _busy ? null : () => _setSwitchState('unlocked'),
               icon: const Icon(Icons.lock_open),
-              label: const Text('开锁'),
+              label: Text(l10n.lockControlUnlockAction),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
               ),
@@ -288,7 +309,7 @@ class _LockControlScreenState extends State<LockControlScreen> {
             FilledButton.tonalIcon(
               onPressed: _busy ? null : () => _setSwitchState('locked'),
               icon: const Icon(Icons.lock_outline),
-              label: const Text('关锁'),
+              label: Text(l10n.lockControlLockAction),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
               ),

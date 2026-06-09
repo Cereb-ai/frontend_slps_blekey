@@ -288,4 +288,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lockWizardSwitchStateSummary => 'Switch State';
+
+  @override
+  String get keyStatusActive => 'normal';
+
+  @override
+  String get listUpdatedAt => 'Updated At';
+
+  @override
+  String get lockStateLocked => 'Locked';
+
+  @override
+  String get lockStateUnlocked => 'Unlocked';
+
+  @override
+  String get lockCardTapHint => 'Tap card to open lock control';
+
+  @override
+  String get lockControlTitle => 'Lock Control';
+
+  @override
+  String get lockControlSelectMacFirst => 'Please scan and select key MAC first';
+
+  @override
+  String get lockControlUnlockSubmitted => 'Unlock command submitted';
+
+  @override
+  String get lockControlLockSubmitted => 'Lock command submitted';
+
+  @override
+  String get lockControlFailed => 'Control failed';
+
+  @override
+  String get lockControlCurrentStatus => 'Current Status';
+
+  @override
+  String get lockControlSdkConfig => 'SDK Control Configuration';
+
+  @override
+  String lockControlKeyCount(Object count) {
+    return '$count keys';
+  }
+
+  @override
+  String get lockControlStopScan => 'Stop Scan';
+
+  @override
+  String get lockControlKeyMac => 'Key MAC';
+
+  @override
+  String get lockControlUnlockAction => 'Unlock';
+
+  @override
+  String get lockControlLockAction => 'Lock';
 }

@@ -97,5 +97,27 @@
   "lockWizardLockNameSummary": "Schlossname",
   "lockWizardLockNumberSummary": "Schlossnummer",
   "lockWizardLocationSummary": "Ort",
-  "lockWizardSwitchStateSummary": "Schaltzustand"
+  "lockWizardSwitchStateSummary": "Schaltzustand",
+  "keyStatusActive": "Normal",
+  "listUpdatedAt": "Aktualisiert am",
+  "lockStateLocked": "Verriegelt",
+  "lockStateUnlocked": "Entriegelt",
+  "lockCardTapHint": "Zum Sperrsteuerungsbildschirm tippen",
+  "lockControlTitle": "Schlosssteuerung",
+  "lockControlSelectMacFirst": "Bitte zuerst Schlussel-MAC scannen und auswahlen",
+  "lockControlUnlockSubmitted": "Entriegelungsbefehl gesendet",
+  "lockControlLockSubmitted": "Verriegelungsbefehl gesendet",
+  "lockControlFailed": "Steuerung fehlgeschlagen",
+  "lockControlCurrentStatus": "Aktueller Status",
+  "lockControlSdkConfig": "SDK-Steuerungskonfiguration",
+  "lockControlKeyCount": "{count} Schlussel",
+  "@lockControlKeyCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "lockControlStopScan": "Scan stoppen",
+  "lockControlKeyMac": "Schlussel-MAC",
+  "lockControlUnlockAction": "Entriegeln",
+  "lockControlLockAction": "Verriegeln"
 }

@@ -97,5 +97,27 @@
   "lockWizardLockNameSummary": "鎖名稱",
   "lockWizardLockNumberSummary": "鎖編號",
   "lockWizardLocationSummary": "位置",
-  "lockWizardSwitchStateSummary": "開關狀態"
+  "lockWizardSwitchStateSummary": "開關狀態",
+  "keyStatusActive": "正常",
+  "listUpdatedAt": "更新時間",
+  "lockStateLocked": "已上鎖",
+  "lockStateUnlocked": "已解鎖",
+  "lockCardTapHint": "點擊卡片進入開關鎖控制",
+  "lockControlTitle": "鎖控制",
+  "lockControlSelectMacFirst": "請先掃描並選擇鑰匙 MAC",
+  "lockControlUnlockSubmitted": "開鎖指令已提交",
+  "lockControlLockSubmitted": "關鎖指令已提交",
+  "lockControlFailed": "控制失敗",
+  "lockControlCurrentStatus": "當前狀態",
+  "lockControlSdkConfig": "SDK 控制配置",
+  "lockControlKeyCount": "{count} 台鑰匙",
+  "@lockControlKeyCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "lockControlStopScan": "停止掃描",
+  "lockControlKeyMac": "鑰匙 MAC",
+  "lockControlUnlockAction": "開鎖",
+  "lockControlLockAction": "關鎖"
 }

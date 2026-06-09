@@ -288,4 +288,57 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get lockWizardSwitchStateSummary => 'Schaltzustand';
+
+  @override
+  String get keyStatusActive => 'Normal';
+
+  @override
+  String get listUpdatedAt => 'Aktualisiert am';
+
+  @override
+  String get lockStateLocked => 'Verriegelt';
+
+  @override
+  String get lockStateUnlocked => 'Entriegelt';
+
+  @override
+  String get lockCardTapHint => 'Zum Sperrsteuerungsbildschirm tippen';
+
+  @override
+  String get lockControlTitle => 'Schlosssteuerung';
+
+  @override
+  String get lockControlSelectMacFirst => 'Bitte zuerst Schlussel-MAC scannen und auswahlen';
+
+  @override
+  String get lockControlUnlockSubmitted => 'Entriegelungsbefehl gesendet';
+
+  @override
+  String get lockControlLockSubmitted => 'Verriegelungsbefehl gesendet';
+
+  @override
+  String get lockControlFailed => 'Steuerung fehlgeschlagen';
+
+  @override
+  String get lockControlCurrentStatus => 'Aktueller Status';
+
+  @override
+  String get lockControlSdkConfig => 'SDK-Steuerungskonfiguration';
+
+  @override
+  String lockControlKeyCount(Object count) {
+    return '$count Schlussel';
+  }
+
+  @override
+  String get lockControlStopScan => 'Scan stoppen';
+
+  @override
+  String get lockControlKeyMac => 'Schlussel-MAC';
+
+  @override
+  String get lockControlUnlockAction => 'Entriegeln';
+
+  @override
+  String get lockControlLockAction => 'Verriegeln';
 }
