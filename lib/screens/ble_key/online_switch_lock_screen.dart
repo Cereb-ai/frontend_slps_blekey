@@ -21,7 +21,7 @@ class _OnlineSwitchLockScreenState extends State<OnlineSwitchLockScreen> {
     text: 'FFFFFFFFFFFFFFFFFFFF',
   );
   final TextEditingController _signController = TextEditingController(
-    text: '0',
+    text: '1',
   );
   final TextEditingController _licController = TextEditingController(
     text: 'FFFFFFFFFFFFFFFF',
@@ -271,7 +271,7 @@ class _OnlineSwitchLockScreenState extends State<OnlineSwitchLockScreen> {
   Map<String, Object?> get _commonArgs => <String, Object?>{
     'secret': _secretController.text.trim(),
     'oldSecret': _secretController.text.trim(),
-    'sign': int.tryParse(_signController.text.trim()) ?? 0,
+    'sign': int.tryParse(_signController.text.trim()) ?? 1,
     'lic': _licController.text.trim(),
     'lockIds': _lockIdsController.text.trim(),
   };

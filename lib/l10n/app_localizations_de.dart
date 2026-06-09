@@ -75,6 +75,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get cancel => 'Abbrechen';
 
   @override
+  String get edit => 'Bearbeiten';
+
+  @override
+  String get delete => 'Loschen';
+
+  @override
+  String get deleteKeyTitle => 'Schlussel loschen';
+
+  @override
+  String get deleteLockTitle => 'Schloss loschen';
+
+  @override
+  String confirmDeleteItem(Object name) {
+    return 'Mochten Sie $name wirklich loschen?';
+  }
+
+  @override
   String get logoutAction => 'Abmelden';
 
   @override
@@ -91,4 +108,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sessionExpired => 'Sitzung abgelaufen, bitte erneut anmelden';
+
+  @override
+  String get smartListEmpty => 'Keine Daten';
+
+  @override
+  String get smartListLoading => 'Wird geladen...';
+
+  @override
+  String get smartListNoMore => 'Keine weiteren Daten';
 }

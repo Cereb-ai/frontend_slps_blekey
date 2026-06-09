@@ -75,6 +75,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get edit => 'Edit';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get deleteKeyTitle => 'Delete key';
+
+  @override
+  String get deleteLockTitle => 'Delete lock';
+
+  @override
+  String confirmDeleteItem(Object name) {
+    return 'Are you sure you want to delete $name?';
+  }
+
+  @override
   String get logoutAction => 'Log out';
 
   @override
@@ -91,4 +108,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionExpired => 'Session expired, please log in again';
+
+  @override
+  String get smartListEmpty => 'No data';
+
+  @override
+  String get smartListLoading => 'Loading...';
+
+  @override
+  String get smartListNoMore => 'No more data';
 }

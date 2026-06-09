@@ -9,6 +9,7 @@ import '../../routes.dart';
 import '../ble_key/ble_key_controller.dart';
 import '../../states/global_user.dart';
 import '../../states/locale_store.dart';
+import '../../widgets/smart_list.dart';
 
 class AppHomeScreen extends StatefulWidget {
   const AppHomeScreen({super.key});
@@ -181,19 +182,20 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   }
 
   Future<void> _deleteKey(_KeyItem item) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('删除钥匙'),
-        content: Text('确认删除 ${item.name} 吗？'),
+        title: Text(l10n.deleteKeyTitle),
+        content: Text(l10n.confirmDeleteItem(item.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('删除'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -217,19 +219,20 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   }
 
   Future<void> _deleteLock(_LockItem item) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('删除锁'),
-        content: Text('确认删除 ${item.name} 吗？'),
+        title: Text(l10n.deleteLockTitle),
+        content: Text(l10n.confirmDeleteItem(item.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('删除'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -1142,7 +1145,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   Map<String, Object?> get _sdkConnectArgs => const <String, Object?>{
     'secret': 'FFFFFFFFFFFFFFFFFFFF',
     'oldSecret': 'FFFFFFFFFFFFFFFFFFFF',
-    'sign': 0,
+    'sign': 1,
     'lic': 'FFFFFFFFFFFFFFFF',
   };
 
@@ -1400,26 +1403,26 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
           ),
         ),
         Expanded(
-          child: isKeyTab && _keyLoading
-              ? const Center(child: CircularProgressIndicator())
-              : !isKeyTab && _lockLoading
-              ? const Center(child: CircularProgressIndicator())
-              : list.isEmpty
-              ? const Center(child: Text('暂无数据'))
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  itemCount: list.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    if (isKeyTab) {
-                      final item = list[index] as _KeyItem;
-                      return _KeyCard(
-                        item: item,
-                        onEdit: () => _editKey(item),
-                        onDelete: () => _deleteKey(item),
-                      );
-                    }
-                    final item = list[index] as _LockItem;
+          child: isKeyTab
+              ? SmartList<_KeyItem>(
+                  key: ValueKey<String>('key-list-$_query'),
+                  items: list.cast<_KeyItem>(),
+                  loading: _keyLoading,
+                  onRefresh: _loadKeysFromApi,
+                  itemBuilder: (context, item, index) {
+                    return _KeyCard(
+                      item: item,
+                      onEdit: () => _editKey(item),
+                      onDelete: () => _deleteKey(item),
+                    );
+                  },
+                )
+              : SmartList<_LockItem>(
+                  key: ValueKey<String>('lock-list-$_query'),
+                  items: list.cast<_LockItem>(),
+                  loading: _lockLoading,
+                  onRefresh: _loadLocksFromApi,
+                  itemBuilder: (context, item, index) {
                     return _LockCard(
                       item: item,
                       onTap: () => _openLockControl(item),
@@ -1508,6 +1511,7 @@ class _KeyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -1522,8 +1526,8 @@ class _KeyCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                TextButton(onPressed: onEdit, child: const Text('编辑')),
-                TextButton(onPressed: onDelete, child: const Text('删除')),
+                TextButton(onPressed: onEdit, child: Text(l10n.edit)),
+                TextButton(onPressed: onDelete, child: Text(l10n.delete)),
               ],
             ),
             const SizedBox(height: 2),
@@ -1560,6 +1564,7 @@ class _LockCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -1577,8 +1582,8 @@ class _LockCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
-                  TextButton(onPressed: onEdit, child: const Text('编辑')),
-                  TextButton(onPressed: onDelete, child: const Text('删除')),
+                  TextButton(onPressed: onEdit, child: Text(l10n.edit)),
+                  TextButton(onPressed: onDelete, child: Text(l10n.delete)),
                 ],
               ),
               const SizedBox(height: 2),

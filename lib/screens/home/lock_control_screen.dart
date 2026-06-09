@@ -44,7 +44,7 @@ class _LockControlScreenState extends State<LockControlScreen> {
     text: 'FFFFFFFFFFFFFFFFFFFF',
   );
   final TextEditingController _signController = TextEditingController(
-    text: '0',
+    text: '1',
   );
   final TextEditingController _licController = TextEditingController(
     text: 'FFFFFFFFFFFFFFFF',
@@ -158,7 +158,7 @@ class _LockControlScreenState extends State<LockControlScreen> {
     return <String, Object?>{
       'secret': _secretController.text.trim(),
       'oldSecret': _secretController.text.trim(),
-      'sign': int.tryParse(_signController.text.trim()) ?? 0,
+      'sign': int.tryParse(_signController.text.trim()) ?? 1,
       'lic': _licController.text.trim(),
       'lockIds': widget.number,
       'switchCount': 1,

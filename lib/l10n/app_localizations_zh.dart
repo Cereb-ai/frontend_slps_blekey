@@ -75,6 +75,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cancel => '取消';
 
   @override
+  String get edit => '编辑';
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get deleteKeyTitle => '删除钥匙';
+
+  @override
+  String get deleteLockTitle => '删除锁';
+
+  @override
+  String confirmDeleteItem(Object name) {
+    return '确认删除 $name 吗？';
+  }
+
+  @override
   String get logoutAction => '退出';
 
   @override
@@ -91,6 +108,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sessionExpired => '登录状态已失效，请重新登录';
+
+  @override
+  String get smartListEmpty => '暂无数据';
+
+  @override
+  String get smartListLoading => '加载中...';
+
+  @override
+  String get smartListNoMore => '没有更多了';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -164,6 +190,23 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get cancel => '取消';
 
   @override
+  String get edit => '编辑';
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get deleteKeyTitle => '删除钥匙';
+
+  @override
+  String get deleteLockTitle => '删除锁';
+
+  @override
+  String confirmDeleteItem(Object name) {
+    return '确认删除 $name 吗？';
+  }
+
+  @override
   String get logoutAction => '退出';
 
   @override
@@ -180,6 +223,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get sessionExpired => '登录状态已失效，请重新登录';
+
+  @override
+  String get smartListEmpty => '暂无数据';
+
+  @override
+  String get smartListLoading => '加载中...';
+
+  @override
+  String get smartListNoMore => '没有更多了';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -253,6 +305,23 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get cancel => '取消';
 
   @override
+  String get edit => '編輯';
+
+  @override
+  String get delete => '刪除';
+
+  @override
+  String get deleteKeyTitle => '刪除鑰匙';
+
+  @override
+  String get deleteLockTitle => '刪除鎖';
+
+  @override
+  String confirmDeleteItem(Object name) {
+    return '確認刪除 $name 嗎？';
+  }
+
+  @override
   String get logoutAction => '登出';
 
   @override
@@ -269,4 +338,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get sessionExpired => '登入狀態已失效，請重新登入';
+
+  @override
+  String get smartListEmpty => '暫無資料';
+
+  @override
+  String get smartListLoading => '載入中...';
+
+  @override
+  String get smartListNoMore => '沒有更多了';
 }

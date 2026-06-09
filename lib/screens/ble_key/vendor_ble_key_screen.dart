@@ -23,7 +23,7 @@ class _VendorBleKeyScreenState extends State<VendorBleKeyScreen> {
     text: 'FFFFFFFFFFFFFFFFFFFF',
   );
   final TextEditingController _signController = TextEditingController(
-    text: '0',
+    text: '1',
   );
   final TextEditingController _licController = TextEditingController(
     text: 'FFFFFFFFFFFFFFFF',
@@ -209,7 +209,7 @@ class _VendorBleKeyScreenState extends State<VendorBleKeyScreen> {
         'secret': _secretController.text,
         'oldSecret': _secretController.text,
         'newSecret': _newSecretController.text,
-        'sign': int.tryParse(_signController.text) ?? 0,
+        'sign': int.tryParse(_signController.text) ?? 1,
         'lic': _licController.text,
         'lockIds': _lockIdsController.text,
         'switchCount': int.tryParse(_switchCountController.text) ?? 1,

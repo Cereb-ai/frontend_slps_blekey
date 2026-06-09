@@ -231,6 +231,36 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @deleteKeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete key'**
+  String get deleteKeyTitle;
+
+  /// No description provided for @deleteLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete lock'**
+  String get deleteLockTitle;
+
+  /// No description provided for @confirmDeleteItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {name}?'**
+  String confirmDeleteItem(Object name);
+
   /// No description provided for @logoutAction.
   ///
   /// In en, this message translates to:
@@ -266,6 +296,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Session expired, please log in again'**
   String get sessionExpired;
+
+  /// No description provided for @smartListEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No data'**
+  String get smartListEmpty;
+
+  /// No description provided for @smartListLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get smartListLoading;
+
+  /// No description provided for @smartListNoMore.
+  ///
+  /// In en, this message translates to:
+  /// **'No more data'**
+  String get smartListNoMore;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

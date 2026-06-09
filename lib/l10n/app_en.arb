@@ -22,10 +22,23 @@
   "logout": "Log out",
   "confirmLogout": "Are you sure you want to log out?",
   "cancel": "Cancel",
+  "edit": "Edit",
+  "delete": "Delete",
+  "deleteKeyTitle": "Delete key",
+  "deleteLockTitle": "Delete lock",
+  "confirmDeleteItem": "Are you sure you want to delete {name}?",
+  "@confirmDeleteItem": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "logoutAction": "Log out",
   "cannotOpenCerebSite": "Unable to open Cereb.AI website",
   "poweredBy": "powered by",
   "searchKeyHint": "Search key name/number",
   "searchLockHint": "Search lock name/number/location",
-  "sessionExpired": "Session expired, please log in again"
+  "sessionExpired": "Session expired, please log in again",
+  "smartListEmpty": "No data",
+  "smartListLoading": "Loading...",
+  "smartListNoMore": "No more data"
 }

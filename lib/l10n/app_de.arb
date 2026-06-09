@@ -22,10 +22,23 @@
   "logout": "Abmelden",
   "confirmLogout": "Mochten Sie sich wirklich abmelden?",
   "cancel": "Abbrechen",
+  "edit": "Bearbeiten",
+  "delete": "Loschen",
+  "deleteKeyTitle": "Schlussel loschen",
+  "deleteLockTitle": "Schloss loschen",
+  "confirmDeleteItem": "Mochten Sie {name} wirklich loschen?",
+  "@confirmDeleteItem": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "logoutAction": "Abmelden",
   "cannotOpenCerebSite": "Cereb.AI-Website kann nicht geoffnet werden",
   "poweredBy": "powered by",
   "searchKeyHint": "Schlusselname/-nummer suchen",
   "searchLockHint": "Schlossname/-nummer/Ort suchen",
-  "sessionExpired": "Sitzung abgelaufen, bitte erneut anmelden"
+  "sessionExpired": "Sitzung abgelaufen, bitte erneut anmelden",
+  "smartListEmpty": "Keine Daten",
+  "smartListLoading": "Wird geladen...",
+  "smartListNoMore": "Keine weiteren Daten"
 }
