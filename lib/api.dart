@@ -5,19 +5,57 @@ typedef JsonMap = Map<String, dynamic>;
 abstract final class Api {
   static const String _baseUrl = 'https://dev-api.cereb.ai';
   static const String _tenantId = 'smart-lock-platform';
+  static const String _skipUnauthorizedHandlerKey = 'skipUnauthorizedHandler';
 
-  static final Dio dio = Dio(
-    BaseOptions(
-      baseUrl: _baseUrl,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 20),
-      sendTimeout: const Duration(seconds: 20),
-      headers: const {
-        'Content-Type': 'application/json',
-        'X-Tenant-ID': _tenantId,
-      },
-    ),
-  );
+  static Future<void> Function()? _onUnauthorized;
+  static bool _handlingUnauthorized = false;
+
+  static final Dio dio =
+      Dio(
+          BaseOptions(
+            baseUrl: _baseUrl,
+            connectTimeout: const Duration(seconds: 15),
+            receiveTimeout: const Duration(seconds: 20),
+            sendTimeout: const Duration(seconds: 20),
+            headers: const {
+              'Content-Type': 'application/json',
+              'X-Tenant-ID': _tenantId,
+            },
+          ),
+        )
+        ..interceptors.add(
+          InterceptorsWrapper(
+            onError: (error, handler) {
+              final statusCode = error.response?.statusCode;
+              final skipUnauthorizedHandler =
+                  error.requestOptions.extra[_skipUnauthorizedHandlerKey] ==
+                  true;
+              if (statusCode == 401 && !skipUnauthorizedHandler) {
+                _triggerUnauthorizedHandler();
+              }
+              handler.next(error);
+            },
+          ),
+        );
+
+  static void registerUnauthorizedHandler(Future<void> Function() handler) {
+    _onUnauthorized = handler;
+  }
+
+  static void _triggerUnauthorizedHandler() {
+    if (_handlingUnauthorized) return;
+    final callback = _onUnauthorized;
+    if (callback == null) return;
+
+    _handlingUnauthorized = true;
+    Future<void>(() async {
+      try {
+        await callback();
+      } finally {
+        _handlingUnauthorized = false;
+      }
+    });
+  }
 
   static Future<Map<String, dynamic>> login({
     required String username,
@@ -26,6 +64,7 @@ abstract final class Api {
     final response = await dio.post<Map<String, dynamic>>(
       '/v3/auth/login/password',
       data: {'identity': username, 'password': password},
+      options: Options(extra: {_skipUnauthorizedHandlerKey: true}),
     );
     return response.data ?? <String, dynamic>{};
   }
@@ -37,7 +76,10 @@ abstract final class Api {
     await dio.post<void>(
       '/v3/auth/logout',
       data: {'refresh_token': refreshToken},
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
+      options: Options(
+        headers: {'Authorization': 'Bearer $token'},
+        extra: {_skipUnauthorizedHandlerKey: true},
+      ),
     );
   }
 

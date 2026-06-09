@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'api.dart';
 import 'common/navigation_service.dart';
 import 'common/route_tool.dart';
 import 'providers.dart';
@@ -27,6 +28,12 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
     );
     WidgetsBinding.instance.addObserver(this);
+    Api.registerUnauthorizedHandler(() async {
+      await GlobalUser.instance.clearLocalSession();
+      final navigator = NavigationService.navigatorKey.currentState;
+      if (navigator == null) return;
+      navigator.pushNamedAndRemoveUntil(Routes.login, (_) => false);
+    });
   }
 
   @override

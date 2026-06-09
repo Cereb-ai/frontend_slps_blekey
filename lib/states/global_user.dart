@@ -113,6 +113,15 @@ class GlobalUser extends ChangeNotifier {
     }
 
     final prefs = await SharedPreferences.getInstance();
+    await _clearLocalSession(prefs);
+  }
+
+  Future<void> clearLocalSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await _clearLocalSession(prefs);
+  }
+
+  Future<void> _clearLocalSession(SharedPreferences prefs) async {
     await prefs.remove(_keyToken);
     await prefs.remove(_keyRefreshToken);
     await prefs.remove(_keyUsername);
