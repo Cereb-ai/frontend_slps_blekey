@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'api.dart';
 import 'common/navigation_service.dart';
 import 'common/route_tool.dart';
+import 'l10n/app_localizations.dart';
 import 'providers.dart';
 import 'routes.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/home/app_home_screen.dart';
 import 'states/global_user.dart';
+import 'states/locale_store.dart';
 import 'themes/app_theme.dart';
 
 class App extends StatefulWidget {
@@ -28,6 +31,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
     );
     WidgetsBinding.instance.addObserver(this);
+    LocaleStore.instance.loadFromStorage();
     Api.registerUnauthorizedHandler(() async {
       await GlobalUser.instance.clearLocalSession();
       final navigator = NavigationService.navigatorKey.currentState;
@@ -53,30 +57,40 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: providers,
-      child: MaterialApp(
-        title: '智能门锁',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        navigatorKey: NavigationService.navigatorKey,
-        home: const _SplashGate(),
-        onGenerateRoute: (settings) {
-          final normalized = mergeUriToRouteSettings(settings);
-          final handler = routes[normalized.name] ?? routes[Routes.home]!;
-          return MaterialPageRoute<void>(
-            settings: normalized,
-            builder: (context) => handler(
-              context,
-              args: normalized.arguments as Map<String, dynamic>?,
-            ),
-          );
-        },
-        builder: (context, child) {
-          return GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: () => _hideKeyboard(context),
-            child: child,
-          );
-        },
+      child: Consumer<LocaleStore>(
+        builder: (context, localeStore, _) => MaterialApp(
+          onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          navigatorKey: NavigationService.navigatorKey,
+          locale: localeStore.locale,
+          supportedLocales: LocaleStore.supportedLocales,
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const _SplashGate(),
+          onGenerateRoute: (settings) {
+            final normalized = mergeUriToRouteSettings(settings);
+            final handler = routes[normalized.name] ?? routes[Routes.home]!;
+            return MaterialPageRoute<void>(
+              settings: normalized,
+              builder: (context) => handler(
+                context,
+                args: normalized.arguments as Map<String, dynamic>?,
+              ),
+            );
+          },
+          builder: (context, child) {
+            return GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () => _hideKeyboard(context),
+              child: child,
+            );
+          },
+        ),
       ),
     );
   }

@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../api.dart';
+import '../../l10n/app_localizations.dart';
 import '../../routes.dart';
 import '../ble_key/ble_key_controller.dart';
 import '../../states/global_user.dart';
+import '../../states/locale_store.dart';
 
 class AppHomeScreen extends StatefulWidget {
   const AppHomeScreen({super.key});
@@ -57,9 +59,10 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   }
 
   String get _title {
-    if (_tabIndex == 0) return '钥匙管理';
-    if (_tabIndex == 1) return '锁管理';
-    return '我的';
+    final l10n = AppLocalizations.of(context)!;
+    if (_tabIndex == 0) return l10n.keysManagement;
+    if (_tabIndex == 1) return l10n.locksManagement;
+    return l10n.my;
   }
 
   bool get _showAdd => _tabIndex == 0 || _tabIndex == 1;
@@ -127,9 +130,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   String? _requireToken() {
     final token = GlobalUser.instance.token;
     if (token == null || token.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('登录状态已失效，请重新登录')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.sessionExpired)),
+      );
       return null;
     }
     return token;
@@ -1321,10 +1324,19 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       body: SafeArea(child: _buildBody(context)),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabIndex,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.key_outlined), label: '钥匙'),
-          NavigationDestination(icon: Icon(Icons.lock_outline), label: '锁'),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: '我的'),
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.key_outlined),
+            label: AppLocalizations.of(context)!.keysManagement,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.lock_outline),
+            label: AppLocalizations.of(context)!.locksManagement,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.person_outline),
+            label: AppLocalizations.of(context)!.my,
+          ),
         ],
         onDestinationSelected: (index) {
           setState(() {
@@ -1358,7 +1370,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
           child: TextField(
             onChanged: (value) => setState(() => _query = value),
             decoration: InputDecoration(
-              hintText: isKeyTab ? '搜索钥匙名称/编号' : '搜索锁名称/编号/位置',
+              hintText: isKeyTab
+                  ? AppLocalizations.of(context)!.searchKeyHint
+                  : AppLocalizations.of(context)!.searchLockHint,
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _query.isEmpty
                   ? null
@@ -1596,19 +1610,20 @@ class _MineTabState extends State<_MineTab> {
   }
 
   Future<void> _logout() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('退出登录'),
-        content: const Text('确认退出登录吗？'),
+        title: Text(l10n.logout),
+        content: Text(l10n.confirmLogout),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('退出'),
+            child: Text(l10n.logoutAction),
           ),
         ],
       ),
@@ -1626,14 +1641,18 @@ class _MineTabState extends State<_MineTab> {
     final url = Uri.parse('http://cereb.ai');
     if (!await launchUrl(url, mode: LaunchMode.externalApplication) &&
         mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('无法打开 Cereb.AI 官网')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.cannotOpenCerebSite),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final localeStore = context.watch<LocaleStore>();
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -1642,14 +1661,36 @@ class _MineTabState extends State<_MineTab> {
             children: [
               ListTile(
                 leading: const Icon(Icons.account_circle_outlined),
-                title: const Text('账号'),
+                title: Text(l10n.account),
                 subtitle: Text(_username ?? '—'),
               ),
               const Divider(height: 1),
-              const ListTile(
+              ListTile(
                 leading: Icon(Icons.info_outline),
-                title: Text('版本'),
-                subtitle: Text('1.0.0+1'),
+                title: Text(l10n.version),
+                subtitle: const Text('1.0.0+1'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.language_outlined),
+                title: Text(l10n.language),
+                trailing: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: localeStore.localeCode,
+                    items: LocaleStore.options
+                        .map(
+                          (item) => DropdownMenuItem<String>(
+                            value: item.code,
+                            child: Text(item.label),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      context.read<LocaleStore>().setLocaleCode(value);
+                    },
+                  ),
+                ),
               ),
             ],
           ),
@@ -1660,24 +1701,24 @@ class _MineTabState extends State<_MineTab> {
             children: [
               ListTile(
                 leading: const Icon(Icons.science_outlined),
-                title: const Text('当前测试主页'),
-                subtitle: const Text('保留原有测试流程'),
+                title: Text(l10n.currentTestHome),
+                subtitle: Text(l10n.keepOriginalTestFlow),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: widget.onOpenCurrentTest,
               ),
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.developer_board_outlined),
-                title: const Text('厂家 SDK 测试界面'),
-                subtitle: const Text('保留原有测试流程'),
+                title: Text(l10n.vendorSdkTest),
+                subtitle: Text(l10n.keepOriginalTestFlow),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: widget.onOpenVendorTest,
               ),
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.lock_open_outlined),
-                title: const Text('设置开关锁钥匙（在线）'),
-                subtitle: const Text('保留原有测试流程'),
+                title: Text(l10n.onlineSwitchLock),
+                subtitle: Text(l10n.keepOriginalTestFlow),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: widget.onOpenOnlineSwitchLock,
               ),
@@ -1694,14 +1735,14 @@ class _MineTabState extends State<_MineTab> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.logout),
-          label: const Text('退出登录'),
+          label: Text(l10n.logout),
         ),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'powered by ',
+              '${l10n.poweredBy} ',
               style: TextStyle(
                 color: Theme.of(
                   context,

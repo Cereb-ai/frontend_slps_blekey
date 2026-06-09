@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../l10n/app_localizations.dart';
 import '../../states/global_user.dart';
+import '../../states/locale_store.dart';
 import '../../routes.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -77,14 +80,17 @@ class _LoginScreenState extends State<LoginScreen>
     final url = Uri.parse('http://cereb.ai');
     if (!await launchUrl(url, mode: LaunchMode.externalApplication) &&
         mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('无法打开 Cereb.AI 官网')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.cannotOpenCerebSite),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFF05070B),
       resizeToAvoidBottomInset: true,
@@ -152,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '智能门锁管理平台',
+                          l10n.smartLockPlatformSub,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.45),
                             fontSize: 13,
@@ -165,11 +171,12 @@ class _LoginScreenState extends State<LoginScreen>
                           style: const TextStyle(color: Colors.white),
                           textInputAction: TextInputAction.next,
                           decoration: _inputDeco(
-                            hint: '用户名 / 邮箱',
+                            hint: l10n.usernameOrEmail,
                             icon: Icons.person_outline,
                           ),
-                          validator: (v) =>
-                              (v == null || v.trim().isEmpty) ? '请输入用户名' : null,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? l10n.pleaseInputUsername
+                              : null,
                         ),
                         const SizedBox(height: 14),
                         // Password
@@ -181,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen>
                           onFieldSubmitted: (_) => _submit(),
                           decoration:
                               _inputDeco(
-                                hint: '密码',
+                                hint: l10n.password,
                                 icon: Icons.lock_outline,
                               ).copyWith(
                                 suffixIcon: IconButton(
@@ -195,8 +202,9 @@ class _LoginScreenState extends State<LoginScreen>
                                   ),
                                 ),
                               ),
-                          validator: (v) =>
-                              (v == null || v.isEmpty) ? '请输入密码' : null,
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? l10n.pleaseInputPassword
+                              : null,
                         ),
                         const SizedBox(height: 12),
                         // Remember me
@@ -217,12 +225,14 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '记住我',
+                              l10n.rememberMe,
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.65),
                                 fontSize: 13,
                               ),
                             ),
+                            const Spacer(),
+                            _LoginLanguageDropdown(onDarkBackground: true),
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -248,9 +258,9 @@ class _LoginScreenState extends State<LoginScreen>
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text(
-                                    '登录',
-                                    style: TextStyle(
+                                : Text(
+                                    l10n.login,
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -263,7 +273,7 @@ class _LoginScreenState extends State<LoginScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'powered by ',
+                              '${l10n.poweredBy} ',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.45),
                                 fontSize: 12,
@@ -327,6 +337,51 @@ class _LoginScreenState extends State<LoginScreen>
       ),
       errorStyle: const TextStyle(color: Color(0xFFFF6B6B)),
       contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+    );
+  }
+}
+
+class _LoginLanguageDropdown extends StatelessWidget {
+  const _LoginLanguageDropdown({required this.onDarkBackground});
+
+  final bool onDarkBackground;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final localeStore = context.watch<LocaleStore>();
+    final textColor = onDarkBackground
+        ? Colors.white.withValues(alpha: 0.9)
+        : Theme.of(context).textTheme.bodyMedium?.color;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '${l10n.language}: ',
+          style: TextStyle(fontSize: 12, color: textColor),
+        ),
+        DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: localeStore.localeCode,
+            dropdownColor: onDarkBackground ? const Color(0xFF111C2D) : null,
+            style: TextStyle(fontSize: 12, color: textColor),
+            iconEnabledColor: textColor,
+            items: LocaleStore.options
+                .map(
+                  (item) => DropdownMenuItem<String>(
+                    value: item.code,
+                    child: Text(item.label),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              if (value == null) return;
+              context.read<LocaleStore>().setLocaleCode(value);
+            },
+          ),
+        ),
+      ],
     );
   }
 }
