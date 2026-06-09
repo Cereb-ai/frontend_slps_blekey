@@ -26,6 +26,15 @@ class HomeScreen extends StatelessWidget {
               subtitle: '对齐 Android demo 的扫描、连接、授权、记录、任务和指纹命令',
               onTap: () => Navigator.of(context).pushNamed(Routes.vendorTest),
             ),
+            const SizedBox(height: 12),
+            _HomeItem(
+              icon: Icons.lock_open_outlined,
+              title: '设置开关锁钥匙（在线）',
+              subtitle:
+                  '按 InitSDK、connectToKey、setDateTime、setUserKey、setOnline 流程授权',
+              onTap: () =>
+                  Navigator.of(context).pushNamed(Routes.onlineSwitchLock),
+            ),
           ],
         ),
       ),

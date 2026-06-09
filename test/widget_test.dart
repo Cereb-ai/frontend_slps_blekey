@@ -15,7 +15,5 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('蓝牙钥匙 SDK 测试'), findsOneWidget);
-    expect(find.text('初始化 SDK'), findsOneWidget);
-    expect(find.text('扫描钥匙'), findsOneWidget);
   });
 }

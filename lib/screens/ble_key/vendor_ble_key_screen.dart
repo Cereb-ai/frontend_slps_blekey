@@ -22,7 +22,9 @@ class _VendorBleKeyScreenState extends State<VendorBleKeyScreen> {
   final TextEditingController _newSecretController = TextEditingController(
     text: 'FFFFFFFFFFFFFFFFFFFF',
   );
-  final TextEditingController _signController = TextEditingController(text: '0');
+  final TextEditingController _signController = TextEditingController(
+    text: '0',
+  );
   final TextEditingController _licController = TextEditingController(
     text: 'FFFFFFFFFFFFFFFF',
   );
