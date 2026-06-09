@@ -42,7 +42,7 @@ class LocaleStore extends ChangeNotifier {
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
-  String _localeCode = 'zh_Hans';
+  String _localeCode = 'en';
 
   String get localeCode => _localeCode;
 
@@ -52,7 +52,7 @@ class LocaleStore extends ChangeNotifier {
         return item.locale;
       }
     }
-    return const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans');
+    return const Locale('en');
   }
 
   Future<void> loadFromStorage() async {
