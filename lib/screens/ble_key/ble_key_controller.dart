@@ -35,6 +35,8 @@ class BleKeyController extends ChangeNotifier {
   final Map<String, BleKeyDevice> _devicesByMac = <String, BleKeyDevice>{};
   final List<BleKeyLog> _logs = <BleKeyLog>[];
   final List<String> _operationResults = <String>[];
+  final StreamController<BleKeyEvent> _operationEventController =
+      StreamController<BleKeyEvent>.broadcast();
 
   bool get initialized => _initialized;
   bool get scanning => _scanning;
@@ -76,6 +78,14 @@ class BleKeyController extends ChangeNotifier {
         isError: !_initialized,
       );
     });
+  }
+
+  Future<void> ensureReady() async {
+    if (_initialized && _eventSubscription != null) return;
+    await initialize();
+    if (!_initialized) {
+      throw StateError('SDK 初始化失败');
+    }
   }
 
   Future<void> startScan({int timeoutMs = 10000}) async {
@@ -128,6 +138,52 @@ class BleKeyController extends ChangeNotifier {
         '${_vendorOperationName(index)}：${sent ? '已下发' : '下发失败'}',
       );
     });
+  }
+
+  Future<BleKeyOperationResult> executeVendorOperationAndWait({
+    required int index,
+    required String expectedOperationName,
+    String? mac,
+    Map<String, Object?> args = const <String, Object?>{},
+    Duration timeout = const Duration(seconds: 12),
+  }) async {
+    await ensureReady();
+    final waiting = _operationEventController.stream
+        .firstWhere((event) {
+          return event.type == 'operationResult' &&
+              event.operationName == expectedOperationName &&
+              event.operationResult != null;
+        })
+        .timeout(timeout);
+    await executeVendorOperation(index: index, mac: mac, args: args);
+    final event = await waiting;
+    final result = event.operationResult!;
+    if (!(result.ret || result.code >= 0)) {
+      throw StateError(
+        '${event.operationName} 失败：${result.msg ?? result.code}',
+      );
+    }
+    return result;
+  }
+
+  Future<BleKeyOperationResult> waitForOperationResult({
+    required String expectedOperationName,
+    bool Function(BleKeyOperationResult result)? where,
+    Duration timeout = const Duration(seconds: 60),
+  }) async {
+    await ensureReady();
+    final event = await _operationEventController.stream
+        .firstWhere((event) {
+          final result = event.operationResult;
+          if (event.type != 'operationResult' ||
+              event.operationName != expectedOperationName ||
+              result == null) {
+            return false;
+          }
+          return where?.call(result) ?? true;
+        })
+        .timeout(timeout);
+    return event.operationResult!;
   }
 
   void clearLogs() {
@@ -276,6 +332,7 @@ class BleKeyController extends ChangeNotifier {
         _addLog('扫描完成，共 ${_devicesByMac.length} 台设备');
       case 'operationResult':
         final result = event.operationResult;
+        _operationEventController.add(event);
         final ok = result?.ret == true || (result?.code ?? -1) >= 0;
         _addOperationResult(
           '${event.operationName ?? 'Operation'}：code=${result?.code ?? '-'}'
@@ -318,6 +375,7 @@ class BleKeyController extends ChangeNotifier {
   @override
   void dispose() {
     _eventSubscription?.cancel();
+    _operationEventController.close();
     super.dispose();
   }
 }

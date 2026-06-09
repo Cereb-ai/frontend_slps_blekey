@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_blekey_sdk/flutter_blekey_sdk.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../api.dart';
 import '../../routes.dart';
+import '../ble_key/ble_key_controller.dart';
 import '../../states/global_user.dart';
 
 class AppHomeScreen extends StatefulWidget {
@@ -255,6 +258,10 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     var keyType = initial?.keyType ?? 'standard';
     var status = initial?.status ?? 'active';
     var currentStep = 0;
+    var selectedMac = '';
+    var sdkBusy = false;
+    var sdkMessage = '';
+    JsonMap? readKeyInfo;
 
     return showModalBottomSheet<_KeyEditorResult>(
       context: context,
@@ -320,6 +327,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                   ownerUserId: ownerController
                                                       .text
                                                       .trim(),
+                                                  readKeyInfo: readKeyInfo,
                                                 ),
                                             updatePayload:
                                                 _buildKeyUpdatePayload(
@@ -353,19 +361,148 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                           Step(
                             title: const Text('连接设备'),
                             isActive: currentStep >= 0,
-                            content: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('参考网页流程：先连接设备并读取钥匙信息。'),
-                                const SizedBox(height: 8),
-                                OutlinedButton.icon(
-                                  onPressed: () => Navigator.of(
-                                    context,
-                                  ).pushNamed(Routes.vendorTest),
-                                  icon: const Icon(Icons.developer_board),
-                                  label: const Text('打开厂家 SDK 测试页'),
-                                ),
-                              ],
+                            content: Consumer<BleKeyController>(
+                              builder: (context, controller, _) {
+                                if (selectedMac.isEmpty &&
+                                    controller.devices.isNotEmpty) {
+                                  selectedMac =
+                                      controller.devices.first.mac ?? '';
+                                }
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('扫描钥匙，选择 MAC 后连接并读取钥匙信息。'),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: FilledButton.icon(
+                                            onPressed: sdkBusy
+                                                ? null
+                                                : () async {
+                                                    setSheetState(() {
+                                                      sdkBusy = true;
+                                                      sdkMessage = '正在扫描钥匙...';
+                                                    });
+                                                    try {
+                                                      await controller
+                                                          .startScan(
+                                                            timeoutMs: 10000,
+                                                          );
+                                                    } finally {
+                                                      setSheetState(() {
+                                                        sdkBusy = false;
+                                                        sdkMessage =
+                                                            '扫描已开始，请等待设备列表刷新';
+                                                      });
+                                                    }
+                                                  },
+                                            icon: const Icon(
+                                              Icons.bluetooth_searching,
+                                            ),
+                                            label: Text(
+                                              controller.scanning
+                                                  ? '扫描中'
+                                                  : '扫描钥匙',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: selectedMac.isEmpty
+                                          ? null
+                                          : selectedMac,
+                                      decoration: const InputDecoration(
+                                        labelText: '钥匙 MAC',
+                                      ),
+                                      items: controller.devices
+                                          .where(
+                                            (device) =>
+                                                device.mac?.isNotEmpty == true,
+                                          )
+                                          .map(
+                                            (device) => DropdownMenuItem(
+                                              value: device.mac,
+                                              child: Text(
+                                                '${device.name ?? '未命名'} ${device.mac}',
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: sdkBusy
+                                          ? null
+                                          : (value) => setSheetState(
+                                              () => selectedMac = value ?? '',
+                                            ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    FilledButton.tonalIcon(
+                                      onPressed: sdkBusy || selectedMac.isEmpty
+                                          ? null
+                                          : () async {
+                                              setSheetState(() {
+                                                sdkBusy = true;
+                                                sdkMessage = '正在连接并读取钥匙信息...';
+                                              });
+                                              try {
+                                                final info =
+                                                    await _readKeyHardware(
+                                                      context
+                                                          .read<
+                                                            BleKeyController
+                                                          >(),
+                                                      selectedMac,
+                                                    );
+                                                final vendorKeyId =
+                                                    _extractHardwareId(info) ??
+                                                    selectedMac;
+                                                setSheetState(() {
+                                                  readKeyInfo = info;
+                                                  numberController.text =
+                                                      vendorKeyId;
+                                                  keyType = _keyTypeFromInfo(
+                                                    info,
+                                                  );
+                                                  if (nameController.text
+                                                      .trim()
+                                                      .isEmpty) {
+                                                    nameController.text =
+                                                        'BLE Key $vendorKeyId';
+                                                  }
+                                                  sdkMessage =
+                                                      '已读取钥匙信息：$vendorKeyId';
+                                                });
+                                              } catch (error) {
+                                                setSheetState(() {
+                                                  sdkMessage =
+                                                      '读取钥匙信息失败：$error';
+                                                });
+                                              } finally {
+                                                setSheetState(
+                                                  () => sdkBusy = false,
+                                                );
+                                              }
+                                            },
+                                      icon: sdkBusy
+                                          ? const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Icon(Icons.key_outlined),
+                                      label: const Text('连接并读取钥匙信息'),
+                                    ),
+                                    if (sdkMessage.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      Text(sdkMessage),
+                                    ],
+                                  ],
+                                );
+                              },
                             ),
                           ),
                           Step(
@@ -516,8 +653,18 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     required String keyType,
     required String status,
     required String ownerUserId,
+    JsonMap? readKeyInfo,
   }) {
     final normalizedOwner = ownerUserId.isEmpty ? null : ownerUserId;
+    final metadata = <String, dynamic>{
+      'provisioningFlow': 'app_key_create',
+      'department': 'Cereb',
+      'source': 'android_app',
+      'capturedAt': DateTime.now().toIso8601String(),
+    };
+    if (readKeyInfo != null) {
+      metadata['readKeyInfo'] = readKeyInfo;
+    }
     return <String, dynamic>{
       'vendorKeyId': vendorKeyId,
       'keyType': keyType,
@@ -525,12 +672,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       'assignedUserId': normalizedOwner,
       'ownerUserId': normalizedOwner,
       'status': status,
-      'metadata': <String, dynamic>{
-        'provisioningFlow': 'app_key_create',
-        'department': 'Cereb',
-        'source': 'android_app',
-        'capturedAt': DateTime.now().toIso8601String(),
-      },
+      'metadata': metadata,
     };
   }
 
@@ -564,6 +706,10 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     );
     var switchState = initial?.switchState ?? 'locked';
     var currentStep = 0;
+    var selectedMac = '';
+    var sdkBusy = false;
+    var sdkMessage = '';
+    JsonMap? readLockId;
 
     return showModalBottomSheet<_LockEditorResult>(
       context: context,
@@ -630,6 +776,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                   vendorLockId: number,
                                                   location: location,
                                                   switchState: switchState,
+                                                  readLockId: readLockId,
                                                 ),
                                             updatePayload:
                                                 _buildLockUpdatePayload(
@@ -660,27 +807,121 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                           Step(
                             title: const Text('连接设备'),
                             isActive: currentStep >= 0,
-                            content: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('参考网页流程：先连接设备并初始化 SDK。'),
-                                const SizedBox(height: 8),
-                                OutlinedButton.icon(
-                                  onPressed: () => Navigator.of(
-                                    context,
-                                  ).pushNamed(Routes.vendorTest),
-                                  icon: const Icon(Icons.developer_board),
-                                  label: const Text('打开厂家 SDK 测试页'),
-                                ),
-                                const SizedBox(height: 8),
-                                OutlinedButton.icon(
-                                  onPressed: () => Navigator.of(
-                                    context,
-                                  ).pushNamed(Routes.onlineSwitchLock),
-                                  icon: const Icon(Icons.lock_open),
-                                  label: const Text('打开在线开关锁流程页'),
-                                ),
-                              ],
+                            content: Consumer<BleKeyController>(
+                              builder: (context, controller, _) {
+                                if (selectedMac.isEmpty &&
+                                    controller.devices.isNotEmpty) {
+                                  selectedMac =
+                                      controller.devices.first.mac ?? '';
+                                }
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('扫描钥匙，选择 MAC 后设置为采集锁号钥匙。'),
+                                    const SizedBox(height: 8),
+                                    FilledButton.icon(
+                                      onPressed: sdkBusy
+                                          ? null
+                                          : () async {
+                                              setSheetState(() {
+                                                sdkBusy = true;
+                                                sdkMessage = '正在扫描钥匙...';
+                                              });
+                                              try {
+                                                await controller.startScan(
+                                                  timeoutMs: 10000,
+                                                );
+                                              } finally {
+                                                setSheetState(() {
+                                                  sdkBusy = false;
+                                                  sdkMessage =
+                                                      '扫描已开始，请等待设备列表刷新';
+                                                });
+                                              }
+                                            },
+                                      icon: const Icon(
+                                        Icons.bluetooth_searching,
+                                      ),
+                                      label: Text(
+                                        controller.scanning ? '扫描中' : '扫描钥匙',
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: selectedMac.isEmpty
+                                          ? null
+                                          : selectedMac,
+                                      decoration: const InputDecoration(
+                                        labelText: '钥匙 MAC',
+                                      ),
+                                      items: controller.devices
+                                          .where(
+                                            (device) =>
+                                                device.mac?.isNotEmpty == true,
+                                          )
+                                          .map(
+                                            (device) => DropdownMenuItem(
+                                              value: device.mac,
+                                              child: Text(
+                                                '${device.name ?? '未命名'} ${device.mac}',
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: sdkBusy
+                                          ? null
+                                          : (value) => setSheetState(
+                                              () => selectedMac = value ?? '',
+                                            ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    FilledButton.tonalIcon(
+                                      onPressed: sdkBusy || selectedMac.isEmpty
+                                          ? null
+                                          : () async {
+                                              setSheetState(() {
+                                                sdkBusy = true;
+                                                sdkMessage = '正在连接并设置采集锁号钥匙...';
+                                              });
+                                              try {
+                                                await _prepareLockCollector(
+                                                  context
+                                                      .read<BleKeyController>(),
+                                                  selectedMac,
+                                                );
+                                                setSheetState(() {
+                                                  sdkMessage =
+                                                      '采集钥匙已设置，请进入下一步后用钥匙碰目标锁';
+                                                });
+                                              } catch (error) {
+                                                setSheetState(() {
+                                                  sdkMessage =
+                                                      '设置采集钥匙失败：$error';
+                                                });
+                                              } finally {
+                                                setSheetState(
+                                                  () => sdkBusy = false,
+                                                );
+                                              }
+                                            },
+                                      icon: sdkBusy
+                                          ? const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Icon(Icons.sensors),
+                                      label: const Text('连接并设置采集锁号钥匙'),
+                                    ),
+                                    if (sdkMessage.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      Text(sdkMessage),
+                                    ],
+                                  ],
+                                );
+                              },
                             ),
                           ),
                           Step(
@@ -690,8 +931,66 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  '在 SDK 页面执行 ReadLockId 后，把锁编号回填到下方字段。',
+                                  '用已设置的钥匙碰目标锁，等待 onReport 回调中的 CMD=19 锁号。',
                                 ),
+                                const SizedBox(height: 8),
+                                FilledButton.tonalIcon(
+                                  onPressed: sdkBusy
+                                      ? null
+                                      : () async {
+                                          setSheetState(() {
+                                            sdkBusy = true;
+                                            sdkMessage = '等待锁号回调，请用钥匙碰锁...';
+                                          });
+                                          try {
+                                            final report =
+                                                await _waitForLockIdReport(
+                                                  context
+                                                      .read<BleKeyController>(),
+                                                );
+                                            final lockId = _extractHardwareId(
+                                              report,
+                                            );
+                                            if (lockId == null ||
+                                                lockId.isEmpty) {
+                                              throw StateError('未从回调中解析到锁号');
+                                            }
+                                            setSheetState(() {
+                                              readLockId = report;
+                                              numberController.text = lockId;
+                                              if (nameController.text
+                                                  .trim()
+                                                  .isEmpty) {
+                                                nameController.text =
+                                                    'Lock $lockId';
+                                              }
+                                              sdkMessage = '已采集锁号：$lockId';
+                                            });
+                                          } catch (error) {
+                                            setSheetState(() {
+                                              sdkMessage = '采集锁号失败：$error';
+                                            });
+                                          } finally {
+                                            setSheetState(
+                                              () => sdkBusy = false,
+                                            );
+                                          }
+                                        },
+                                  icon: sdkBusy
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.touch_app_outlined),
+                                  label: const Text('等待并读取锁号'),
+                                ),
+                                if (sdkMessage.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Text(sdkMessage),
+                                ],
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: numberController,
@@ -799,18 +1098,23 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     required String vendorLockId,
     required String location,
     required String switchState,
+    JsonMap? readLockId,
   }) {
+    final metadata = <String, dynamic>{
+      'provisioningFlow': 'app_lock_create',
+      'location': location,
+      'switchState': switchState,
+      'source': 'android_app',
+      'capturedAt': DateTime.now().toIso8601String(),
+    };
+    if (readLockId != null) {
+      metadata['readLockId'] = readLockId;
+    }
     return <String, dynamic>{
       'vendorLockId': vendorLockId,
       'name': name,
       'assetId': null,
-      'metadata': <String, dynamic>{
-        'provisioningFlow': 'app_lock_create',
-        'location': location,
-        'switchState': switchState,
-        'source': 'android_app',
-        'capturedAt': DateTime.now().toIso8601String(),
-      },
+      'metadata': metadata,
     };
   }
 
@@ -830,6 +1134,120 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
         'capturedAt': DateTime.now().toIso8601String(),
       },
     };
+  }
+
+  Map<String, Object?> get _sdkConnectArgs => const <String, Object?>{
+    'secret': 'FFFFFFFFFFFFFFFFFFFF',
+    'oldSecret': 'FFFFFFFFFFFFFFFFFFFF',
+    'sign': 0,
+    'lic': 'FFFFFFFFFFFFFFFF',
+  };
+
+  Future<JsonMap> _readKeyHardware(
+    BleKeyController controller,
+    String mac,
+  ) async {
+    await controller.executeVendorOperationAndWait(
+      index: 0,
+      expectedOperationName: 'ConnectKey',
+      mac: mac,
+      args: _sdkConnectArgs,
+      timeout: const Duration(seconds: 15),
+    );
+    final result = await controller.executeVendorOperationAndWait(
+      index: 2,
+      expectedOperationName: 'ReadKeyInfo',
+      mac: mac,
+      args: _sdkConnectArgs,
+      timeout: const Duration(seconds: 15),
+    );
+    return _sdkResultToJson('ReadKeyInfo', result);
+  }
+
+  Future<void> _prepareLockCollector(
+    BleKeyController controller,
+    String mac,
+  ) async {
+    await controller.executeVendorOperationAndWait(
+      index: 0,
+      expectedOperationName: 'ConnectKey',
+      mac: mac,
+      args: _sdkConnectArgs,
+      timeout: const Duration(seconds: 15),
+    );
+    await controller.executeVendorOperationAndWait(
+      index: 8,
+      expectedOperationName: 'SetReadLockIdKey',
+      mac: mac,
+      args: _sdkConnectArgs,
+      timeout: const Duration(seconds: 15),
+    );
+  }
+
+  Future<JsonMap> _waitForLockIdReport(BleKeyController controller) async {
+    final result = await controller.waitForOperationResult(
+      expectedOperationName: 'Report',
+      where: (result) {
+        final obj = result.obj ?? '';
+        return _extractCommand(obj) == 19 ||
+            obj.toLowerCase().contains('cmd=19');
+      },
+      timeout: const Duration(seconds: 90),
+    );
+    return _sdkResultToJson('Report', result);
+  }
+
+  JsonMap _sdkResultToJson(String operationName, BleKeyOperationResult result) {
+    final obj = result.obj ?? '';
+    final json = <String, dynamic>{
+      'operation': operationName,
+      'ret': result.ret,
+      'code': result.code,
+      'msg': result.msg,
+      'obj': obj,
+    };
+    final id = _extractHardwareIdFromText(obj);
+    if (id != null) json['id'] = id;
+    final cmd = _extractCommand(obj);
+    if (cmd != null) json['cmd'] = cmd;
+    return json;
+  }
+
+  String? _extractHardwareId(JsonMap sdkResult) {
+    final direct = sdkResult['id']?.toString();
+    if (direct != null && direct.isNotEmpty) return direct;
+    return _extractHardwareIdFromText(sdkResult['obj']?.toString() ?? '');
+  }
+
+  String? _extractHardwareIdFromText(String text) {
+    final patterns = <RegExp>[
+      RegExp(r'keyId\s*[=:]\s*([0-9A-Fa-f]{6,})'),
+      RegExp(r'lockid\s*[=:]\s*([0-9A-Fa-f]{6,})', caseSensitive: false),
+      RegExp(r'lockId\s*[=:]\s*([0-9A-Fa-f]{6,})'),
+      RegExp(r'\bid\s*[=:]\s*([0-9A-Fa-f]{6,})'),
+    ];
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(text);
+      if (match != null) return match.group(1);
+    }
+    return null;
+  }
+
+  int? _extractCommand(String text) {
+    final match = RegExp(
+      r'cmd\s*[=:]\s*(\d+)',
+      caseSensitive: false,
+    ).firstMatch(text);
+    if (match == null) return null;
+    return int.tryParse(match.group(1) ?? '');
+  }
+
+  String _keyTypeFromInfo(JsonMap sdkResult) {
+    final obj = (sdkResult['obj'] ?? '').toString().toLowerCase();
+    if (obj.contains('finger')) return 'fingerprint';
+    if (obj.contains('display') || obj.contains('screen')) return 'display';
+    if (obj.contains('4g') || obj.contains('cellular')) return 'cellular';
+    return 'bluetooth';
   }
 
   Future<void> _editKey(_KeyItem item) async {
