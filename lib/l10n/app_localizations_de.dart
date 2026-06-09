@@ -117,4 +117,175 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get smartListNoMore => 'Keine weiteren Daten';
+
+  @override
+  String get unnamedDevice => 'Unbenannt';
+
+  @override
+  String get wizardConfirmStep => 'Bestatigen';
+
+  @override
+  String get keyWizardCreateTitle => 'Schlussel erstellen (Schrittweise)';
+
+  @override
+  String get keyWizardEditTitle => 'Schlussel bearbeiten (Schrittweise)';
+
+  @override
+  String get keyWizardFillRequired => 'Bitte zuerst Name und Nummer eingeben';
+
+  @override
+  String get keyWizardSave => 'Speichern';
+
+  @override
+  String get keyWizardNext => 'Weiter';
+
+  @override
+  String get keyWizardPrevious => 'Zuruck';
+
+  @override
+  String get keyWizardStepConnect => 'Gerat verbinden';
+
+  @override
+  String get keyWizardConnectHint => 'Schlussel scannen, MAC auswahlen, dann verbinden und Schlusselinfo lesen.';
+
+  @override
+  String get keyWizardScanning => 'Schlussel werden gescannt...';
+
+  @override
+  String get keyWizardScanStarted => 'Scan gestartet, bitte auf Aktualisierung der Gerateliste warten';
+
+  @override
+  String get keyWizardScanningShort => 'Scan lauft';
+
+  @override
+  String get keyWizardScanKey => 'Schlussel scannen';
+
+  @override
+  String get keyWizardReadingInfo => 'Verbinden und Schlusselinfo lesen...';
+
+  @override
+  String get keyWizardReadSuccess => 'Schlusselinfo gelesen';
+
+  @override
+  String get keyWizardReadFailed => 'Schlusselinfo konnte nicht gelesen werden';
+
+  @override
+  String get keyWizardReadAction => 'Verbinden und Schlusselinfo lesen';
+
+  @override
+  String get keyWizardStepInfo => 'Informationen ausfullen';
+
+  @override
+  String get keyWizardKeyName => 'Schlusselname';
+
+  @override
+  String get keyWizardKeyNumber => 'Schlusselnummer / vendorKeyId';
+
+  @override
+  String get keyWizardKeyNumberHelper => 'Herstellernummer kann beim Bearbeiten nicht geandert werden';
+
+  @override
+  String get keyWizardKeyType => 'Schlusseltyp';
+
+  @override
+  String get keyWizardOwnerId => 'Besitzer-ID';
+
+  @override
+  String get keyWizardOwnerIdHelper => 'Nur Verwahrer, keine Entriegelungsberechtigung';
+
+  @override
+  String get keyWizardStatus => 'Schlusselstatus';
+
+  @override
+  String get keyWizardKeyNumberSummary => 'Schlusselnummer';
+
+  @override
+  String get keyWizardTypeSummary => 'Typ';
+
+  @override
+  String get keyWizardOwnerSummary => 'Besitzer';
+
+  @override
+  String get keyWizardStatusSummary => 'Status';
+
+  @override
+  String get lockWizardCreateTitle => 'Schloss erstellen (Schrittweise)';
+
+  @override
+  String get lockWizardEditTitle => 'Schloss bearbeiten (Schrittweise)';
+
+  @override
+  String get lockWizardFillRequired => 'Bitte zuerst Name, Nummer und Ort eingeben';
+
+  @override
+  String get lockWizardConnectHint => 'Schlussel scannen, MAC auswahlen, dann als Lock-ID-Sammler setzen.';
+
+  @override
+  String get lockWizardPreparingCollector => 'Verbinden und Sammlerschlussel vorbereiten...';
+
+  @override
+  String get lockWizardCollectorReady => 'Sammlerschlussel bereit, im nachsten Schritt Schloss beruhren';
+
+  @override
+  String get lockWizardPrepareFailed => 'Sammlerschlussel konnte nicht vorbereitet werden';
+
+  @override
+  String get lockWizardPrepareAction => 'Verbinden und Sammlerschlussel setzen';
+
+  @override
+  String get lockWizardStepReadId => 'Lock-ID lesen';
+
+  @override
+  String get lockWizardReadHint => 'Schloss mit konfiguriertem Schlussel beruhren und auf CMD=19 in onReport warten.';
+
+  @override
+  String get lockWizardWaitingReport => 'Warte auf Lock-ID-Report, bitte Schloss beruhren...';
+
+  @override
+  String get lockWizardParseFailed => 'Lock-ID konnte aus Callback nicht gelesen werden';
+
+  @override
+  String get lockWizardReadSuccess => 'Lock-ID erfasst';
+
+  @override
+  String get lockWizardReadFailed => 'Lock-ID konnte nicht erfasst werden';
+
+  @override
+  String get lockWizardReadAction => 'Warten und Lock-ID lesen';
+
+  @override
+  String get lockWizardLockNumber => 'Schlossnummer';
+
+  @override
+  String get lockWizardLockNumberHelper => 'Hersteller-Schlossnummer kann beim Bearbeiten nicht geandert werden';
+
+  @override
+  String get lockWizardStepBasic => 'Grundinformationen';
+
+  @override
+  String get lockWizardLockName => 'Schlossname';
+
+  @override
+  String get lockWizardStepStatus => 'Status';
+
+  @override
+  String get lockWizardSwitchState => 'Schaltzustand';
+
+  @override
+  String get lockWizardStepLocation => 'Ort';
+
+  @override
+  String get lockWizardLocation => 'Ort';
+
+  @override
+  String get lockWizardLockNameSummary => 'Schlossname';
+
+  @override
+  String get lockWizardLockNumberSummary => 'Schlossnummer';
+
+  @override
+  String get lockWizardLocationSummary => 'Ort';
+
+  @override
+  String get lockWizardSwitchStateSummary => 'Schaltzustand';
 }

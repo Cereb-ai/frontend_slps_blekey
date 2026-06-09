@@ -314,6 +314,348 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No more data'**
   String get smartListNoMore;
+
+  /// No description provided for @unnamedDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Unnamed'**
+  String get unnamedDevice;
+
+  /// No description provided for @wizardConfirmStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get wizardConfirmStep;
+
+  /// No description provided for @keyWizardCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Key (Step by step)'**
+  String get keyWizardCreateTitle;
+
+  /// No description provided for @keyWizardEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Key (Step by step)'**
+  String get keyWizardEditTitle;
+
+  /// No description provided for @keyWizardFillRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill in name and number first'**
+  String get keyWizardFillRequired;
+
+  /// No description provided for @keyWizardSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get keyWizardSave;
+
+  /// No description provided for @keyWizardNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get keyWizardNext;
+
+  /// No description provided for @keyWizardPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get keyWizardPrevious;
+
+  /// No description provided for @keyWizardStepConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Device'**
+  String get keyWizardStepConnect;
+
+  /// No description provided for @keyWizardConnectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan key, select MAC, then connect and read key info.'**
+  String get keyWizardConnectHint;
+
+  /// No description provided for @keyWizardScanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning keys...'**
+  String get keyWizardScanning;
+
+  /// No description provided for @keyWizardScanStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan started, waiting for device list to refresh'**
+  String get keyWizardScanStarted;
+
+  /// No description provided for @keyWizardScanningShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning'**
+  String get keyWizardScanningShort;
+
+  /// No description provided for @keyWizardScanKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Key'**
+  String get keyWizardScanKey;
+
+  /// No description provided for @keyWizardReadingInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting and reading key info...'**
+  String get keyWizardReadingInfo;
+
+  /// No description provided for @keyWizardReadSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Key info read'**
+  String get keyWizardReadSuccess;
+
+  /// No description provided for @keyWizardReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to read key info'**
+  String get keyWizardReadFailed;
+
+  /// No description provided for @keyWizardReadAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect and Read Key Info'**
+  String get keyWizardReadAction;
+
+  /// No description provided for @keyWizardStepInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill Information'**
+  String get keyWizardStepInfo;
+
+  /// No description provided for @keyWizardKeyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Name'**
+  String get keyWizardKeyName;
+
+  /// No description provided for @keyWizardKeyNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Number / vendorKeyId'**
+  String get keyWizardKeyNumber;
+
+  /// No description provided for @keyWizardKeyNumberHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Vendor number cannot be edited while editing'**
+  String get keyWizardKeyNumberHelper;
+
+  /// No description provided for @keyWizardKeyType.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Type'**
+  String get keyWizardKeyType;
+
+  /// No description provided for @keyWizardOwnerId.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner User ID'**
+  String get keyWizardOwnerId;
+
+  /// No description provided for @keyWizardOwnerIdHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Only indicates custodian, not unlock permission'**
+  String get keyWizardOwnerIdHelper;
+
+  /// No description provided for @keyWizardStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Status'**
+  String get keyWizardStatus;
+
+  /// No description provided for @keyWizardKeyNumberSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Number'**
+  String get keyWizardKeyNumberSummary;
+
+  /// No description provided for @keyWizardTypeSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get keyWizardTypeSummary;
+
+  /// No description provided for @keyWizardOwnerSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get keyWizardOwnerSummary;
+
+  /// No description provided for @keyWizardStatusSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get keyWizardStatusSummary;
+
+  /// No description provided for @lockWizardCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Lock (Step by step)'**
+  String get lockWizardCreateTitle;
+
+  /// No description provided for @lockWizardEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Lock (Step by step)'**
+  String get lockWizardEditTitle;
+
+  /// No description provided for @lockWizardFillRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill in name, number and location first'**
+  String get lockWizardFillRequired;
+
+  /// No description provided for @lockWizardConnectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan key, select MAC, then set it as lock-id collector key.'**
+  String get lockWizardConnectHint;
+
+  /// No description provided for @lockWizardPreparingCollector.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting and preparing collector key...'**
+  String get lockWizardPreparingCollector;
+
+  /// No description provided for @lockWizardCollectorReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Collector key is ready, continue and touch target lock with key'**
+  String get lockWizardCollectorReady;
+
+  /// No description provided for @lockWizardPrepareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to prepare collector key'**
+  String get lockWizardPrepareFailed;
+
+  /// No description provided for @lockWizardPrepareAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect and Set Collector Key'**
+  String get lockWizardPrepareAction;
+
+  /// No description provided for @lockWizardStepReadId.
+  ///
+  /// In en, this message translates to:
+  /// **'Read Lock ID'**
+  String get lockWizardStepReadId;
+
+  /// No description provided for @lockWizardReadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Touch target lock with configured key and wait for CMD=19 in onReport.'**
+  String get lockWizardReadHint;
+
+  /// No description provided for @lockWizardWaitingReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting lock-id report, please touch lock with key...'**
+  String get lockWizardWaitingReport;
+
+  /// No description provided for @lockWizardParseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to parse lock id from callback'**
+  String get lockWizardParseFailed;
+
+  /// No description provided for @lockWizardReadSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock ID collected'**
+  String get lockWizardReadSuccess;
+
+  /// No description provided for @lockWizardReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to collect lock ID'**
+  String get lockWizardReadFailed;
+
+  /// No description provided for @lockWizardReadAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait and Read Lock ID'**
+  String get lockWizardReadAction;
+
+  /// No description provided for @lockWizardLockNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Number'**
+  String get lockWizardLockNumber;
+
+  /// No description provided for @lockWizardLockNumberHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Vendor lock number cannot be edited while editing'**
+  String get lockWizardLockNumberHelper;
+
+  /// No description provided for @lockWizardStepBasic.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Information'**
+  String get lockWizardStepBasic;
+
+  /// No description provided for @lockWizardLockName.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Name'**
+  String get lockWizardLockName;
+
+  /// No description provided for @lockWizardStepStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get lockWizardStepStatus;
+
+  /// No description provided for @lockWizardSwitchState.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch State'**
+  String get lockWizardSwitchState;
+
+  /// No description provided for @lockWizardStepLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get lockWizardStepLocation;
+
+  /// No description provided for @lockWizardLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get lockWizardLocation;
+
+  /// No description provided for @lockWizardLockNameSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Name'**
+  String get lockWizardLockNameSummary;
+
+  /// No description provided for @lockWizardLockNumberSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Number'**
+  String get lockWizardLockNumberSummary;
+
+  /// No description provided for @lockWizardLocationSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get lockWizardLocationSummary;
+
+  /// No description provided for @lockWizardSwitchStateSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch State'**
+  String get lockWizardSwitchStateSummary;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

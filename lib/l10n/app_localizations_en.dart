@@ -117,4 +117,175 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get smartListNoMore => 'No more data';
+
+  @override
+  String get unnamedDevice => 'Unnamed';
+
+  @override
+  String get wizardConfirmStep => 'Confirm';
+
+  @override
+  String get keyWizardCreateTitle => 'Create Key (Step by step)';
+
+  @override
+  String get keyWizardEditTitle => 'Edit Key (Step by step)';
+
+  @override
+  String get keyWizardFillRequired => 'Please fill in name and number first';
+
+  @override
+  String get keyWizardSave => 'Save';
+
+  @override
+  String get keyWizardNext => 'Next';
+
+  @override
+  String get keyWizardPrevious => 'Previous';
+
+  @override
+  String get keyWizardStepConnect => 'Connect Device';
+
+  @override
+  String get keyWizardConnectHint => 'Scan key, select MAC, then connect and read key info.';
+
+  @override
+  String get keyWizardScanning => 'Scanning keys...';
+
+  @override
+  String get keyWizardScanStarted => 'Scan started, waiting for device list to refresh';
+
+  @override
+  String get keyWizardScanningShort => 'Scanning';
+
+  @override
+  String get keyWizardScanKey => 'Scan Key';
+
+  @override
+  String get keyWizardReadingInfo => 'Connecting and reading key info...';
+
+  @override
+  String get keyWizardReadSuccess => 'Key info read';
+
+  @override
+  String get keyWizardReadFailed => 'Failed to read key info';
+
+  @override
+  String get keyWizardReadAction => 'Connect and Read Key Info';
+
+  @override
+  String get keyWizardStepInfo => 'Fill Information';
+
+  @override
+  String get keyWizardKeyName => 'Key Name';
+
+  @override
+  String get keyWizardKeyNumber => 'Key Number / vendorKeyId';
+
+  @override
+  String get keyWizardKeyNumberHelper => 'Vendor number cannot be edited while editing';
+
+  @override
+  String get keyWizardKeyType => 'Key Type';
+
+  @override
+  String get keyWizardOwnerId => 'Owner User ID';
+
+  @override
+  String get keyWizardOwnerIdHelper => 'Only indicates custodian, not unlock permission';
+
+  @override
+  String get keyWizardStatus => 'Key Status';
+
+  @override
+  String get keyWizardKeyNumberSummary => 'Key Number';
+
+  @override
+  String get keyWizardTypeSummary => 'Type';
+
+  @override
+  String get keyWizardOwnerSummary => 'Owner';
+
+  @override
+  String get keyWizardStatusSummary => 'Status';
+
+  @override
+  String get lockWizardCreateTitle => 'Create Lock (Step by step)';
+
+  @override
+  String get lockWizardEditTitle => 'Edit Lock (Step by step)';
+
+  @override
+  String get lockWizardFillRequired => 'Please fill in name, number and location first';
+
+  @override
+  String get lockWizardConnectHint => 'Scan key, select MAC, then set it as lock-id collector key.';
+
+  @override
+  String get lockWizardPreparingCollector => 'Connecting and preparing collector key...';
+
+  @override
+  String get lockWizardCollectorReady => 'Collector key is ready, continue and touch target lock with key';
+
+  @override
+  String get lockWizardPrepareFailed => 'Failed to prepare collector key';
+
+  @override
+  String get lockWizardPrepareAction => 'Connect and Set Collector Key';
+
+  @override
+  String get lockWizardStepReadId => 'Read Lock ID';
+
+  @override
+  String get lockWizardReadHint => 'Touch target lock with configured key and wait for CMD=19 in onReport.';
+
+  @override
+  String get lockWizardWaitingReport => 'Waiting lock-id report, please touch lock with key...';
+
+  @override
+  String get lockWizardParseFailed => 'Failed to parse lock id from callback';
+
+  @override
+  String get lockWizardReadSuccess => 'Lock ID collected';
+
+  @override
+  String get lockWizardReadFailed => 'Failed to collect lock ID';
+
+  @override
+  String get lockWizardReadAction => 'Wait and Read Lock ID';
+
+  @override
+  String get lockWizardLockNumber => 'Lock Number';
+
+  @override
+  String get lockWizardLockNumberHelper => 'Vendor lock number cannot be edited while editing';
+
+  @override
+  String get lockWizardStepBasic => 'Basic Information';
+
+  @override
+  String get lockWizardLockName => 'Lock Name';
+
+  @override
+  String get lockWizardStepStatus => 'Status';
+
+  @override
+  String get lockWizardSwitchState => 'Switch State';
+
+  @override
+  String get lockWizardStepLocation => 'Location';
+
+  @override
+  String get lockWizardLocation => 'Location';
+
+  @override
+  String get lockWizardLockNameSummary => 'Lock Name';
+
+  @override
+  String get lockWizardLockNumberSummary => 'Lock Number';
+
+  @override
+  String get lockWizardLocationSummary => 'Location';
+
+  @override
+  String get lockWizardSwitchStateSummary => 'Switch State';
 }

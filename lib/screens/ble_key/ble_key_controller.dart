@@ -250,6 +250,7 @@ class BleKeyController extends ChangeNotifier {
       if (sdkInt >= 31) ...<Permission>[
         Permission.bluetoothScan,
         Permission.bluetoothConnect,
+        Permission.bluetoothAdvertise,
       ],
       if (sdkInt >= 33) Permission.nearbyWifiDevices,
       Permission.locationWhenInUse,
@@ -281,6 +282,7 @@ class BleKeyController extends ChangeNotifier {
   String _permissionLabel(Permission permission) {
     if (permission == Permission.bluetoothScan) return '附近设备-扫描';
     if (permission == Permission.bluetoothConnect) return '附近设备-连接';
+    if (permission == Permission.bluetoothAdvertise) return '附近设备-广播';
     if (permission == Permission.nearbyWifiDevices) return 'WLAN 权限';
     if (permission == Permission.locationWhenInUse) return '定位权限';
     return permission.toString();

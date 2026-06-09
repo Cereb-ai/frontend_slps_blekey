@@ -117,6 +117,177 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get smartListNoMore => '没有更多了';
+
+  @override
+  String get unnamedDevice => '未命名';
+
+  @override
+  String get wizardConfirmStep => '确认完成';
+
+  @override
+  String get keyWizardCreateTitle => '新增钥匙（分步）';
+
+  @override
+  String get keyWizardEditTitle => '编辑钥匙（分步）';
+
+  @override
+  String get keyWizardFillRequired => '请先填写名称和编号';
+
+  @override
+  String get keyWizardSave => '保存';
+
+  @override
+  String get keyWizardNext => '下一步';
+
+  @override
+  String get keyWizardPrevious => '上一步';
+
+  @override
+  String get keyWizardStepConnect => '连接设备';
+
+  @override
+  String get keyWizardConnectHint => '扫描钥匙，选择 MAC 后连接并读取钥匙信息。';
+
+  @override
+  String get keyWizardScanning => '正在扫描钥匙...';
+
+  @override
+  String get keyWizardScanStarted => '扫描已开始，请等待设备列表刷新';
+
+  @override
+  String get keyWizardScanningShort => '扫描中';
+
+  @override
+  String get keyWizardScanKey => '扫描钥匙';
+
+  @override
+  String get keyWizardReadingInfo => '正在连接并读取钥匙信息...';
+
+  @override
+  String get keyWizardReadSuccess => '已读取钥匙信息';
+
+  @override
+  String get keyWizardReadFailed => '读取钥匙信息失败';
+
+  @override
+  String get keyWizardReadAction => '连接并读取钥匙信息';
+
+  @override
+  String get keyWizardStepInfo => '信息填写';
+
+  @override
+  String get keyWizardKeyName => '钥匙名称';
+
+  @override
+  String get keyWizardKeyNumber => '钥匙编号 / vendorKeyId';
+
+  @override
+  String get keyWizardKeyNumberHelper => '编辑时厂商编号不可修改';
+
+  @override
+  String get keyWizardKeyType => '钥匙类型';
+
+  @override
+  String get keyWizardOwnerId => '归属用户 ID';
+
+  @override
+  String get keyWizardOwnerIdHelper => '只表示保管人，不代表开锁权限';
+
+  @override
+  String get keyWizardStatus => '钥匙状态';
+
+  @override
+  String get keyWizardKeyNumberSummary => '钥匙编号';
+
+  @override
+  String get keyWizardTypeSummary => '类型';
+
+  @override
+  String get keyWizardOwnerSummary => '归属用户';
+
+  @override
+  String get keyWizardStatusSummary => '状态';
+
+  @override
+  String get lockWizardCreateTitle => '新增锁（分步）';
+
+  @override
+  String get lockWizardEditTitle => '编辑锁（分步）';
+
+  @override
+  String get lockWizardFillRequired => '请先填写名称、编号、位置';
+
+  @override
+  String get lockWizardConnectHint => '扫描钥匙，选择 MAC 后设置为采集锁号钥匙。';
+
+  @override
+  String get lockWizardPreparingCollector => '正在连接并设置采集锁号钥匙...';
+
+  @override
+  String get lockWizardCollectorReady => '采集钥匙已设置，请进入下一步后用钥匙碰目标锁';
+
+  @override
+  String get lockWizardPrepareFailed => '设置采集钥匙失败';
+
+  @override
+  String get lockWizardPrepareAction => '连接并设置采集锁号钥匙';
+
+  @override
+  String get lockWizardStepReadId => '读取锁号';
+
+  @override
+  String get lockWizardReadHint => '用已设置的钥匙碰目标锁，等待 onReport 回调中的 CMD=19 锁号。';
+
+  @override
+  String get lockWizardWaitingReport => '等待锁号回调，请用钥匙碰锁...';
+
+  @override
+  String get lockWizardParseFailed => '未从回调中解析到锁号';
+
+  @override
+  String get lockWizardReadSuccess => '已采集锁号';
+
+  @override
+  String get lockWizardReadFailed => '采集锁号失败';
+
+  @override
+  String get lockWizardReadAction => '等待并读取锁号';
+
+  @override
+  String get lockWizardLockNumber => '锁编号';
+
+  @override
+  String get lockWizardLockNumberHelper => '编辑时厂商锁号不可修改';
+
+  @override
+  String get lockWizardStepBasic => '基础信息';
+
+  @override
+  String get lockWizardLockName => '锁名称';
+
+  @override
+  String get lockWizardStepStatus => '状态设置';
+
+  @override
+  String get lockWizardSwitchState => '开关状态';
+
+  @override
+  String get lockWizardStepLocation => '位置信息';
+
+  @override
+  String get lockWizardLocation => '位置';
+
+  @override
+  String get lockWizardLockNameSummary => '锁名称';
+
+  @override
+  String get lockWizardLockNumberSummary => '锁编号';
+
+  @override
+  String get lockWizardLocationSummary => '位置';
+
+  @override
+  String get lockWizardSwitchStateSummary => '开关状态';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -232,6 +403,177 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get smartListNoMore => '没有更多了';
+
+  @override
+  String get unnamedDevice => '未命名';
+
+  @override
+  String get wizardConfirmStep => '确认完成';
+
+  @override
+  String get keyWizardCreateTitle => '新增钥匙（分步）';
+
+  @override
+  String get keyWizardEditTitle => '编辑钥匙（分步）';
+
+  @override
+  String get keyWizardFillRequired => '请先填写名称和编号';
+
+  @override
+  String get keyWizardSave => '保存';
+
+  @override
+  String get keyWizardNext => '下一步';
+
+  @override
+  String get keyWizardPrevious => '上一步';
+
+  @override
+  String get keyWizardStepConnect => '连接设备';
+
+  @override
+  String get keyWizardConnectHint => '扫描钥匙，选择 MAC 后连接并读取钥匙信息。';
+
+  @override
+  String get keyWizardScanning => '正在扫描钥匙...';
+
+  @override
+  String get keyWizardScanStarted => '扫描已开始，请等待设备列表刷新';
+
+  @override
+  String get keyWizardScanningShort => '扫描中';
+
+  @override
+  String get keyWizardScanKey => '扫描钥匙';
+
+  @override
+  String get keyWizardReadingInfo => '正在连接并读取钥匙信息...';
+
+  @override
+  String get keyWizardReadSuccess => '已读取钥匙信息';
+
+  @override
+  String get keyWizardReadFailed => '读取钥匙信息失败';
+
+  @override
+  String get keyWizardReadAction => '连接并读取钥匙信息';
+
+  @override
+  String get keyWizardStepInfo => '信息填写';
+
+  @override
+  String get keyWizardKeyName => '钥匙名称';
+
+  @override
+  String get keyWizardKeyNumber => '钥匙编号 / vendorKeyId';
+
+  @override
+  String get keyWizardKeyNumberHelper => '编辑时厂商编号不可修改';
+
+  @override
+  String get keyWizardKeyType => '钥匙类型';
+
+  @override
+  String get keyWizardOwnerId => '归属用户 ID';
+
+  @override
+  String get keyWizardOwnerIdHelper => '只表示保管人，不代表开锁权限';
+
+  @override
+  String get keyWizardStatus => '钥匙状态';
+
+  @override
+  String get keyWizardKeyNumberSummary => '钥匙编号';
+
+  @override
+  String get keyWizardTypeSummary => '类型';
+
+  @override
+  String get keyWizardOwnerSummary => '归属用户';
+
+  @override
+  String get keyWizardStatusSummary => '状态';
+
+  @override
+  String get lockWizardCreateTitle => '新增锁（分步）';
+
+  @override
+  String get lockWizardEditTitle => '编辑锁（分步）';
+
+  @override
+  String get lockWizardFillRequired => '请先填写名称、编号、位置';
+
+  @override
+  String get lockWizardConnectHint => '扫描钥匙，选择 MAC 后设置为采集锁号钥匙。';
+
+  @override
+  String get lockWizardPreparingCollector => '正在连接并设置采集锁号钥匙...';
+
+  @override
+  String get lockWizardCollectorReady => '采集钥匙已设置，请进入下一步后用钥匙碰目标锁';
+
+  @override
+  String get lockWizardPrepareFailed => '设置采集钥匙失败';
+
+  @override
+  String get lockWizardPrepareAction => '连接并设置采集锁号钥匙';
+
+  @override
+  String get lockWizardStepReadId => '读取锁号';
+
+  @override
+  String get lockWizardReadHint => '用已设置的钥匙碰目标锁，等待 onReport 回调中的 CMD=19 锁号。';
+
+  @override
+  String get lockWizardWaitingReport => '等待锁号回调，请用钥匙碰锁...';
+
+  @override
+  String get lockWizardParseFailed => '未从回调中解析到锁号';
+
+  @override
+  String get lockWizardReadSuccess => '已采集锁号';
+
+  @override
+  String get lockWizardReadFailed => '采集锁号失败';
+
+  @override
+  String get lockWizardReadAction => '等待并读取锁号';
+
+  @override
+  String get lockWizardLockNumber => '锁编号';
+
+  @override
+  String get lockWizardLockNumberHelper => '编辑时厂商锁号不可修改';
+
+  @override
+  String get lockWizardStepBasic => '基础信息';
+
+  @override
+  String get lockWizardLockName => '锁名称';
+
+  @override
+  String get lockWizardStepStatus => '状态设置';
+
+  @override
+  String get lockWizardSwitchState => '开关状态';
+
+  @override
+  String get lockWizardStepLocation => '位置信息';
+
+  @override
+  String get lockWizardLocation => '位置';
+
+  @override
+  String get lockWizardLockNameSummary => '锁名称';
+
+  @override
+  String get lockWizardLockNumberSummary => '锁编号';
+
+  @override
+  String get lockWizardLocationSummary => '位置';
+
+  @override
+  String get lockWizardSwitchStateSummary => '开关状态';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -347,4 +689,175 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get smartListNoMore => '沒有更多了';
+
+  @override
+  String get unnamedDevice => '未命名';
+
+  @override
+  String get wizardConfirmStep => '確認完成';
+
+  @override
+  String get keyWizardCreateTitle => '新增鑰匙（分步）';
+
+  @override
+  String get keyWizardEditTitle => '編輯鑰匙（分步）';
+
+  @override
+  String get keyWizardFillRequired => '請先填寫名稱和編號';
+
+  @override
+  String get keyWizardSave => '儲存';
+
+  @override
+  String get keyWizardNext => '下一步';
+
+  @override
+  String get keyWizardPrevious => '上一步';
+
+  @override
+  String get keyWizardStepConnect => '連接設備';
+
+  @override
+  String get keyWizardConnectHint => '掃描鑰匙，選擇 MAC 後連接並讀取鑰匙資訊。';
+
+  @override
+  String get keyWizardScanning => '正在掃描鑰匙...';
+
+  @override
+  String get keyWizardScanStarted => '掃描已開始，請等待設備列表更新';
+
+  @override
+  String get keyWizardScanningShort => '掃描中';
+
+  @override
+  String get keyWizardScanKey => '掃描鑰匙';
+
+  @override
+  String get keyWizardReadingInfo => '正在連接並讀取鑰匙資訊...';
+
+  @override
+  String get keyWizardReadSuccess => '已讀取鑰匙資訊';
+
+  @override
+  String get keyWizardReadFailed => '讀取鑰匙資訊失敗';
+
+  @override
+  String get keyWizardReadAction => '連接並讀取鑰匙資訊';
+
+  @override
+  String get keyWizardStepInfo => '資訊填寫';
+
+  @override
+  String get keyWizardKeyName => '鑰匙名稱';
+
+  @override
+  String get keyWizardKeyNumber => '鑰匙編號 / vendorKeyId';
+
+  @override
+  String get keyWizardKeyNumberHelper => '編輯時廠商編號不可修改';
+
+  @override
+  String get keyWizardKeyType => '鑰匙類型';
+
+  @override
+  String get keyWizardOwnerId => '歸屬用戶 ID';
+
+  @override
+  String get keyWizardOwnerIdHelper => '僅表示保管人，不代表開鎖權限';
+
+  @override
+  String get keyWizardStatus => '鑰匙狀態';
+
+  @override
+  String get keyWizardKeyNumberSummary => '鑰匙編號';
+
+  @override
+  String get keyWizardTypeSummary => '類型';
+
+  @override
+  String get keyWizardOwnerSummary => '歸屬用戶';
+
+  @override
+  String get keyWizardStatusSummary => '狀態';
+
+  @override
+  String get lockWizardCreateTitle => '新增鎖（分步）';
+
+  @override
+  String get lockWizardEditTitle => '編輯鎖（分步）';
+
+  @override
+  String get lockWizardFillRequired => '請先填寫名稱、編號、位置';
+
+  @override
+  String get lockWizardConnectHint => '掃描鑰匙，選擇 MAC 後設置為採集鎖號鑰匙。';
+
+  @override
+  String get lockWizardPreparingCollector => '正在連接並設置採集鎖號鑰匙...';
+
+  @override
+  String get lockWizardCollectorReady => '採集鑰匙已設置，請進入下一步後用鑰匙碰目標鎖';
+
+  @override
+  String get lockWizardPrepareFailed => '設置採集鑰匙失敗';
+
+  @override
+  String get lockWizardPrepareAction => '連接並設置採集鎖號鑰匙';
+
+  @override
+  String get lockWizardStepReadId => '讀取鎖號';
+
+  @override
+  String get lockWizardReadHint => '用已設置的鑰匙碰目標鎖，等待 onReport 回調中的 CMD=19 鎖號。';
+
+  @override
+  String get lockWizardWaitingReport => '等待鎖號回調，請用鑰匙碰鎖...';
+
+  @override
+  String get lockWizardParseFailed => '未從回調中解析到鎖號';
+
+  @override
+  String get lockWizardReadSuccess => '已採集鎖號';
+
+  @override
+  String get lockWizardReadFailed => '採集鎖號失敗';
+
+  @override
+  String get lockWizardReadAction => '等待並讀取鎖號';
+
+  @override
+  String get lockWizardLockNumber => '鎖編號';
+
+  @override
+  String get lockWizardLockNumberHelper => '編輯時廠商鎖號不可修改';
+
+  @override
+  String get lockWizardStepBasic => '基礎資訊';
+
+  @override
+  String get lockWizardLockName => '鎖名稱';
+
+  @override
+  String get lockWizardStepStatus => '狀態設置';
+
+  @override
+  String get lockWizardSwitchState => '開關狀態';
+
+  @override
+  String get lockWizardStepLocation => '位置信息';
+
+  @override
+  String get lockWizardLocation => '位置';
+
+  @override
+  String get lockWizardLockNameSummary => '鎖名稱';
+
+  @override
+  String get lockWizardLockNumberSummary => '鎖編號';
+
+  @override
+  String get lockWizardLocationSummary => '位置';
+
+  @override
+  String get lockWizardSwitchStateSummary => '開關狀態';
 }

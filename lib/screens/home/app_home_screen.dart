@@ -256,6 +256,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   }
 
   Future<_KeyEditorResult?> _showKeyEditor({_KeyItem? initial}) async {
+    final l10n = AppLocalizations.of(context)!;
     final nameController = TextEditingController(text: initial?.name ?? '');
     final numberController = TextEditingController(text: initial?.number ?? '');
     final ownerController = TextEditingController(
@@ -290,7 +291,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        initial == null ? '新增钥匙（分步）' : '编辑钥匙（分步）',
+                        initial == null
+                            ? l10n.keyWizardCreateTitle
+                            : l10n.keyWizardEditTitle,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
@@ -316,8 +319,10 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('请先填写名称和编号'),
+                                            SnackBar(
+                                              content: Text(
+                                                l10n.keyWizardFillRequired,
+                                              ),
                                             ),
                                           );
                                           return;
@@ -350,7 +355,11 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                     : () => setSheetState(
                                         () => currentStep = currentStep + 1,
                                       ),
-                                child: Text(isLast ? '保存' : '下一步'),
+                                child: Text(
+                                  isLast
+                                      ? l10n.keyWizardSave
+                                      : l10n.keyWizardNext,
+                                ),
                               ),
                               const SizedBox(width: 8),
                               if (currentStep > 0)
@@ -358,14 +367,14 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                   onPressed: () => setSheetState(
                                     () => currentStep = currentStep - 1,
                                   ),
-                                  child: const Text('上一步'),
+                                  child: Text(l10n.keyWizardPrevious),
                                 ),
                             ],
                           );
                         },
                         steps: [
                           Step(
-                            title: const Text('连接设备'),
+                            title: Text(l10n.keyWizardStepConnect),
                             isActive: currentStep >= 0,
                             content: Consumer<BleKeyController>(
                               builder: (context, controller, _) {
@@ -377,7 +386,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('扫描钥匙，选择 MAC 后连接并读取钥匙信息。'),
+                                    Text(l10n.keyWizardConnectHint),
                                     const SizedBox(height: 8),
                                     Row(
                                       children: [
@@ -388,7 +397,8 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                 : () async {
                                                     setSheetState(() {
                                                       sdkBusy = true;
-                                                      sdkMessage = '正在扫描钥匙...';
+                                                      sdkMessage = l10n
+                                                          .keyWizardScanning;
                                                     });
                                                     try {
                                                       await controller
@@ -398,8 +408,8 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                     } finally {
                                                       setSheetState(() {
                                                         sdkBusy = false;
-                                                        sdkMessage =
-                                                            '扫描已开始，请等待设备列表刷新';
+                                                        sdkMessage = l10n
+                                                            .keyWizardScanStarted;
                                                       });
                                                     }
                                                   },
@@ -408,8 +418,8 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                             ),
                                             label: Text(
                                               controller.scanning
-                                                  ? '扫描中'
-                                                  : '扫描钥匙',
+                                                  ? l10n.keyWizardScanningShort
+                                                  : l10n.keyWizardScanKey,
                                             ),
                                           ),
                                         ),
@@ -421,7 +431,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                           ? null
                                           : selectedMac,
                                       decoration: const InputDecoration(
-                                        labelText: '钥匙 MAC',
+                                        labelText: 'MAC',
                                       ),
                                       items: controller.devices
                                           .where(
@@ -432,7 +442,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                             (device) => DropdownMenuItem(
                                               value: device.mac,
                                               child: Text(
-                                                '${device.name ?? '未命名'} ${device.mac}',
+                                                '${device.name ?? l10n.unnamedDevice} ${device.mac}',
                                               ),
                                             ),
                                           )
@@ -451,6 +461,8 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                               setSheetState(() {
                                                 sdkBusy = true;
                                                 sdkMessage = '正在连接并读取钥匙信息...';
+                                                sdkMessage =
+                                                    l10n.keyWizardReadingInfo;
                                               });
                                               try {
                                                 final info =
@@ -478,12 +490,12 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                         'BLE Key $vendorKeyId';
                                                   }
                                                   sdkMessage =
-                                                      '已读取钥匙信息：$vendorKeyId';
+                                                      '${l10n.keyWizardReadSuccess}: $vendorKeyId';
                                                 });
                                               } catch (error) {
                                                 setSheetState(() {
                                                   sdkMessage =
-                                                      '读取钥匙信息失败：$error';
+                                                      '${l10n.keyWizardReadFailed}: $error';
                                                 });
                                               } finally {
                                                 setSheetState(
@@ -500,7 +512,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                               ),
                                             )
                                           : const Icon(Icons.key_outlined),
-                                      label: const Text('连接并读取钥匙信息'),
+                                      label: Text(l10n.keyWizardReadAction),
                                     ),
                                     if (sdkMessage.isNotEmpty) ...[
                                       const SizedBox(height: 8),
@@ -512,55 +524,55 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                             ),
                           ),
                           Step(
-                            title: const Text('信息填写'),
+                            title: Text(l10n.keyWizardStepInfo),
                             isActive: currentStep >= 1,
                             content: Column(
                               children: [
                                 TextField(
                                   controller: nameController,
-                                  decoration: const InputDecoration(
-                                    labelText: '钥匙名称',
+                                  decoration: InputDecoration(
+                                    labelText: l10n.keyWizardKeyName,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: numberController,
                                   enabled: initial == null,
-                                  decoration: const InputDecoration(
-                                    labelText: '钥匙编号 / vendorKeyId',
-                                    helperText: '编辑时厂商编号不可修改',
+                                  decoration: InputDecoration(
+                                    labelText: l10n.keyWizardKeyNumber,
+                                    helperText: l10n.keyWizardKeyNumberHelper,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 DropdownButtonFormField<String>(
                                   initialValue: keyType,
-                                  decoration: const InputDecoration(
-                                    labelText: '钥匙类型',
+                                  decoration: InputDecoration(
+                                    labelText: l10n.keyWizardKeyType,
                                   ),
                                   items: const [
                                     DropdownMenuItem(
                                       value: 'standard',
-                                      child: Text('standard / 普通'),
+                                      child: Text('standard'),
                                     ),
                                     DropdownMenuItem(
                                       value: 'bluetooth',
-                                      child: Text('bluetooth / 蓝牙'),
+                                      child: Text('bluetooth'),
                                     ),
                                     DropdownMenuItem(
                                       value: 'fingerprint',
-                                      child: Text('fingerprint / 指纹'),
+                                      child: Text('fingerprint'),
                                     ),
                                     DropdownMenuItem(
                                       value: 'cellular',
-                                      child: Text('cellular / 4G'),
+                                      child: Text('cellular'),
                                     ),
                                     DropdownMenuItem(
                                       value: 'display',
-                                      child: Text('display / 屏显'),
+                                      child: Text('display'),
                                     ),
                                     DropdownMenuItem(
                                       value: 'emergency',
-                                      child: Text('emergency / 应急'),
+                                      child: Text('emergency'),
                                     ),
                                   ],
                                   onChanged: (value) {
@@ -572,29 +584,29 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: ownerController,
-                                  decoration: const InputDecoration(
-                                    labelText: '归属用户 ID',
-                                    helperText: '只表示保管人，不代表开锁权限',
+                                  decoration: InputDecoration(
+                                    labelText: l10n.keyWizardOwnerId,
+                                    helperText: l10n.keyWizardOwnerIdHelper,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 DropdownButtonFormField<String>(
                                   initialValue: status,
-                                  decoration: const InputDecoration(
-                                    labelText: '钥匙状态',
+                                  decoration: InputDecoration(
+                                    labelText: l10n.keyWizardStatus,
                                   ),
                                   items: const [
                                     DropdownMenuItem(
                                       value: 'active',
-                                      child: Text('active / 正常'),
+                                      child: Text('active'),
                                     ),
                                     DropdownMenuItem(
                                       value: 'damaged',
-                                      child: Text('damaged / 损坏'),
+                                      child: Text('damaged'),
                                     ),
                                     DropdownMenuItem(
                                       value: 'lost',
-                                      child: Text('lost / 丢失'),
+                                      child: Text('lost'),
                                     ),
                                   ],
                                   onChanged: (value) {
@@ -607,7 +619,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                             ),
                           ),
                           Step(
-                            title: const Text('确认完成'),
+                            title: Text(l10n.wizardConfirmStep),
                             isActive: currentStep >= 2,
                             content: Container(
                               width: double.infinity,
@@ -622,20 +634,24 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '钥匙名称: ${nameController.text.trim().isEmpty ? '-' : nameController.text.trim()}',
+                                    '${l10n.keyWizardKeyName}: ${nameController.text.trim().isEmpty ? '-' : nameController.text.trim()}',
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '钥匙编号: ${numberController.text.trim().isEmpty ? '-' : numberController.text.trim()}',
+                                    '${l10n.keyWizardKeyNumberSummary}: ${numberController.text.trim().isEmpty ? '-' : numberController.text.trim()}',
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text('类型: $keyType'),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '归属用户: ${ownerController.text.trim().isEmpty ? '-' : ownerController.text.trim()}',
+                                    '${l10n.keyWizardTypeSummary}: $keyType',
                                   ),
                                   const SizedBox(height: 4),
-                                  Text('状态: $status'),
+                                  Text(
+                                    '${l10n.keyWizardOwnerSummary}: ${ownerController.text.trim().isEmpty ? '-' : ownerController.text.trim()}',
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${l10n.keyWizardStatusSummary}: $status',
+                                  ),
                                 ],
                               ),
                             ),
@@ -705,6 +721,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   }
 
   Future<_LockEditorResult?> _showLockEditor({_LockItem? initial}) async {
+    final l10n = AppLocalizations.of(context)!;
     final nameController = TextEditingController(text: initial?.name ?? '');
     final numberController = TextEditingController(text: initial?.number ?? '');
     final locationController = TextEditingController(
@@ -738,7 +755,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        initial == null ? '新增锁（分步）' : '编辑锁（分步）',
+                        initial == null
+                            ? l10n.lockWizardCreateTitle
+                            : l10n.lockWizardEditTitle,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
@@ -768,8 +787,10 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('请先填写名称、编号、位置'),
+                                            SnackBar(
+                                              content: Text(
+                                                l10n.lockWizardFillRequired,
+                                              ),
                                             ),
                                           );
                                           return;
@@ -796,7 +817,11 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                     : () => setSheetState(
                                         () => currentStep = currentStep + 1,
                                       ),
-                                child: Text(isLast ? '保存' : '下一步'),
+                                child: Text(
+                                  isLast
+                                      ? l10n.keyWizardSave
+                                      : l10n.keyWizardNext,
+                                ),
                               ),
                               const SizedBox(width: 8),
                               if (currentStep > 0)
@@ -804,14 +829,14 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                   onPressed: () => setSheetState(
                                     () => currentStep = currentStep - 1,
                                   ),
-                                  child: const Text('上一步'),
+                                  child: Text(l10n.keyWizardPrevious),
                                 ),
                             ],
                           );
                         },
                         steps: [
                           Step(
-                            title: const Text('连接设备'),
+                            title: Text(l10n.keyWizardStepConnect),
                             isActive: currentStep >= 0,
                             content: Consumer<BleKeyController>(
                               builder: (context, controller, _) {
@@ -823,7 +848,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('扫描钥匙，选择 MAC 后设置为采集锁号钥匙。'),
+                                    Text(l10n.lockWizardConnectHint),
                                     const SizedBox(height: 8),
                                     FilledButton.icon(
                                       onPressed: sdkBusy
@@ -831,7 +856,8 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                           : () async {
                                               setSheetState(() {
                                                 sdkBusy = true;
-                                                sdkMessage = '正在扫描钥匙...';
+                                                sdkMessage =
+                                                    l10n.keyWizardScanning;
                                               });
                                               try {
                                                 await controller.startScan(
@@ -841,7 +867,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                 setSheetState(() {
                                                   sdkBusy = false;
                                                   sdkMessage =
-                                                      '扫描已开始，请等待设备列表刷新';
+                                                      l10n.keyWizardScanStarted;
                                                 });
                                               }
                                             },
@@ -849,7 +875,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                         Icons.bluetooth_searching,
                                       ),
                                       label: Text(
-                                        controller.scanning ? '扫描中' : '扫描钥匙',
+                                        controller.scanning
+                                            ? l10n.keyWizardScanningShort
+                                            : l10n.keyWizardScanKey,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -858,7 +886,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                           ? null
                                           : selectedMac,
                                       decoration: const InputDecoration(
-                                        labelText: '钥匙 MAC',
+                                        labelText: 'MAC',
                                       ),
                                       items: controller.devices
                                           .where(
@@ -869,7 +897,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                             (device) => DropdownMenuItem(
                                               value: device.mac,
                                               child: Text(
-                                                '${device.name ?? '未命名'} ${device.mac}',
+                                                '${device.name ?? l10n.unnamedDevice} ${device.mac}',
                                               ),
                                             ),
                                           )
@@ -887,7 +915,8 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                           : () async {
                                               setSheetState(() {
                                                 sdkBusy = true;
-                                                sdkMessage = '正在连接并设置采集锁号钥匙...';
+                                                sdkMessage = l10n
+                                                    .lockWizardPreparingCollector;
                                               });
                                               try {
                                                 await _prepareLockCollector(
@@ -896,13 +925,13 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                   selectedMac,
                                                 );
                                                 setSheetState(() {
-                                                  sdkMessage =
-                                                      '采集钥匙已设置，请进入下一步后用钥匙碰目标锁';
+                                                  sdkMessage = l10n
+                                                      .lockWizardCollectorReady;
                                                 });
                                               } catch (error) {
                                                 setSheetState(() {
                                                   sdkMessage =
-                                                      '设置采集钥匙失败：$error';
+                                                      '${l10n.lockWizardPrepareFailed}: $error';
                                                 });
                                               } finally {
                                                 setSheetState(
@@ -919,7 +948,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                               ),
                                             )
                                           : const Icon(Icons.sensors),
-                                      label: const Text('连接并设置采集锁号钥匙'),
+                                      label: Text(l10n.lockWizardPrepareAction),
                                     ),
                                     if (sdkMessage.isNotEmpty) ...[
                                       const SizedBox(height: 8),
@@ -931,14 +960,12 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                             ),
                           ),
                           Step(
-                            title: const Text('读取锁号'),
+                            title: Text(l10n.lockWizardStepReadId),
                             isActive: currentStep >= 1,
                             content: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  '用已设置的钥匙碰目标锁，等待 onReport 回调中的 CMD=19 锁号。',
-                                ),
+                                Text(l10n.lockWizardReadHint),
                                 const SizedBox(height: 8),
                                 FilledButton.tonalIcon(
                                   onPressed: sdkBusy
@@ -946,7 +973,8 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                       : () async {
                                           setSheetState(() {
                                             sdkBusy = true;
-                                            sdkMessage = '等待锁号回调，请用钥匙碰锁...';
+                                            sdkMessage =
+                                                l10n.lockWizardWaitingReport;
                                           });
                                           try {
                                             final report =
@@ -959,7 +987,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                             );
                                             if (lockId == null ||
                                                 lockId.isEmpty) {
-                                              throw StateError('未从回调中解析到锁号');
+                                              throw StateError(
+                                                l10n.lockWizardParseFailed,
+                                              );
                                             }
                                             setSheetState(() {
                                               readLockId = report;
@@ -970,11 +1000,13 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                 nameController.text =
                                                     'Lock $lockId';
                                               }
-                                              sdkMessage = '已采集锁号：$lockId';
+                                              sdkMessage =
+                                                  '${l10n.lockWizardReadSuccess}: $lockId';
                                             });
                                           } catch (error) {
                                             setSheetState(() {
-                                              sdkMessage = '采集锁号失败：$error';
+                                              sdkMessage =
+                                                  '${l10n.lockWizardReadFailed}: $error';
                                             });
                                           } finally {
                                             setSheetState(
@@ -991,7 +1023,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                           ),
                                         )
                                       : const Icon(Icons.touch_app_outlined),
-                                  label: const Text('等待并读取锁号'),
+                                  label: Text(l10n.lockWizardReadAction),
                                 ),
                                 if (sdkMessage.isNotEmpty) ...[
                                   const SizedBox(height: 8),
@@ -1001,40 +1033,40 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                 TextField(
                                   controller: numberController,
                                   enabled: initial == null,
-                                  decoration: const InputDecoration(
-                                    labelText: '锁编号',
-                                    helperText: '编辑时厂商锁号不可修改',
+                                  decoration: InputDecoration(
+                                    labelText: l10n.lockWizardLockNumber,
+                                    helperText: l10n.lockWizardLockNumberHelper,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                           Step(
-                            title: const Text('基础信息'),
+                            title: Text(l10n.lockWizardStepBasic),
                             isActive: currentStep >= 2,
                             content: TextField(
                               controller: nameController,
-                              decoration: const InputDecoration(
-                                labelText: '锁名称',
+                              decoration: InputDecoration(
+                                labelText: l10n.lockWizardLockName,
                               ),
                             ),
                           ),
                           Step(
-                            title: const Text('状态设置'),
+                            title: Text(l10n.lockWizardStepStatus),
                             isActive: currentStep >= 3,
                             content: DropdownButtonFormField<String>(
                               initialValue: switchState,
-                              decoration: const InputDecoration(
-                                labelText: '开关状态',
+                              decoration: InputDecoration(
+                                labelText: l10n.lockWizardSwitchState,
                               ),
                               items: const [
                                 DropdownMenuItem(
                                   value: 'locked',
-                                  child: Text('locked / 已上锁'),
+                                  child: Text('locked'),
                                 ),
                                 DropdownMenuItem(
                                   value: 'unlocked',
-                                  child: Text('unlocked / 已解锁'),
+                                  child: Text('unlocked'),
                                 ),
                               ],
                               onChanged: (value) {
@@ -1045,17 +1077,17 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                             ),
                           ),
                           Step(
-                            title: const Text('位置信息'),
+                            title: Text(l10n.lockWizardStepLocation),
                             isActive: currentStep >= 4,
                             content: TextField(
                               controller: locationController,
-                              decoration: const InputDecoration(
-                                labelText: '位置',
+                              decoration: InputDecoration(
+                                labelText: l10n.lockWizardLocation,
                               ),
                             ),
                           ),
                           Step(
-                            title: const Text('确认完成'),
+                            title: Text(l10n.wizardConfirmStep),
                             isActive: currentStep >= 5,
                             content: Container(
                               width: double.infinity,
@@ -1070,18 +1102,20 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '锁名称: ${nameController.text.trim().isEmpty ? '-' : nameController.text.trim()}',
+                                    '${l10n.lockWizardLockNameSummary}: ${nameController.text.trim().isEmpty ? '-' : nameController.text.trim()}',
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    '锁编号: ${numberController.text.trim().isEmpty ? '-' : numberController.text.trim()}',
+                                    '${l10n.lockWizardLockNumberSummary}: ${numberController.text.trim().isEmpty ? '-' : numberController.text.trim()}',
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    '位置: ${locationController.text.trim().isEmpty ? '-' : locationController.text.trim()}',
+                                    '${l10n.lockWizardLocationSummary}: ${locationController.text.trim().isEmpty ? '-' : locationController.text.trim()}',
                                   ),
                                   const SizedBox(height: 8),
-                                  Text('开关状态: $switchState'),
+                                  Text(
+                                    '${l10n.lockWizardSwitchStateSummary}: $switchState',
+                                  ),
                                 ],
                               ),
                             ),
