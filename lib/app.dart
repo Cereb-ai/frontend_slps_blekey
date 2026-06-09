@@ -6,6 +6,9 @@ import 'common/navigation_service.dart';
 import 'common/route_tool.dart';
 import 'providers.dart';
 import 'routes.dart';
+import 'screens/login/login_screen.dart';
+import 'screens/home/app_home_screen.dart';
+import 'states/global_user.dart';
 import 'themes/app_theme.dart';
 
 class App extends StatefulWidget {
@@ -44,11 +47,11 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     return MultiProvider(
       providers: providers,
       child: MaterialApp(
-        title: '蓝牙钥匙测试',
+        title: '智能门锁',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         navigatorKey: NavigationService.navigatorKey,
-        initialRoute: Routes.home,
+        home: const _SplashGate(),
         onGenerateRoute: (settings) {
           final normalized = mergeUriToRouteSettings(settings);
           final handler = routes[normalized.name] ?? routes[Routes.home]!;
@@ -68,6 +71,41 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           );
         },
       ),
+    );
+  }
+}
+
+/// Shown at startup; checks token then routes to login or home.
+class _SplashGate extends StatefulWidget {
+  const _SplashGate();
+
+  @override
+  State<_SplashGate> createState() => _SplashGateState();
+}
+
+class _SplashGateState extends State<_SplashGate> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    await GlobalUser.instance.loadFromStorage();
+    final loggedIn = GlobalUser.instance.isLoggedIn;
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => loggedIn ? const AppHomeScreen() : const LoginScreen(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFF05070B),
+      body: Center(child: CircularProgressIndicator(color: Color(0xFF00D9FF))),
     );
   }
 }

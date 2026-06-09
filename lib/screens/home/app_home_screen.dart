@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../routes.dart';
+import '../../states/global_user.dart';
 
 class AppHomeScreen extends StatefulWidget {
   const AppHomeScreen({super.key});
@@ -486,7 +487,7 @@ class _LockCard extends StatelessWidget {
   }
 }
 
-class _MineTab extends StatelessWidget {
+class _MineTab extends StatefulWidget {
   const _MineTab({
     required this.onOpenCurrentTest,
     required this.onOpenVendorTest,
@@ -498,20 +499,71 @@ class _MineTab extends StatelessWidget {
   final VoidCallback onOpenOnlineSwitchLock;
 
   @override
+  State<_MineTab> createState() => _MineTabState();
+}
+
+class _MineTabState extends State<_MineTab> {
+  String? _username;
+  bool _loggingOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    GlobalUser.instance.loadFromStorage().then((_) async {
+      if (!mounted) return;
+      setState(() {
+        _username = GlobalUser.instance.username;
+      });
+      await GlobalUser.instance.fetchProfile();
+      if (!mounted) return;
+      setState(() {
+        _username = GlobalUser.instance.username ?? GlobalUser.instance.email;
+      });
+    });
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('退出登录'),
+        content: const Text('确认退出登录吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('退出'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _loggingOut = true);
+    try {
+      await GlobalUser.instance.logout();
+    } catch (_) {}
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil(Routes.login, (_) => false);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Card(
           child: Column(
-            children: const [
+            children: [
               ListTile(
-                leading: Icon(Icons.account_circle_outlined),
-                title: Text('账号'),
-                subtitle: Text('demo@cereb.com'),
+                leading: const Icon(Icons.account_circle_outlined),
+                title: const Text('账号'),
+                subtitle: Text(_username ?? '—'),
               ),
-              Divider(height: 1),
-              ListTile(
+              const Divider(height: 1),
+              const ListTile(
                 leading: Icon(Icons.info_outline),
                 title: Text('版本'),
                 subtitle: Text('1.0.0+1'),
@@ -528,7 +580,7 @@ class _MineTab extends StatelessWidget {
                 title: const Text('当前测试主页'),
                 subtitle: const Text('保留原有测试流程'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: onOpenCurrentTest,
+                onTap: widget.onOpenCurrentTest,
               ),
               const Divider(height: 1),
               ListTile(
@@ -536,7 +588,7 @@ class _MineTab extends StatelessWidget {
                 title: const Text('厂家 SDK 测试界面'),
                 subtitle: const Text('保留原有测试流程'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: onOpenVendorTest,
+                onTap: widget.onOpenVendorTest,
               ),
               const Divider(height: 1),
               ListTile(
@@ -544,19 +596,21 @@ class _MineTab extends StatelessWidget {
                 title: const Text('设置开关锁钥匙（在线）'),
                 subtitle: const Text('保留原有测试流程'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: onOpenOnlineSwitchLock,
+                onTap: widget.onOpenOnlineSwitchLock,
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
         FilledButton.tonalIcon(
-          onPressed: () {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('已退出登录（演示）')));
-          },
-          icon: const Icon(Icons.logout),
+          onPressed: _loggingOut ? null : _logout,
+          icon: _loggingOut
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.logout),
           label: const Text('退出登录'),
         ),
       ],
