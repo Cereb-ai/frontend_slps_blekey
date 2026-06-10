@@ -452,7 +452,6 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                           : () async {
                                               setSheetState(() {
                                                 sdkBusy = true;
-                                                sdkMessage = '正在连接并读取钥匙信息...';
                                                 sdkMessage =
                                                     l10n.keyWizardReadingInfo;
                                               });
@@ -465,7 +464,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                           >(),
                                                       selectedMac,
                                                     );
-                                                final vendorKeyId = selectedMac;
+                                                final vendorKeyId =
+                                                    _extractHardwareId(info) ??
+                                                    selectedMac;
                                                 final generatedName =
                                                     _defaultBleKeyName(
                                                       vendorKeyId,
@@ -763,9 +764,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                             .trim();
                                         final location = locationController.text
                                             .trim();
-                                        if (name.isEmpty ||
-                                            number.isEmpty ||
-                                            location.isEmpty) {
+                                        if (name.isEmpty || number.isEmpty) {
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
@@ -979,8 +978,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                               if (nameController.text
                                                   .trim()
                                                   .isEmpty) {
-                                                nameController.text =
-                                                    'Lock $lockId';
+                                                nameController.text = lockId;
                                               }
                                               sdkMessage =
                                                   '${l10n.lockWizardReadSuccess}: $lockId';
@@ -1041,14 +1039,14 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                               decoration: InputDecoration(
                                 labelText: l10n.lockWizardSwitchState,
                               ),
-                              items: const [
+                              items: [
                                 DropdownMenuItem(
                                   value: 'locked',
-                                  child: Text('locked'),
+                                  child: Text(l10n.lockStateLocked),
                                 ),
                                 DropdownMenuItem(
                                   value: 'unlocked',
-                                  child: Text('unlocked'),
+                                  child: Text(l10n.lockStateUnlocked),
                                 ),
                               ],
                               onChanged: (value) {
@@ -1096,7 +1094,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    '${l10n.lockWizardSwitchStateSummary}: $switchState',
+                                    '${l10n.lockWizardSwitchStateSummary}: ${switchState == 'locked' ? l10n.lockStateLocked : l10n.lockStateUnlocked}',
                                   ),
                                 ],
                               ),
@@ -1221,7 +1219,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
 
   JsonMap _sdkResultToJson(String operationName, BleKeyOperationResult result) {
     final obj = _normalizeSdkObject(result.obj);
-    final objText = result.objText ?? obj?.toString() ?? '';
+    final objText = result.objText ?? obj.toString();
     final json = <String, dynamic>{
       'operation': operationName,
       'ret': result.ret,
@@ -1230,7 +1228,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       'obj': obj,
       'objText': objText,
     };
-    final id = _extractHardwareIdFromObject(obj) ?? _extractHardwareIdFromText(objText);
+    final id =
+        _extractHardwareIdFromObject(obj) ??
+        _extractHardwareIdFromText(objText);
     if (id != null) json['id'] = id;
     final cmd = _extractCommand(objText);
     if (cmd != null) json['cmd'] = cmd;
@@ -1277,7 +1277,8 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   }
 
   String? _extractHardwareId(JsonMap sdkResult) {
-    final direct = _extractHardwareIdFromObject(sdkResult['id']) ??
+    final direct =
+        _extractHardwareIdFromObject(sdkResult['id']) ??
         _extractHardwareIdFromObject(sdkResult['obj']);
     if (direct != null && direct.isNotEmpty) return direct;
     return _extractHardwareIdFromText(
@@ -1309,13 +1310,54 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   }
 
   String _keyTypeFromInfo(JsonMap sdkResult) {
-    final obj = (sdkResult['objText'] ?? sdkResult['obj'] ?? '')
+    final objText = (sdkResult['objText'] ?? sdkResult['obj'] ?? '')
         .toString()
         .toLowerCase();
-    if (obj.contains('finger')) return 'fingerprint';
-    if (obj.contains('display') || obj.contains('screen')) return 'display';
-    if (obj.contains('4g') || obj.contains('cellular')) return 'cellular';
-    return 'bluetooth';
+    final mode =
+        _extractIntFromObject(sdkResult['obj'], 'mode') ??
+        _extractIntFromText(objText, 'mode');
+
+    // Keep the same precedence as web: bluetooth -> cellular -> fingerprint -> emergency -> standard.
+    if (objText.contains('bluetooth') || objText.contains('ble')) {
+      return 'bluetooth';
+    }
+    if (objText.contains('4g') ||
+        objText.contains('cellular') ||
+        objText.contains('mobileparam')) {
+      return 'cellular';
+    }
+    if (objText.contains('finger')) return 'fingerprint';
+    if (mode == 1) return 'emergency';
+    return 'standard';
+  }
+
+  int? _extractIntFromObject(Object? value, String key) {
+    if (value is Map) {
+      final json = Map<String, dynamic>.from(value);
+      final direct = int.tryParse(json[key]?.toString() ?? '');
+      if (direct != null) return direct;
+      for (final nested in json.values) {
+        final found = _extractIntFromObject(nested, key);
+        if (found != null) return found;
+      }
+      return null;
+    }
+    if (value is List) {
+      for (final item in value) {
+        final found = _extractIntFromObject(item, key);
+        if (found != null) return found;
+      }
+    }
+    return null;
+  }
+
+  int? _extractIntFromText(String text, String field) {
+    final match = RegExp(
+      '$field\\s*[=:]\\s*(\\d+)',
+      caseSensitive: false,
+    ).firstMatch(text);
+    if (match == null) return null;
+    return int.tryParse(match.group(1) ?? '');
   }
 
   Future<void> _editKey(_KeyItem item) async {
