@@ -21,6 +21,8 @@ abstract final class AppTheme {
       onError: Colors.white,
       surface: _surface,
       onSurface: _text,
+      outline: _outline,
+      outlineVariant: _outline,
     );
 
     return ThemeData(

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -65,9 +66,25 @@ class _LoginScreenState extends State<LoginScreen>
       Navigator.of(context).pushReplacementNamed(Routes.home);
     } catch (e) {
       if (!mounted) return;
+      String message = e.toString().replaceFirst('Exception: ', '');
+      if (e is DioException) {
+        final body = e.response?.data;
+        if (body is String && body.isNotEmpty) {
+          message = body;
+        } else if (body is Map) {
+          final map = Map<String, dynamic>.from(body);
+          for (final key in const ['message', 'error', 'msg', 'detail']) {
+            final text = map[key]?.toString().trim();
+            if (text != null && text.isNotEmpty) {
+              message = text;
+              break;
+            }
+          }
+        }
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(message),
           backgroundColor: Colors.red.shade700,
         ),
       );

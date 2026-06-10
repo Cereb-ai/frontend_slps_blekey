@@ -1,0 +1,254 @@
+import 'package:flutter/material.dart';
+
+import '../../../api.dart' hide JsonMap;
+import '../../../l10n/app_localizations.dart';
+import '../../../states/global_user.dart';
+import '../../../widgets/smart_list.dart';
+import '../models.dart';
+import 'key_editor_sheet.dart';
+
+/// Standalone key management list widget.
+///
+/// Manages its own data fetching, loading state, search filtering, and CRUD.
+class KeysList extends StatefulWidget {
+  const KeysList({super.key});
+
+  @override
+  State<KeysList> createState() => _KeysListState();
+}
+
+class _KeysListState extends State<KeysList> {
+  final List<KeyItem> _items = <KeyItem>[];
+  String _query = '';
+  bool _loading = false;
+
+  List<KeyItem> get _filtered {
+    if (_query.trim().isEmpty) return _items;
+    final query = _query.trim().toLowerCase();
+    return _items
+        .where(
+          (item) =>
+              item.name.toLowerCase().contains(query) ||
+              item.number.toLowerCase().contains(query),
+        )
+        .toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final token = GlobalUser.instance.token;
+    if (token == null || token.isEmpty) return;
+    setState(() => _loading = true);
+    try {
+      final response = await Api.listLockKeys(token: token);
+      final mapped = response.map(_mapApiKey).toList();
+      if (!mounted) return;
+      setState(() {
+        _items
+          ..clear()
+          ..addAll(mapped);
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('钥匙列表加载失败: $error')));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _edit(KeyItem item) async {
+    final result = await showKeyEditorSheet(context, initial: item);
+    if (result == null) return;
+    final token = _requireToken();
+    if (token == null) return;
+    setState(() => _loading = true);
+    try {
+      await Api.updateLockKey(
+        token: token,
+        id: item.id,
+        payload: result.updatePayload,
+      );
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('钥匙已更新')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('钥匙更新失败: ${formatRequestError(error)}')));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _delete(KeyItem item) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteKeyTitle),
+        content: Text(l10n.confirmDeleteItem(item.name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final token = _requireToken();
+    if (token == null) return;
+    try {
+      await Api.deleteLockKey(token: token, id: item.id);
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('钥匙已删除')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('钥匙删除失败: $error')));
+    }
+  }
+
+  String? _requireToken() {
+    final token = GlobalUser.instance.token;
+    if (token == null || token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.sessionExpired)),
+      );
+      return null;
+    }
+    return token;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: TextField(
+            onChanged: (value) => setState(() => _query = value),
+            decoration: InputDecoration(
+              hintText: l10n.searchKeyHint,
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      onPressed: () => setState(() => _query = ''),
+                      icon: const Icon(Icons.close),
+                    ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: SmartList<KeyItem>(
+            key: ValueKey<String>('key-list-$_query'),
+            items: _filtered.cast<KeyItem>(),
+            loading: _loading,
+            onRefresh: _load,
+            itemBuilder: (context, item, index) {
+              return _KeyCard(
+                item: item,
+                onEdit: () => _edit(item),
+                onDelete: () => _delete(item),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  KeyItem _mapApiKey(Map<String, dynamic> json) {
+    final id = (json['id'] ?? '').toString();
+    final name = (json['name'] ?? json['vendorKeyId'] ?? id).toString();
+    final number = (json['vendorKeyId'] ?? id).toString();
+    final status = (json['status'] ?? 'active').toString();
+    final keyType = (json['keyType'] ?? 'standard').toString();
+    final ownerUserId =
+        (json['ownerUserId'] ?? json['assignedUserId'] ?? '').toString();
+    final updatedAtRaw = json['updatedAt']?.toString();
+    final updatedAt = DateTime.tryParse(updatedAtRaw ?? '') ?? DateTime.now();
+    return KeyItem(
+      id: id.isEmpty ? DateTime.now().microsecondsSinceEpoch.toString() : id,
+      name: name,
+      number: number,
+      keyType: keyType,
+      ownerUserId: ownerUserId,
+      status: status,
+      updatedAt: updatedAt,
+    );
+  }
+}
+
+class _KeyCard extends StatelessWidget {
+  const _KeyCard({
+    required this.item,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final KeyItem item;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.name,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                TextButton(onPressed: onEdit, child: Text(l10n.edit)),
+                TextButton(onPressed: onDelete, child: Text(l10n.delete)),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text('${l10n.keyWizardTypeSummary}: ${item.keyType}'),
+            const SizedBox(height: 2),
+            Text('${l10n.keyWizardKeyNumberSummary}: ${item.number}'),
+            if (item.ownerUserId.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text('${l10n.keyWizardOwnerSummary}: ${item.ownerUserId}'),
+            ],
+            const SizedBox(height: 2),
+            Text(
+              '${l10n.keyWizardStatusSummary}: ${item.status == 'active' ? l10n.keyStatusActive : item.status}',
+            ),
+            const SizedBox(height: 2),
+            Text('${l10n.listUpdatedAt}: ${formatDate(item.updatedAt)}'),
+          ],
+        ),
+      ),
+    );
+  }
+}
