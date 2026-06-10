@@ -297,6 +297,30 @@ abstract class AppLocalizations {
   /// **'Session expired, please log in again'**
   String get sessionExpired;
 
+  /// No description provided for @keyCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Key created successfully'**
+  String get keyCreatedSuccess;
+
+  /// No description provided for @keyCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create key'**
+  String get keyCreateFailed;
+
+  /// No description provided for @lockCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock created successfully'**
+  String get lockCreatedSuccess;
+
+  /// No description provided for @lockCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create lock'**
+  String get lockCreateFailed;
+
   /// No description provided for @smartListEmpty.
   ///
   /// In en, this message translates to:

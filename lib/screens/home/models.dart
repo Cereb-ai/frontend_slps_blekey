@@ -38,6 +38,7 @@ class LockItem {
   final String number;
   final String location;
   final String switchState;
+  final String status;
   final DateTime updatedAt;
 
   const LockItem({
@@ -46,6 +47,7 @@ class LockItem {
     required this.number,
     required this.location,
     required this.switchState,
+    this.status = 'uninstalled',
     required this.updatedAt,
   });
 }

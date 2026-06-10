@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../api.dart' hide JsonMap;
 import '../../l10n/app_localizations.dart';
+import '../../states/global_user.dart';
+import 'models.dart';
 import 'widgets/keys_list.dart';
 import 'widgets/locks_list.dart';
 import 'widgets/mine_tab.dart';
@@ -29,16 +32,57 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   bool get _showAdd => _tabIndex == 0 || _tabIndex == 1;
 
   Future<void> _onAddPressed() async {
+    final l10n = AppLocalizations.of(context)!;
+    final token = GlobalUser.instance.token;
+    if (token == null || token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.sessionExpired),
+        ),
+      );
+      return;
+    }
     if (_tabIndex == 0) {
       final result = await showKeyEditorSheet(context);
       if (result == null) return;
-      setState(() => _keysReloadTrigger++);
+      try {
+        await Api.createLockKey(token: token, payload: result.createPayload);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.keyCreatedSuccess)),
+        );
+        setState(() => _keysReloadTrigger++);
+      } catch (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.keyCreateFailed}: ${formatRequestError(error)}'),
+          ),
+        );
+      }
       return;
     }
     if (_tabIndex == 1) {
       final result = await showLockEditorSheet(context);
       if (result == null) return;
-      setState(() => _locksReloadTrigger++);
+      try {
+        await Api.createLockDevice(
+          token: token,
+          payload: result.createPayload,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.lockCreatedSuccess)),
+        );
+        setState(() => _locksReloadTrigger++);
+      } catch (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.lockCreateFailed}: ${formatRequestError(error)}'),
+          ),
+        );
+      }
     }
   }
 

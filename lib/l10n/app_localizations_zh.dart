@@ -110,6 +110,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionExpired => '登录状态已失效，请重新登录';
 
   @override
+  String get keyCreatedSuccess => '钥匙创建成功';
+
+  @override
+  String get keyCreateFailed => '钥匙创建失败';
+
+  @override
+  String get lockCreatedSuccess => '锁创建成功';
+
+  @override
+  String get lockCreateFailed => '锁创建失败';
+  @override
   String get smartListEmpty => '暂无数据';
 
   @override
@@ -449,6 +460,17 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get sessionExpired => '登录状态已失效，请重新登录';
 
   @override
+  String get keyCreatedSuccess => '钥匙创建成功';
+
+  @override
+  String get keyCreateFailed => '钥匙创建失败';
+
+  @override
+  String get lockCreatedSuccess => '锁创建成功';
+
+  @override
+  String get lockCreateFailed => '锁创建失败';
+  @override
   String get smartListEmpty => '暂无数据';
 
   @override
@@ -787,6 +809,17 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get sessionExpired => '登入狀態已失效，請重新登入';
 
+  @override
+  String get keyCreatedSuccess => '鑰匙創建成功';
+
+  @override
+  String get keyCreateFailed => '鑰匙創建失敗';
+
+  @override
+  String get lockCreatedSuccess => '鎖創建成功';
+
+  @override
+  String get lockCreateFailed => '鎖創建失敗';
   @override
   String get smartListEmpty => '暫無資料';
 

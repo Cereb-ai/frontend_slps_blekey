@@ -227,12 +227,15 @@ class _LocksListState extends State<LocksList> {
             ?.toString();
     final updatedAt = DateTime.tryParse(updatedAtRaw ?? '') ?? DateTime.now();
 
+    final status = (json['status'] ?? metadata['status'] ?? 'uninstalled').toString();
+
     return LockItem(
       id: id.isEmpty ? DateTime.now().microsecondsSinceEpoch.toString() : id,
       name: name,
       number: number,
       location: location,
       switchState: switchState,
+      status: status,
       updatedAt: updatedAt,
     );
   }

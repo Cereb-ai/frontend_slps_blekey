@@ -110,6 +110,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionExpired => 'Session expired, please log in again';
 
   @override
+  String get keyCreatedSuccess => 'Key created successfully';
+
+  @override
+  String get keyCreateFailed => 'Failed to create key';
+
+  @override
+  String get lockCreatedSuccess => 'Lock created successfully';
+
+  @override
+  String get lockCreateFailed => 'Failed to create lock';
+
+  @override
   String get smartListEmpty => 'No data';
 
   @override

@@ -17,7 +17,7 @@ Future<KeyEditorResult?> showKeyEditorSheet(
   final l10n = AppLocalizations.of(context)!;
   final nameController = TextEditingController(text: initial?.name ?? '');
   final numberController = TextEditingController(text: initial?.number ?? '');
-  var keyType = initial?.keyType ?? 'standard';
+  var keyType = _normalizeKeyType(initial?.keyType) ?? 'standard';
   var status = initial?.status ?? 'active';
   var currentStep = 0;
   var selectedMac = '';
@@ -538,6 +538,16 @@ int? _extractCommand(String text) {
   return int.tryParse(match.group(1) ?? '');
 }
 
+/// Map legacy key type values to the canonical set
+String? _normalizeKeyType(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  const legacyMap = <String, String>{
+    '4g': 'cellular',
+    '4G': 'cellular',
+  };
+  return legacyMap[raw] ?? raw;
+}
+
 String _keyTypeFromInfo(JsonMap sdkResult) {
   final objText =
       (sdkResult['objText'] ?? sdkResult['obj'] ?? '').toString().toLowerCase();
@@ -624,8 +634,8 @@ JsonMap _buildKeyUpdatePayload({
   return <String, dynamic>{
     'name': name,
     'keyType': keyType,
-    'status': status,
     'metadata': <String, dynamic>{
+      'status': status,
       'department': 'Cereb',
       'source': 'android_app',
       'updatedFrom': 'app_key_edit',

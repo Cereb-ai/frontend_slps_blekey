@@ -110,6 +110,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sessionExpired => 'Sitzung abgelaufen, bitte erneut anmelden';
 
   @override
+  String get keyCreatedSuccess => 'Schlüssel erfolgreich erstellt';
+
+  @override
+  String get keyCreateFailed => 'Fehler beim Erstellen des Schlüssels';
+
+  @override
+  String get lockCreatedSuccess => 'Schloss erfolgreich erstellt';
+
+  @override
+  String get lockCreateFailed => 'Fehler beim Erstellen des Schlosses';
+  @override
   String get smartListEmpty => 'Keine Daten';
 
   @override

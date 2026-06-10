@@ -20,6 +20,7 @@ Future<LockEditorResult?> showLockEditorSheet(
   final locationController =
       TextEditingController(text: initial?.location ?? '');
   var switchState = initial?.switchState ?? 'locked';
+  var lockStatus = initial?.status ?? 'uninstalled';
   var currentStep = 0;
   var selectedMac = '';
   var sdkBusy = false;
@@ -93,6 +94,7 @@ Future<LockEditorResult?> showLockEditorSheet(
                                             vendorLockId: number,
                                             location: location,
                                             switchState: switchState,
+                                            lockStatus: lockStatus,
                                             readLockId: readLockId,
                                           ),
                                           updatePayload:
@@ -100,6 +102,7 @@ Future<LockEditorResult?> showLockEditorSheet(
                                             name: name,
                                             location: location,
                                             switchState: switchState,
+                                            lockStatus: lockStatus,
                                           ),
                                         ),
                                       );
@@ -357,26 +360,60 @@ Future<LockEditorResult?> showLockEditorSheet(
                         Step(
                           title: Text(l10n.lockWizardStepStatus),
                           isActive: currentStep >= 3,
-                          content: DropdownButtonFormField<String>(
-                            initialValue: switchState,
-                            decoration: InputDecoration(
-                              labelText: l10n.lockWizardSwitchState,
-                            ),
-                            items: [
-                              DropdownMenuItem(
-                                value: 'locked',
-                                child: Text(l10n.lockStateLocked),
+                          content: Column(
+                            children: [
+                              DropdownButtonFormField<String>(
+                                initialValue: lockStatus,
+                                decoration: InputDecoration(
+                                  labelText: 'Lock Status',
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'uninstalled',
+                                    child: Text('Uninstalled'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'installed',
+                                    child: Text('Installed'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'damaged',
+                                    child: Text('Damaged'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'lost',
+                                    child: Text('Lost'),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setSheetState(() => lockStatus = value);
+                                  }
+                                },
                               ),
-                              DropdownMenuItem(
-                                value: 'unlocked',
-                                child: Text(l10n.lockStateUnlocked),
+                              const SizedBox(height: 16),
+                              DropdownButtonFormField<String>(
+                                initialValue: switchState,
+                                decoration: InputDecoration(
+                                  labelText: l10n.lockWizardSwitchState,
+                                ),
+                                items: [
+                                  DropdownMenuItem(
+                                    value: 'locked',
+                                    child: Text(l10n.lockStateLocked),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'unlocked',
+                                    child: Text(l10n.lockStateUnlocked),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setSheetState(() => switchState = value);
+                                  }
+                                },
                               ),
                             ],
-                            onChanged: (value) {
-                              if (value != null) {
-                                setSheetState(() => switchState = value);
-                              }
-                            },
                           ),
                         ),
                         // Step 4: Location
@@ -416,6 +453,10 @@ Future<LockEditorResult?> showLockEditorSheet(
                                 const SizedBox(height: 8),
                                 Text(
                                   '${l10n.lockWizardLocationSummary}: ${locationController.text.trim().isEmpty ? '-' : locationController.text.trim()}',
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Status: $lockStatus',
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
@@ -574,6 +615,7 @@ JsonMap _buildLockCreatePayload({
   required String vendorLockId,
   required String location,
   required String switchState,
+  required String lockStatus,
   JsonMap? readLockId,
 }) {
   final metadata = <String, dynamic>{
@@ -581,7 +623,6 @@ JsonMap _buildLockCreatePayload({
     'captureMethod': 'ReadLockId',
     'usingKeyVendorKeyId': '',
     'department': 'Cereb',
-    'status': 'uninstalled',
     'switchState': switchState,
     'battery': 100,
     'signal': 'Unknown',
@@ -598,6 +639,7 @@ JsonMap _buildLockCreatePayload({
     'vendor': 'smartlock',
     'vendorLockId': vendorLockId,
     'name': name,
+    'status': lockStatus,
     'assetId': null,
     'metadata': metadata,
   };
@@ -607,9 +649,11 @@ JsonMap _buildLockUpdatePayload({
   required String name,
   required String location,
   required String switchState,
+  required String lockStatus,
 }) {
   return <String, dynamic>{
     'name': name,
+    'status': lockStatus,
     'assetId': null,
     'metadata': <String, dynamic>{
       'location': location,
