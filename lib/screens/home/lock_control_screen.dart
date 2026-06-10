@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_blekey_sdk/flutter_blekey_sdk.dart';
 import 'package:provider/provider.dart';
 
 import '../../api.dart';
@@ -91,6 +92,8 @@ class _LockControlScreenState extends State<LockControlScreen> {
     setState(() => _busy = true);
     try {
       final controller = context.read<BleKeyController>();
+
+      // 1) App 连接钥匙
       await controller.executeVendorOperationAndWait(
         index: 0,
         expectedOperationName: 'ConnectKey',
@@ -98,6 +101,27 @@ class _LockControlScreenState extends State<LockControlScreen> {
         args: _sdkArgs(nextState),
         timeout: const Duration(seconds: 15),
       );
+
+      // 2) App/后端开锁前鉴权（任务、时间、GPS 由后端策略判定）
+      final keyId = await _resolveKeyIdByMac(token, _selectedMac!);
+      if (keyId == null || keyId.isEmpty) {
+        throw StateError('未找到该 MAC 对应的钥匙档案，请先创建并同步钥匙');
+      }
+      final decision = await Api.decideAccess(
+        token: token,
+        keyId: keyId,
+        lockId: widget.lockId,
+        at: DateTime.now(),
+        clientTraceId:
+            'ble_unlock_${DateTime.now().millisecondsSinceEpoch}_${widget.lockId}',
+      );
+      final allowed = decision['allowed'] == true;
+      if (!allowed) {
+        final reasons = _formatDecisionReasons(decision['reasons']);
+        throw StateError('后端鉴权拒绝：$reasons');
+      }
+
+      // 3) App 给钥匙 SetDateTime 校时
       await controller.executeVendorOperationAndWait(
         index: 15,
         expectedOperationName: 'SetDateTime',
@@ -105,6 +129,8 @@ class _LockControlScreenState extends State<LockControlScreen> {
         args: _sdkArgs(nextState),
         timeout: const Duration(seconds: 15),
       );
+
+      // 4) App 给钥匙 SetUserKey 写 lockIds + timeBlocks + offline=0
       await controller.executeVendorOperationAndWait(
         index: 6,
         expectedOperationName: 'SetUserKey',
@@ -112,6 +138,8 @@ class _LockControlScreenState extends State<LockControlScreen> {
         args: _sdkArgs(nextState),
         timeout: const Duration(seconds: 20),
       );
+
+      // 5) 设置在线模式
       await controller.executeVendorOperationAndWait(
         index: 7,
         expectedOperationName: 'SetOnline',
@@ -119,10 +147,16 @@ class _LockControlScreenState extends State<LockControlScreen> {
         args: _sdkArgs(nextState),
         timeout: const Duration(seconds: 20),
       );
-      await controller.executeVendorOperation(
-        index: 20,
-        mac: _selectedMac,
-        args: _sdkArgs(nextState),
+
+      // 6) 保持蓝牙连接，用钥匙开锁；等待 CMD=10 回调确认
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('已完成在线授权，请保持蓝牙连接并用钥匙操作锁体。')),
+      );
+      final report = await controller.waitForOperationResult(
+        expectedOperationName: 'Report',
+        where: _isCmd10SwitchReport,
+        timeout: const Duration(seconds: 90),
       );
 
       await Api.updateLockDevice(
@@ -135,6 +169,8 @@ class _LockControlScreenState extends State<LockControlScreen> {
             'controlMac': _selectedMac,
             'controlChannel': 'flutter_blekey_sdk',
             'controlledAt': DateTime.now().toIso8601String(),
+            'controlReport': report.obj,
+            'controlReportText': report.objText,
           },
         },
       );
@@ -167,9 +203,86 @@ class _LockControlScreenState extends State<LockControlScreen> {
       'sign': int.tryParse(_signController.text.trim()) ?? 1,
       'lic': _licController.text.trim(),
       'lockIds': widget.number,
-      'switchCount': 1,
-      'unlock': nextState == 'unlocked',
     };
+  }
+
+  Future<String?> _resolveKeyIdByMac(String token, String mac) async {
+    final keys = await Api.listLockKeys(
+      token: token,
+      query: <String, dynamic>{'vendorKeyId': mac, 'limit': 200},
+    );
+    final normalizedMac = mac.trim().toUpperCase();
+    for (final key in keys) {
+      final vendorKeyId = (key['vendorKeyId'] ?? '').toString().trim().toUpperCase();
+      if (vendorKeyId == normalizedMac) {
+        final id = (key['id'] ?? '').toString().trim();
+        if (id.isNotEmpty) return id;
+      }
+    }
+
+    final fallbackKeys = await Api.listLockKeys(
+      token: token,
+      query: const <String, dynamic>{'limit': 200},
+    );
+    for (final key in fallbackKeys) {
+      final vendorKeyId = (key['vendorKeyId'] ?? '').toString().trim().toUpperCase();
+      if (vendorKeyId == normalizedMac) {
+        final id = (key['id'] ?? '').toString().trim();
+        if (id.isNotEmpty) return id;
+      }
+    }
+    return null;
+  }
+
+  String _formatDecisionReasons(dynamic reasons) {
+    if (reasons is List) {
+      final values = reasons.map((item) => item.toString()).where((item) => item.isNotEmpty).toList();
+      if (values.isNotEmpty) return values.join(', ');
+    }
+    return 'unknown reason';
+  }
+
+  bool _isCmd10SwitchReport(BleKeyOperationResult result) {
+    final cmd = _extractCommand(result.obj);
+    if (cmd == 10) return true;
+    final text = (result.objText ?? result.obj?.toString() ?? '').toLowerCase();
+    return text.contains('cmd=10') ||
+        text.contains('cmd:10') ||
+        text.contains('command=10') ||
+        text.contains('command:10');
+  }
+
+  int? _extractCommand(Object? value) {
+    if (value is Map) {
+      final map = Map<String, dynamic>.from(value);
+      final direct = _toInt(map['cmd']) ?? _toInt(map['command']);
+      if (direct != null) return direct;
+      for (final nested in map.values) {
+        final cmd = _extractCommand(nested);
+        if (cmd != null) return cmd;
+      }
+      return null;
+    }
+    if (value is List) {
+      for (final item in value) {
+        final cmd = _extractCommand(item);
+        if (cmd != null) return cmd;
+      }
+      return null;
+    }
+    if (value == null) return null;
+    final text = value.toString();
+    final match = RegExp(r'cmd\s*[=:]\s*(\d+)', caseSensitive: false).firstMatch(text) ??
+        RegExp(r'command\s*[=:]\s*(\d+)', caseSensitive: false).firstMatch(text);
+    if (match == null) return null;
+    return int.tryParse(match.group(1) ?? '');
+  }
+
+  int? _toInt(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
   }
 
   @override

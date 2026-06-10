@@ -28,6 +28,9 @@ class GlobalUser extends ChangeNotifier {
     refreshToken = prefs.getString(_keyRefreshToken);
     username = prefs.getString(_keyUsername);
     rememberMe = prefs.getBool(_keyRememberMe) ?? false;
+    debugPrint(
+      '[GlobalUser] loadFromStorage token=${_preview(token)} refresh=${_preview(refreshToken)} user=$username rememberMe=$rememberMe',
+    );
     notifyListeners();
   }
 
@@ -49,31 +52,23 @@ class GlobalUser extends ChangeNotifier {
     bool rememberMe = false,
   }) async {
     final body = await Api.login(username: username, password: password);
-    final nextToken = (body['access_token'] ?? body['token'] ?? '') as String;
+    final nextToken = _readTokenValue(body, ['access_token', 'token']) ?? '';
     final nextRefreshToken =
-        (body['refresh_token'] ?? body['refreshToken'] ?? '') as String;
+        _readTokenValue(body, ['refresh_token', 'refreshToken']) ?? '';
+    debugPrint(
+      '[GlobalUser] login parsed access=${_preview(nextToken)} refresh=${_preview(nextRefreshToken)}',
+    );
 
     if (nextToken.isEmpty) {
       throw Exception('服务器未返回有效 token');
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyToken, nextToken);
-    if (nextRefreshToken.isNotEmpty) {
-      await prefs.setString(_keyRefreshToken, nextRefreshToken);
-    }
-    await prefs.setString(_keyUsername, username);
-    await prefs.setBool(_keyRememberMe, rememberMe);
-    if (rememberMe) {
-      await prefs.setString(_keySavedUsername, username);
-    } else {
-      await prefs.remove(_keySavedUsername);
-    }
-
-    token = nextToken;
-    refreshToken = nextRefreshToken;
-    this.username = username;
-    this.rememberMe = rememberMe;
+    await persistTokens(
+      accessToken: nextToken,
+      refreshToken: nextRefreshToken,
+      username: username,
+      rememberMe: rememberMe,
+    );
 
     try {
       await fetchProfile();
@@ -94,6 +89,51 @@ class GlobalUser extends ChangeNotifier {
       username = profileAlias.toString();
     }
     notifyListeners();
+  }
+
+  Future<void> persistTokens({
+    required String accessToken,
+    String? refreshToken,
+    String? username,
+    bool? rememberMe,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyToken, accessToken);
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await prefs.setString(_keyRefreshToken, refreshToken);
+    }
+    if (username != null) {
+      await prefs.setString(_keyUsername, username);
+      this.username = username;
+    }
+    if (rememberMe != null) {
+      await prefs.setBool(_keyRememberMe, rememberMe);
+      this.rememberMe = rememberMe;
+      if (rememberMe && username != null) {
+        await prefs.setString(_keySavedUsername, username);
+      } else if (!rememberMe) {
+        await prefs.remove(_keySavedUsername);
+      }
+    }
+
+    token = accessToken;
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      this.refreshToken = refreshToken;
+    }
+    debugPrint(
+      '[GlobalUser] persistTokens access=${_preview(token)} refresh=${_preview(this.refreshToken)}',
+    );
+    notifyListeners();
+  }
+
+  String? _readTokenValue(Map<String, dynamic> body, List<String> keys) {
+    for (final key in keys) {
+      final value = body[key]?.toString();
+      if (value != null && value.isNotEmpty) {
+        return value;
+      }
+    }
+    return null;
   }
 
   Future<void> logout() async {
@@ -130,6 +170,13 @@ class GlobalUser extends ChangeNotifier {
     refreshToken = null;
     username = null;
     email = null;
+    debugPrint('[GlobalUser] local session cleared');
     notifyListeners();
+  }
+
+  String _preview(String? value) {
+    if (value == null || value.isEmpty) return '<empty>';
+    final head = value.length <= 12 ? value : value.substring(0, 12);
+    return '$head...(${value.length})';
   }
 }

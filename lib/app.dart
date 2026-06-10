@@ -32,6 +32,16 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     );
     WidgetsBinding.instance.addObserver(this);
     LocaleStore.instance.loadFromStorage();
+    Api.registerAuthStateHandlers(
+      getAccessToken: () => GlobalUser.instance.token,
+      getRefreshToken: () => GlobalUser.instance.refreshToken,
+      persistTokens: ({required accessToken, refreshToken}) {
+        return GlobalUser.instance.persistTokens(
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        );
+      },
+    );
     Api.registerUnauthorizedHandler(() async {
       await GlobalUser.instance.clearLocalSession();
       final navigator = NavigationService.navigatorKey.currentState;

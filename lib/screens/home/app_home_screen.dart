@@ -259,9 +259,6 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     final l10n = AppLocalizations.of(context)!;
     final nameController = TextEditingController(text: initial?.name ?? '');
     final numberController = TextEditingController(text: initial?.number ?? '');
-    final ownerController = TextEditingController(
-      text: initial?.ownerUserId ?? '',
-    );
     var keyType = initial?.keyType ?? 'standard';
     var status = initial?.status ?? 'active';
     var currentStep = 0;
@@ -335,9 +332,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                   vendorKeyId: number,
                                                   keyType: keyType,
                                                   status: status,
-                                                  ownerUserId: ownerController
-                                                      .text
-                                                      .trim(),
+                                                  bleMac: selectedMac,
                                                   readKeyInfo: readKeyInfo,
                                                 ),
                                             updatePayload:
@@ -345,9 +340,6 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                   name: name,
                                                   keyType: keyType,
                                                   status: status,
-                                                  ownerUserId: ownerController
-                                                      .text
-                                                      .trim(),
                                                 ),
                                           ),
                                         );
@@ -473,9 +465,11 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                           >(),
                                                       selectedMac,
                                                     );
-                                                final vendorKeyId =
-                                                    _extractHardwareId(info) ??
-                                                    selectedMac;
+                                                final vendorKeyId = selectedMac;
+                                                final generatedName =
+                                                    _defaultBleKeyName(
+                                                      vendorKeyId,
+                                                    );
                                                 setSheetState(() {
                                                   readKeyInfo = info;
                                                   numberController.text =
@@ -483,11 +477,15 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                   keyType = _keyTypeFromInfo(
                                                     info,
                                                   );
-                                                  if (nameController.text
-                                                      .trim()
-                                                      .isEmpty) {
+                                                  final currentName =
+                                                      nameController.text
+                                                          .trim();
+                                                  if (currentName.isEmpty ||
+                                                      currentName.startsWith(
+                                                        'BLE Key ',
+                                                      )) {
                                                     nameController.text =
-                                                        'BLE Key $vendorKeyId';
+                                                        generatedName;
                                                   }
                                                   sdkMessage =
                                                       '${l10n.keyWizardReadSuccess}: $vendorKeyId';
@@ -582,14 +580,6 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                   },
                                 ),
                                 const SizedBox(height: 8),
-                                TextField(
-                                  controller: ownerController,
-                                  decoration: InputDecoration(
-                                    labelText: l10n.keyWizardOwnerId,
-                                    helperText: l10n.keyWizardOwnerIdHelper,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
                                 DropdownButtonFormField<String>(
                                   initialValue: status,
                                   decoration: InputDecoration(
@@ -646,10 +636,6 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${l10n.keyWizardOwnerSummary}: ${ownerController.text.trim().isEmpty ? '-' : ownerController.text.trim()}',
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
                                     '${l10n.keyWizardStatusSummary}: $status',
                                   ),
                                 ],
@@ -674,16 +660,18 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     required String vendorKeyId,
     required String keyType,
     required String status,
-    required String ownerUserId,
+    required String bleMac,
     JsonMap? readKeyInfo,
   }) {
-    final normalizedOwner = ownerUserId.isEmpty ? null : ownerUserId;
     final metadata = <String, dynamic>{
       'provisioningFlow': 'app_key_create',
       'department': 'Cereb',
       'source': 'android_app',
       'capturedAt': DateTime.now().toIso8601String(),
     };
+    if (bleMac.isNotEmpty) {
+      metadata['bleMac'] = bleMac;
+    }
     if (readKeyInfo != null) {
       metadata['readKeyInfo'] = readKeyInfo;
     }
@@ -691,8 +679,6 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       'vendorKeyId': vendorKeyId,
       'keyType': keyType,
       'name': name,
-      'assignedUserId': normalizedOwner,
-      'ownerUserId': normalizedOwner,
       'status': status,
       'metadata': metadata,
     };
@@ -702,14 +688,10 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     required String name,
     required String keyType,
     required String status,
-    required String ownerUserId,
   }) {
-    final normalizedOwner = ownerUserId.isEmpty ? null : ownerUserId;
     return <String, dynamic>{
       'name': name,
       'keyType': keyType,
-      'assignedUserId': normalizedOwner,
-      'ownerUserId': normalizedOwner,
       'status': status,
       'metadata': <String, dynamic>{
         'department': 'Cereb',
@@ -1228,9 +1210,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     final result = await controller.waitForOperationResult(
       expectedOperationName: 'Report',
       where: (result) {
-        final obj = result.obj ?? '';
-        return _extractCommand(obj) == 19 ||
-            obj.toLowerCase().contains('cmd=19');
+        final objText = result.objText ?? result.obj?.toString() ?? '';
+        return _extractCommand(objText) == 19 ||
+            objText.toLowerCase().contains('cmd=19');
       },
       timeout: const Duration(seconds: 90),
     );
@@ -1238,25 +1220,69 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   }
 
   JsonMap _sdkResultToJson(String operationName, BleKeyOperationResult result) {
-    final obj = result.obj ?? '';
+    final obj = _normalizeSdkObject(result.obj);
+    final objText = result.objText ?? obj?.toString() ?? '';
     final json = <String, dynamic>{
       'operation': operationName,
       'ret': result.ret,
       'code': result.code,
       'msg': result.msg,
       'obj': obj,
+      'objText': objText,
     };
-    final id = _extractHardwareIdFromText(obj);
+    final id = _extractHardwareIdFromObject(obj) ?? _extractHardwareIdFromText(objText);
     if (id != null) json['id'] = id;
-    final cmd = _extractCommand(obj);
+    final cmd = _extractCommand(objText);
     if (cmd != null) json['cmd'] = cmd;
     return json;
   }
 
+  Object _normalizeSdkObject(Object? value) {
+    if (value is Map) {
+      return Map<String, dynamic>.from(value);
+    }
+    if (value is List) {
+      return value
+          .map<Object>((item) => _normalizeSdkObject(item))
+          .toList(growable: false);
+    }
+    return value ?? '';
+  }
+
+  String _defaultBleKeyName(String identifier) => 'BLE Key $identifier';
+
+  String? _extractHardwareIdFromObject(Object? value) {
+    if (value is Map) {
+      final json = Map<String, dynamic>.from(value);
+      for (final key in const ['mac', 'vendorKeyId', 'keyId', 'id', 'sign']) {
+        final candidate = json[key]?.toString().trim();
+        if (candidate != null && candidate.isNotEmpty) {
+          return candidate;
+        }
+      }
+      for (final nestedValue in json.values) {
+        final nested = _extractHardwareIdFromObject(nestedValue);
+        if (nested != null) return nested;
+      }
+      return null;
+    }
+    if (value is List) {
+      for (final item in value) {
+        final nested = _extractHardwareIdFromObject(item);
+        if (nested != null) return nested;
+      }
+      return null;
+    }
+    return value == null ? null : _extractHardwareIdFromText(value.toString());
+  }
+
   String? _extractHardwareId(JsonMap sdkResult) {
-    final direct = sdkResult['id']?.toString();
+    final direct = _extractHardwareIdFromObject(sdkResult['id']) ??
+        _extractHardwareIdFromObject(sdkResult['obj']);
     if (direct != null && direct.isNotEmpty) return direct;
-    return _extractHardwareIdFromText(sdkResult['obj']?.toString() ?? '');
+    return _extractHardwareIdFromText(
+      sdkResult['objText']?.toString() ?? sdkResult['obj']?.toString() ?? '',
+    );
   }
 
   String? _extractHardwareIdFromText(String text) {
@@ -1283,7 +1309,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   }
 
   String _keyTypeFromInfo(JsonMap sdkResult) {
-    final obj = (sdkResult['obj'] ?? '').toString().toLowerCase();
+    final obj = (sdkResult['objText'] ?? sdkResult['obj'] ?? '')
+        .toString()
+        .toLowerCase();
     if (obj.contains('finger')) return 'fingerprint';
     if (obj.contains('display') || obj.contains('screen')) return 'display';
     if (obj.contains('4g') || obj.contains('cellular')) return 'cellular';
