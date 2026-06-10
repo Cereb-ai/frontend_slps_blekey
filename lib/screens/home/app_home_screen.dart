@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blekey_sdk/flutter_blekey_sdk.dart';
 import 'package:provider/provider.dart';
@@ -152,9 +153,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       await _loadKeysFromApi();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('钥匙创建失败: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('钥匙创建失败: ${_formatRequestError(error)}')),
+      );
     } finally {
       if (mounted) setState(() => _keyLoading = false);
     }
@@ -173,12 +174,49 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       await _loadLocksFromApi();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('锁创建失败: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('锁创建失败: ${_formatRequestError(error)}')),
+      );
     } finally {
       if (mounted) setState(() => _lockLoading = false);
     }
+  }
+
+  String _formatRequestError(Object error) {
+    if (error is DioException) {
+      final status = error.response?.statusCode;
+      final details = _extractErrorDetails(error.response?.data);
+      if (status != null && details.isNotEmpty) {
+        return 'HTTP $status: $details';
+      }
+      if (details.isNotEmpty) return details;
+      if (status != null) return 'HTTP $status';
+      return error.message ?? error.toString();
+    }
+    return error.toString();
+  }
+
+  String _extractErrorDetails(dynamic data) {
+    if (data == null) return '';
+    if (data is String) return data;
+    if (data is List) {
+      final parts = data
+          .map((e) => _extractErrorDetails(e))
+          .where((e) => e.isNotEmpty);
+      return parts.join('; ');
+    }
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      for (final key in const ['message', 'error', 'msg', 'detail']) {
+        final text = map[key]?.toString().trim();
+        if (text != null && text.isNotEmpty) return text;
+      }
+      final errors = map['errors'] ?? map['details'] ?? map['violations'];
+      final nested = _extractErrorDetails(errors);
+      if (nested.isNotEmpty) return nested;
+      return map.toString();
+    }
+    return data.toString();
   }
 
   Future<void> _deleteKey(_KeyItem item) async {
@@ -394,14 +432,23 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                     });
                                                     try {
                                                       await controller
+                                                          .ensureReady();
+                                                      await controller
                                                           .startScan(
                                                             timeoutMs: 10000,
                                                           );
+                                                      setSheetState(() {
+                                                        sdkMessage = l10n
+                                                            .keyWizardScanStarted;
+                                                      });
+                                                    } catch (error) {
+                                                      setSheetState(() {
+                                                        sdkMessage =
+                                                            '${l10n.keyWizardReadFailed}: ${_formatRequestError(error)}';
+                                                      });
                                                     } finally {
                                                       setSheetState(() {
                                                         sdkBusy = false;
-                                                        sdkMessage = l10n
-                                                            .keyWizardScanStarted;
                                                       });
                                                     }
                                                   },
@@ -677,10 +724,12 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       metadata['readKeyInfo'] = readKeyInfo;
     }
     return <String, dynamic>{
+      'vendor': 'smartlock',
       'vendorKeyId': vendorKeyId,
       'keyType': keyType,
       'name': name,
-      'status': status,
+      'ownerUserId': null,
+      'sign': 1,
       'metadata': metadata,
     };
   }
@@ -841,14 +890,22 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
                                                     l10n.keyWizardScanning;
                                               });
                                               try {
+                                                await controller.ensureReady();
                                                 await controller.startScan(
                                                   timeoutMs: 10000,
                                                 );
+                                                setSheetState(() {
+                                                  sdkMessage =
+                                                      l10n.keyWizardScanStarted;
+                                                });
+                                              } catch (error) {
+                                                setSheetState(() {
+                                                  sdkMessage =
+                                                      '${l10n.lockWizardPrepareFailed}: ${_formatRequestError(error)}';
+                                                });
                                               } finally {
                                                 setSheetState(() {
                                                   sdkBusy = false;
-                                                  sdkMessage =
-                                                      l10n.keyWizardScanStarted;
                                                 });
                                               }
                                             },
@@ -1122,8 +1179,16 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   }) {
     final metadata = <String, dynamic>{
       'provisioningFlow': 'app_lock_create',
-      'location': location,
+      'captureMethod': 'ReadLockId',
+      'usingKeyVendorKeyId': '',
+      'department': 'Cereb',
+      'status': 'uninstalled',
       'switchState': switchState,
+      'battery': 100,
+      'signal': 'Unknown',
+      'location': location,
+      'latitude': null,
+      'longitude': null,
       'source': 'android_app',
       'capturedAt': DateTime.now().toIso8601String(),
     };
@@ -1131,6 +1196,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       metadata['readLockId'] = readLockId;
     }
     return <String, dynamic>{
+      'vendor': 'smartlock',
       'vendorLockId': vendorLockId,
       'name': name,
       'assetId': null,

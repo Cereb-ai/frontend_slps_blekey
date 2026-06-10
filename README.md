@@ -69,17 +69,23 @@ samples, guidance on mobile development, and a full API reference.
 
 ## ADB 日志监测
 
-插件 Android 日志 tag 固定为 `FlutterBlekeySdk`。连接手机后可以这样看厂家 SDK 调用链路：
+| Tag                | 来源            | 内容                                     |
+| ------------------ | --------------- | ---------------------------------------- |
+| `FlutterBlekeySdk` | SDK 原生 Kotlin | BLE 指令、扫描回调、连接状态             |
+| `FlutterBlekeyApp` | App Dart 层     | HTTP 请求体/响应体、Token 刷新、错误详情 |
 
 ```bash
-adb logcat | grep FlutterBlekeySdk
-```
+# 同时看两边（推荐）
+adb logcat | grep FlutterBlekey
 
-如果想先清空旧日志再复现问题：
+# 只看 SDK 原生
+adb logcat -s FlutterBlekeySdk
 
-```bash
-adb logcat -c
-adb logcat | grep FlutterBlekeySdk
+# 只看 App Dart
+adb logcat -s FlutterBlekeyApp
+
+# 清空旧日志后再复现
+adb logcat -c && adb logcat | grep FlutterBlekey
 ```
 
 重点看这些日志：

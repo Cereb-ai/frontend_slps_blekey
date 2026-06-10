@@ -80,7 +80,15 @@ abstract final class Api {
                 'skipRefresh': skipAuthRefresh,
                 'retried': options.extra[_retriedWithFreshTokenKey] == true,
               });
+              _httpLog('>> ${options.method} ${options.path}', options.data);
               handler.next(options);
+            },
+            onResponse: (response, handler) {
+              _httpLog(
+                '<< ${response.statusCode} ${response.requestOptions.method} ${response.requestOptions.path}',
+                response.data,
+              );
+              handler.next(response);
             },
             onError: (error, handler) {
               _handleError(error, handler);
@@ -438,9 +446,11 @@ abstract final class Api {
     return <String, dynamic>{};
   }
 
+  static const String _logTag = 'FlutterBlekeyApp';
+
   static void _authLog(String event, [Map<String, dynamic>? fields]) {
     if (!enableAuthDebugLog) return;
-    developer.log(fields == null ? event : '$event | $fields', name: 'ApiAuth');
+    developer.log(fields == null ? event : '$event | $fields', name: _logTag);
   }
 
   static void _applyTenantHeader(Map<String, dynamic> headers, String tenant) {
@@ -462,5 +472,10 @@ abstract final class Api {
     final text = value?.toString() ?? 'null';
     if (text.length <= 220) return text;
     return '${text.substring(0, 220)}...';
+  }
+
+  static void _httpLog(String label, dynamic body) {
+    if (!enableAuthDebugLog) return;
+    developer.log('$label  body=${_short(body)}', name: _logTag);
   }
 }
