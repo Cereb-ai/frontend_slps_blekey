@@ -17,8 +17,9 @@ Future<LockEditorResult?> showLockEditorSheet(
   final l10n = AppLocalizations.of(context)!;
   final nameController = TextEditingController(text: initial?.name ?? '');
   final numberController = TextEditingController(text: initial?.number ?? '');
-  final locationController =
-      TextEditingController(text: initial?.location ?? '');
+  final locationController = TextEditingController(
+    text: initial?.location ?? '',
+  );
   var switchState = initial?.switchState ?? 'locked';
   var lockStatus = initial?.status ?? 'uninstalled';
   var currentStep = 0;
@@ -70,10 +71,10 @@ Future<LockEditorResult?> showLockEditorSheet(
                               onPressed: isLast
                                   ? () {
                                       final name = nameController.text.trim();
-                                      final number =
-                                          numberController.text.trim();
-                                      final location =
-                                          locationController.text.trim();
+                                      final number = numberController.text
+                                          .trim();
+                                      final location = locationController.text
+                                          .trim();
                                       if (name.isEmpty || number.isEmpty) {
                                         ScaffoldMessenger.of(
                                           context,
@@ -90,20 +91,20 @@ Future<LockEditorResult?> showLockEditorSheet(
                                         LockEditorResult(
                                           createPayload:
                                               _buildLockCreatePayload(
-                                            name: name,
-                                            vendorLockId: number,
-                                            location: location,
-                                            switchState: switchState,
-                                            lockStatus: lockStatus,
-                                            readLockId: readLockId,
-                                          ),
+                                                name: name,
+                                                vendorLockId: number,
+                                                location: location,
+                                                switchState: switchState,
+                                                lockStatus: lockStatus,
+                                                readLockId: readLockId,
+                                              ),
                                           updatePayload:
                                               _buildLockUpdatePayload(
-                                            name: name,
-                                            location: location,
-                                            switchState: switchState,
-                                            lockStatus: lockStatus,
-                                          ),
+                                                name: name,
+                                                location: location,
+                                                switchState: switchState,
+                                                lockStatus: lockStatus,
+                                              ),
                                         ),
                                       );
                                     }
@@ -173,9 +174,7 @@ Future<LockEditorResult?> showLockEditorSheet(
                                               );
                                             }
                                           },
-                                    icon: const Icon(
-                                      Icons.bluetooth_searching,
-                                    ),
+                                    icon: const Icon(Icons.bluetooth_searching),
                                     label: Text(
                                       controller.scanning
                                           ? l10n.keyWizardScanningShort
@@ -207,53 +206,50 @@ Future<LockEditorResult?> showLockEditorSheet(
                                     onChanged: sdkBusy
                                         ? null
                                         : (value) => setSheetState(
-                                            () => selectedMac = value ?? ''),
+                                            () => selectedMac = value ?? '',
+                                          ),
                                   ),
                                   const SizedBox(height: 8),
                                   FilledButton.tonalIcon(
-                                    onPressed:
-                                        sdkBusy || selectedMac.isEmpty
-                                            ? null
-                                            : () async {
-                                                setSheetState(() {
-                                                  sdkBusy = true;
-                                                  sdkMessage = l10n
-                                                      .lockWizardPreparingCollector;
-                                                });
-                                                try {
-                                                  await _prepareLockCollector(
-                                                    context
-                                                        .read<
-                                                            BleKeyController>(),
-                                                    selectedMac,
-                                                  );
-                                                  setSheetState(() {
-                                                    sdkMessage = l10n
-                                                        .lockWizardCollectorReady;
-                                                  });
-                                                } catch (error) {
-                                                  setSheetState(() {
-                                                    sdkMessage =
-                                                        '${l10n.lockWizardPrepareFailed}: $error';
-                                                  });
-                                                } finally {
-                                                  setSheetState(
-                                                    () => sdkBusy = false,
-                                                  );
-                                                }
-                                              },
+                                    onPressed: sdkBusy || selectedMac.isEmpty
+                                        ? null
+                                        : () async {
+                                            setSheetState(() {
+                                              sdkBusy = true;
+                                              sdkMessage = l10n
+                                                  .lockWizardPreparingCollector;
+                                            });
+                                            try {
+                                              await _prepareLockCollector(
+                                                context
+                                                    .read<BleKeyController>(),
+                                                selectedMac,
+                                              );
+                                              setSheetState(() {
+                                                sdkMessage = l10n
+                                                    .lockWizardCollectorReady;
+                                              });
+                                            } catch (error) {
+                                              setSheetState(() {
+                                                sdkMessage =
+                                                    '${l10n.lockWizardPrepareFailed}: $error';
+                                              });
+                                            } finally {
+                                              setSheetState(
+                                                () => sdkBusy = false,
+                                              );
+                                            }
+                                          },
                                     icon: sdkBusy
                                         ? const SizedBox(
                                             width: 16,
                                             height: 16,
-                                            child:
-                                                CircularProgressIndicator(
+                                            child: CircularProgressIndicator(
                                               strokeWidth: 2,
                                             ),
                                           )
                                         : const Icon(Icons.sensors),
-                                    label:
-                                        Text(l10n.lockWizardPrepareAction),
+                                    label: Text(l10n.lockWizardPrepareAction),
                                   ),
                                   if (sdkMessage.isNotEmpty) ...[
                                     const SizedBox(height: 8),
@@ -285,10 +281,12 @@ Future<LockEditorResult?> showLockEditorSheet(
                                         try {
                                           final report =
                                               await _waitForLockIdReport(
-                                            context.read<BleKeyController>(),
+                                                context
+                                                    .read<BleKeyController>(),
+                                              );
+                                          final lockId = _extractHardwareId(
+                                            report,
                                           );
-                                          final lockId =
-                                              _extractHardwareId(report);
                                           if (lockId == null ||
                                               lockId.isEmpty) {
                                             throw StateError(
@@ -312,9 +310,7 @@ Future<LockEditorResult?> showLockEditorSheet(
                                                 '${l10n.lockWizardReadFailed}: $error';
                                           });
                                         } finally {
-                                          setSheetState(
-                                            () => sdkBusy = false,
-                                          );
+                                          setSheetState(() => sdkBusy = false);
                                         }
                                       },
                                 icon: sdkBusy
@@ -338,8 +334,7 @@ Future<LockEditorResult?> showLockEditorSheet(
                                 enabled: initial == null,
                                 decoration: InputDecoration(
                                   labelText: l10n.lockWizardLockNumber,
-                                  helperText:
-                                      l10n.lockWizardLockNumberHelper,
+                                  helperText: l10n.lockWizardLockNumberHelper,
                                 ),
                               ),
                             ],
@@ -455,9 +450,7 @@ Future<LockEditorResult?> showLockEditorSheet(
                                   '${l10n.lockWizardLocationSummary}: ${locationController.text.trim().isEmpty ? '-' : locationController.text.trim()}',
                                 ),
                                 const SizedBox(height: 8),
-                                Text(
-                                  'Status: $lockStatus',
-                                ),
+                                Text('Status: $lockStatus'),
                                 const SizedBox(height: 8),
                                 Text(
                                   '${l10n.lockWizardSwitchStateSummary}: ${switchState == 'locked' ? l10n.lockStateLocked : l10n.lockStateUnlocked}',
@@ -513,7 +506,8 @@ Future<JsonMap> _waitForLockIdReport(BleKeyController controller) async {
     expectedOperationName: 'Report',
     where: (result) {
       final objText = result.objText ?? result.obj?.toString() ?? '';
-      return _extractCommand(objText) == 19 ||
+      return _extractCommand(result.obj) == 19 ||
+          _extractCommand(objText) == 19 ||
           objText.toLowerCase().contains('cmd=19');
     },
     timeout: const Duration(seconds: 90),
@@ -521,8 +515,7 @@ Future<JsonMap> _waitForLockIdReport(BleKeyController controller) async {
   return _sdkResultToJson('Report', result);
 }
 
-JsonMap _sdkResultToJson(
-    String operationName, BleKeyOperationResult result) {
+JsonMap _sdkResultToJson(String operationName, BleKeyOperationResult result) {
   final obj = _normalizeSdkObject(result.obj);
   final objText = result.objText ?? obj.toString();
   final json = <String, dynamic>{
@@ -533,10 +526,10 @@ JsonMap _sdkResultToJson(
     'obj': obj,
     'objText': objText,
   };
-  final id = _extractHardwareIdFromObject(obj) ??
-      _extractHardwareIdFromText(objText);
+  final id =
+      _extractHardwareIdFromObject(obj) ?? _extractHardwareIdFromText(objText);
   if (id != null) json['id'] = id;
-  final cmd = _extractCommand(objText);
+  final cmd = _extractCommand(obj) ?? _extractCommand(objText);
   if (cmd != null) json['cmd'] = cmd;
   return json;
 }
@@ -553,9 +546,33 @@ Object _normalizeSdkObject(Object? value) {
   return value ?? '';
 }
 
-int? _extractCommand(String text) {
-  final match =
-      RegExp(r'cmd\s*[=:]\s*(\d+)', caseSensitive: false).firstMatch(text);
+int? _extractCommand(Object? value) {
+  if (value is Map) {
+    final json = Map<String, dynamic>.from(value);
+    for (final key in const ['cmd', 'command']) {
+      final candidate = json[key];
+      if (candidate is num) return candidate.toInt();
+      final parsed = int.tryParse(candidate?.toString() ?? '');
+      if (parsed != null) return parsed;
+    }
+    for (final nestedValue in json.values) {
+      final nested = _extractCommand(nestedValue);
+      if (nested != null) return nested;
+    }
+    return null;
+  }
+  if (value is List) {
+    for (final item in value) {
+      final nested = _extractCommand(item);
+      if (nested != null) return nested;
+    }
+    return null;
+  }
+  final text = value?.toString() ?? '';
+  final match = RegExp(
+    r'cmd\s*[=:]\s*(\d+)',
+    caseSensitive: false,
+  ).firstMatch(text);
   if (match == null) return null;
   return int.tryParse(match.group(1) ?? '');
 }
@@ -563,7 +580,16 @@ int? _extractCommand(String text) {
 String? _extractHardwareIdFromObject(Object? value) {
   if (value is Map) {
     final json = Map<String, dynamic>.from(value);
-    for (final key in const ['mac', 'vendorKeyId', 'keyId', 'id', 'sign']) {
+    for (final key in const [
+      'lockid',
+      'lockId',
+      'vendorLockId',
+      'keyId',
+      'vendorKeyId',
+      'id',
+      'mac',
+      'sign',
+    ]) {
       final candidate = json[key]?.toString().trim();
       if (candidate != null && candidate.isNotEmpty) {
         return candidate;
@@ -582,9 +608,7 @@ String? _extractHardwareIdFromObject(Object? value) {
     }
     return null;
   }
-  return value == null
-      ? null
-      : _extractHardwareIdFromText(value.toString());
+  return value == null ? null : _extractHardwareIdFromText(value.toString());
 }
 
 String? _extractHardwareIdFromText(String text) {
@@ -602,7 +626,8 @@ String? _extractHardwareIdFromText(String text) {
 }
 
 String? _extractHardwareId(JsonMap sdkResult) {
-  final direct = _extractHardwareIdFromObject(sdkResult['id']) ??
+  final direct =
+      _extractHardwareIdFromObject(sdkResult['id']) ??
       _extractHardwareIdFromObject(sdkResult['obj']);
   if (direct != null && direct.isNotEmpty) return direct;
   return _extractHardwareIdFromText(
