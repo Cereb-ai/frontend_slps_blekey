@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,6 +18,7 @@ class _VendorBleKeyScreenState extends State<VendorBleKeyScreen> {
   int _selectedOperation = 0;
   String? _selectedMac;
   bool _unlock = false;
+  BleKeyController? _bleController;
   final TextEditingController _secretController = TextEditingController(
     text: 'FFFFFFFFFFFFFFFFFFFF',
   );
@@ -46,12 +49,18 @@ class _VendorBleKeyScreenState extends State<VendorBleKeyScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<BleKeyController>().preparePermissions();
+      final controller = context.read<BleKeyController>();
+      _bleController = controller;
+      controller.preparePermissions();
     });
   }
 
   @override
   void dispose() {
+    final controller = _bleController;
+    if (controller != null && controller.scanning) {
+      unawaited(controller.stopScan());
+    }
     _secretController.dispose();
     _newSecretController.dispose();
     _signController.dispose();

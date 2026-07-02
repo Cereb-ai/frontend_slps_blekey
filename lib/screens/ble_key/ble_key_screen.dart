@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,13 +18,26 @@ class BleKeyScreen extends StatefulWidget {
 }
 
 class _BleKeyScreenState extends State<BleKeyScreen> {
+  BleKeyController? _bleController;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<BleKeyController>().preparePermissions();
+      final controller = context.read<BleKeyController>();
+      _bleController = controller;
+      controller.preparePermissions();
     });
+  }
+
+  @override
+  void dispose() {
+    final controller = _bleController;
+    if (controller != null && controller.scanning) {
+      unawaited(controller.stopScan());
+    }
+    super.dispose();
   }
 
   @override

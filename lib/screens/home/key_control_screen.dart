@@ -97,11 +97,28 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
 
   @override
   void dispose() {
-    _bleController?.removeListener(_onBleControllerChanged);
+    final controller = _bleController;
+    controller?.removeListener(_onBleControllerChanged);
+    if (controller != null) {
+      unawaited(_releaseBleResources(controller));
+    }
     _secretController.dispose();
     _signController.dispose();
     _licController.dispose();
     super.dispose();
+  }
+
+  Future<void> _releaseBleResources(BleKeyController controller) async {
+    final shouldDisconnect =
+        _selectedMac != null &&
+        (_connectionPhase == _KeyConnectionPhase.connected ||
+            _connectionPhase == _KeyConnectionPhase.connecting);
+    final args = _baseSdkArgs();
+    if (controller.scanning) {
+      await controller.stopScan();
+    }
+    if (!shouldDisconnect) return;
+    await controller.executeVendorOperation(index: 1, args: args);
   }
 
   void _onBleControllerChanged() {
@@ -381,8 +398,12 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       }
 
       // 2) Backend authorization for this (key, lock) pair.
-      final provisioningConfig = await Api.getProvisioningConfig(token: token);
-      final decisionAt = AccessDecisionTime.resolveDecisionAt(provisioningConfig);
+      final provisioningConfig = await _getProvisioningConfigSafely(
+        token: token,
+      );
+      final decisionAt = AccessDecisionTime.resolveDecisionAt(
+        provisioningConfig,
+      );
       final decision = await Api.decideAccess(
         token: token,
         keyId: widget.keyId,
@@ -395,7 +416,9 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       final allowed = decision['allowed'] == true;
       if (!allowed) {
         final reasons = _formatDecisionReasons(decision['reasons']);
-        final blockedByGroupLockout = _reasonsIndicateGroupLockout(decision['reasons']);
+        final blockedByGroupLockout = _reasonsIndicateGroupLockout(
+          decision['reasons'],
+        );
         if (blockedByGroupLockout && mounted) {
           await _showGroupLockoutBlockedDialog(
             reasons: reasons,
@@ -406,7 +429,9 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       }
 
       // 3) SetDateTime (use platform timezone from provisioning config)
-      final keyLocalTime = AccessDecisionTime.resolveKeyLocalTime(provisioningConfig);
+      final keyLocalTime = AccessDecisionTime.resolveKeyLocalTime(
+        provisioningConfig,
+      );
       await controller.executeVendorOperationAndWait(
         index: 15,
         expectedOperationName: 'SetDateTime',
@@ -497,11 +522,25 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       'sign': int.tryParse(_signController.text.trim()) ?? 1,
       'lic': _licController.text.trim(),
       'lockIds': _selectedLock?.number ?? '',
-      if (keyLocalTime != null && keyLocalTime.isNotEmpty) 'time': keyLocalTime,
+      if (keyLocalTime != null && keyLocalTime.isNotEmpty)
+        'time': keyLocalTime,
     };
   }
 
-  Map<String, Object?> _sdkArgs({String? keyLocalTime}) => _baseSdkArgs(keyLocalTime: keyLocalTime);
+  Map<String, Object?> _sdkArgs({String? keyLocalTime}) =>
+      _baseSdkArgs(keyLocalTime: keyLocalTime);
+
+  Future<Map<String, dynamic>?> _getProvisioningConfigSafely({
+    required String token,
+  }) async {
+    try {
+      return await Api.getProvisioningConfig(
+        token: token,
+      ).timeout(const Duration(seconds: 5));
+    } catch (_) {
+      return null;
+    }
+  }
 
   String _formatDecisionReasons(dynamic reasons) {
     if (reasons is List) {

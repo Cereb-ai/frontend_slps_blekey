@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -17,6 +19,7 @@ class OnlineSwitchLockScreen extends StatefulWidget {
 class _OnlineSwitchLockScreenState extends State<OnlineSwitchLockScreen> {
   String? _selectedMac;
   int? _runningStep;
+  BleKeyController? _bleController;
   final TextEditingController _secretController = TextEditingController(
     text: 'FFFFFFFFFFFFFFFFFFFF',
   );
@@ -39,12 +42,18 @@ class _OnlineSwitchLockScreenState extends State<OnlineSwitchLockScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<BleKeyController>().preparePermissions();
+      final controller = context.read<BleKeyController>();
+      _bleController = controller;
+      controller.preparePermissions();
     });
   }
 
   @override
   void dispose() {
+    final controller = _bleController;
+    if (controller != null && controller.scanning) {
+      unawaited(controller.stopScan());
+    }
     _secretController.dispose();
     _signController.dispose();
     _licController.dispose();
