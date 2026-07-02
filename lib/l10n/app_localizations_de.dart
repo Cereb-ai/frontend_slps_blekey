@@ -396,6 +396,29 @@ class AppLocalizationsDe extends AppLocalizations {
   String get keyUnlockKeyMacReadonly => 'Gebundene Schlüssel-MAC';
 
   @override
+  String get keyUnlockConnectionSection => 'Schlüsselverbindung';
+
+  @override
+  String get keyUnlockScanningKey => 'Schlüssel wird gescannt…';
+
+  @override
+  String get keyUnlockConnectingKey => 'Schlüssel wird verbunden…';
+
+  @override
+  String get keyUnlockKeyConnected => 'Schlüssel verbunden';
+
+  @override
+  String get keyUnlockKeyConnectFailed =>
+      'Schlüssel nicht gefunden oder Verbindung fehlgeschlagen. Bitte Schlüssel in der Nähe halten und erneut versuchen.';
+
+  @override
+  String get keyUnlockRetryConnect => 'Erneut scannen und verbinden';
+
+  @override
+  String get keyUnlockKeyNotConnected =>
+      'Schlüssel noch nicht verbunden. Bitte warten Sie auf die automatische Verbindung.';
+
+  @override
   String get keyUnlockAuthDenied => 'Autorisierung abgelehnt';
 
   @override

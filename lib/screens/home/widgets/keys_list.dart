@@ -98,6 +98,7 @@ class _KeysListState extends State<KeysList> {
         'keyId': item.id,
         'name': item.name,
         'number': item.number,
+        'bleMac': item.bleMac,
         'keyType': item.keyType,
       },
     );
@@ -199,6 +200,11 @@ class _KeysListState extends State<KeysList> {
     final id = (json['id'] ?? '').toString();
     final name = (json['name'] ?? json['vendorKeyId'] ?? id).toString();
     final number = (json['vendorKeyId'] ?? id).toString();
+    final metadataRaw = json['metadata'];
+    final metadata = metadataRaw is Map
+        ? Map<String, dynamic>.from(metadataRaw)
+        : const <String, dynamic>{};
+    final bleMac = _extractBleMac(metadata);
     final status = (json['status'] ?? 'active').toString();
     final keyType = (json['keyType'] ?? 'standard').toString();
     final ownerUserId = (json['ownerUserId'] ?? json['assignedUserId'] ?? '')
@@ -209,11 +215,35 @@ class _KeysListState extends State<KeysList> {
       id: id.isEmpty ? DateTime.now().microsecondsSinceEpoch.toString() : id,
       name: name,
       number: number,
+      bleMac: bleMac,
       keyType: keyType,
       ownerUserId: ownerUserId,
       status: status,
       updatedAt: updatedAt,
     );
+  }
+
+  String _extractBleMac(Map<String, dynamic> metadata) {
+    final direct = metadata['bleMac']?.toString().trim() ?? '';
+    if (direct.isNotEmpty) return direct;
+
+    final readKeyInfo = metadata['readKeyInfo'];
+    if (readKeyInfo is Map) {
+      final map = Map<String, dynamic>.from(readKeyInfo);
+      for (final key in const ['bleMac', 'mac']) {
+        final value = map[key]?.toString().trim() ?? '';
+        if (value.isNotEmpty) return value;
+      }
+      final obj = map['obj'];
+      if (obj is Map) {
+        final nested = Map<String, dynamic>.from(obj);
+        for (final key in const ['bleMac', 'mac']) {
+          final value = nested[key]?.toString().trim() ?? '';
+          if (value.isNotEmpty) return value;
+        }
+      }
+    }
+    return '';
   }
 }
 

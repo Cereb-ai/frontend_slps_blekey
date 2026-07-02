@@ -90,10 +90,15 @@ class BleKeyController extends ChangeNotifier {
 
   Future<void> startScan({int timeoutMs = 10000}) async {
     await _run('开始扫描', () async {
+      await ensureReady();
       final granted = await _requestBluetoothPermissions();
       if (!granted) return;
       final bluetoothReady = await _ensureBluetoothEnabled();
       if (!bluetoothReady) return;
+      if (_scanning) {
+        await _sdk.stopScan();
+        _scanning = false;
+      }
       _devicesByMac.clear();
       _scanning = await _sdk.startScan(timeoutMs: timeoutMs);
       _addLog(

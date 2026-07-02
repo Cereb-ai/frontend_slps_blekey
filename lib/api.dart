@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 
@@ -23,21 +24,39 @@ abstract final class Api {
   })?
   _persistTokens;
   static bool _handlingUnauthorized = false;
+  static bool _suppressUnauthorizedHandler = false;
   static Future<String?>? _refreshingAccessToken;
   static bool enableAuthDebugLog = true;
 
-  static final Dio _refreshDio = Dio(
-    BaseOptions(
-      baseUrl: _baseUrl,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 20),
-      sendTimeout: const Duration(seconds: 20),
-      headers: const {
-        'Content-Type': 'application/json',
-        _tenantHeader: _tenantId,
-      },
-    ),
-  );
+  static final Dio _refreshDio =
+      Dio(
+          BaseOptions(
+            baseUrl: _baseUrl,
+            connectTimeout: const Duration(seconds: 15),
+            receiveTimeout: const Duration(seconds: 20),
+            sendTimeout: const Duration(seconds: 20),
+            headers: const {
+              'Content-Type': 'application/json',
+              _tenantHeader: _tenantId,
+            },
+          ),
+        )
+        ..interceptors.add(
+          InterceptorsWrapper(
+            onRequest: (options, handler) {
+              _logRequest(options);
+              handler.next(options);
+            },
+            onResponse: (response, handler) {
+              _logResponse(response);
+              handler.next(response);
+            },
+            onError: (error, handler) {
+              _logErrorResponse(error);
+              handler.next(error);
+            },
+          ),
+        );
 
   static final Dio dio =
       Dio(
@@ -80,14 +99,11 @@ abstract final class Api {
                 'skipRefresh': skipAuthRefresh,
                 'retried': options.extra[_retriedWithFreshTokenKey] == true,
               });
-              _httpLog('>> ${options.method} ${options.path}', options.data);
+              _logRequest(options);
               handler.next(options);
             },
             onResponse: (response, handler) {
-              _httpLog(
-                '<< ${response.statusCode} ${response.requestOptions.method} ${response.requestOptions.path}',
-                response.data,
-              );
+              _logResponse(response);
               handler.next(response);
             },
             onError: (error, handler) {
@@ -98,6 +114,11 @@ abstract final class Api {
 
   static void registerUnauthorizedHandler(Future<void> Function() handler) {
     _onUnauthorized = handler;
+  }
+
+  /// Suppress kick-to-login during startup auth checks to avoid races with splash navigation.
+  static void suppressUnauthorizedHandler(bool suppress) {
+    _suppressUnauthorizedHandler = suppress;
   }
 
   static void registerAuthStateHandlers({
@@ -122,6 +143,7 @@ abstract final class Api {
     DioException error,
     ErrorInterceptorHandler handler,
   ) async {
+    _logErrorResponse(error);
     final statusCode = error.response?.statusCode;
     final requestOptions = error.requestOptions;
     final skipUnauthorizedHandler =
@@ -137,7 +159,7 @@ abstract final class Api {
     });
 
     final canRetryWithRefresh =
-        (statusCode == 401 || statusCode == 403) &&
+        statusCode == 401 &&
         !skipUnauthorizedHandler &&
         !_shouldSkipAuthRefresh(requestOptions) &&
         requestOptions.extra[_retriedWithFreshTokenKey] != true;
@@ -167,16 +189,18 @@ abstract final class Api {
       }
     }
 
-    if ((statusCode == 401 || statusCode == 403) && !skipUnauthorizedHandler) {
+    if (statusCode == 401 && !skipUnauthorizedHandler) {
       _triggerUnauthorizedHandler();
     }
     handler.next(error);
   }
 
   static Future<String?> ensureFreshAccessToken() {
-    return _refreshingAccessToken ??= _refreshAccessToken().whenComplete(() {
-      _refreshingAccessToken = null;
-    });
+    return _refreshingAccessToken ??= _refreshAccessToken()
+        .catchError((_) => null)
+        .whenComplete(() {
+          _refreshingAccessToken = null;
+        });
   }
 
   static Future<String?> _refreshAccessToken() async {
@@ -187,33 +211,38 @@ abstract final class Api {
       return null;
     }
 
-    final response = await _refreshDio.post<Map<String, dynamic>>(
-      '/v3/auth/refresh',
-      data: {'refresh_token': refreshToken},
-      options: Options(
-        extra: {_skipUnauthorizedHandlerKey: true, _skipAuthRefreshKey: true},
-      ),
-    );
-    final body = response.data ?? <String, dynamic>{};
-    _authLog('refresh-response', {
-      'status': response.statusCode,
-      'body': _short(body),
-    });
-    final nextAccessToken = _readTokenValue(body, ['access_token', 'token']);
-    final nextRefreshToken =
-        _readTokenValue(body, ['refresh_token', 'refreshToken']) ??
-        refreshToken;
+    try {
+      final response = await _refreshDio.post<Map<String, dynamic>>(
+        '/v3/auth/refresh',
+        data: {'refresh_token': refreshToken},
+        options: Options(
+          extra: {_skipUnauthorizedHandlerKey: true, _skipAuthRefreshKey: true},
+        ),
+      );
+      final body = response.data ?? <String, dynamic>{};
+      _authLog('refresh-response', {
+        'status': response.statusCode,
+        'body': _short(body),
+      });
+      final nextAccessToken = _readTokenValue(body, ['access_token', 'token']);
+      final nextRefreshToken =
+          _readTokenValue(body, ['refresh_token', 'refreshToken']) ??
+          refreshToken;
 
-    if (nextAccessToken == null || nextAccessToken.isEmpty) {
-      _authLog('refresh-empty-access-token', {'body': _short(body)});
+      if (nextAccessToken == null || nextAccessToken.isEmpty) {
+        _authLog('refresh-empty-access-token', {'body': _short(body)});
+        return null;
+      }
+
+      await _persistTokens?.call(
+        accessToken: nextAccessToken,
+        refreshToken: nextRefreshToken,
+      );
+      return nextAccessToken;
+    } catch (e) {
+      _authLog('refresh-error', {'error': e.toString()});
       return null;
     }
-
-    await _persistTokens?.call(
-      accessToken: nextAccessToken,
-      refreshToken: nextRefreshToken,
-    );
-    return nextAccessToken;
   }
 
   static String? _readTokenValue(Map<String, dynamic> body, List<String> keys) {
@@ -227,7 +256,7 @@ abstract final class Api {
   }
 
   static void _triggerUnauthorizedHandler() {
-    if (_handlingUnauthorized) return;
+    if (_handlingUnauthorized || _suppressUnauthorizedHandler) return;
     final callback = _onUnauthorized;
     if (callback == null) return;
 
@@ -460,6 +489,14 @@ abstract final class Api {
     return _asJsonMap(response.data);
   }
 
+  static Future<JsonMap> getProvisioningConfig({required String token}) async {
+    final response = await dio.get<Map<String, dynamic>>(
+      '/slps/provisioning/config',
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return response.data ?? <String, dynamic>{};
+  }
+
   static Future<JsonMap> decideAccess({
     required String token,
     required String keyId,
@@ -529,7 +566,7 @@ abstract final class Api {
 
   static void _authLog(String event, [Map<String, dynamic>? fields]) {
     if (!enableAuthDebugLog) return;
-    developer.log(fields == null ? event : '$event | $fields', name: _logTag);
+    _logLine(fields == null ? event : '$event | $fields');
   }
 
   static void _applyTenantHeader(Map<String, dynamic> headers, String tenant) {
@@ -553,8 +590,58 @@ abstract final class Api {
     return '${text.substring(0, 220)}...';
   }
 
-  static void _httpLog(String label, dynamic body) {
+  static void _logRequest(RequestOptions options) {
     if (!enableAuthDebugLog) return;
-    developer.log('$label  body=${_short(body)}', name: _logTag);
+    _logLine(
+      'HTTP REQUEST | method=${options.method} url=${options.uri} '
+      'query=${_toLogText(options.queryParameters)} '
+      'body=${_toLogText(options.data)}',
+    );
+  }
+
+  static void _logResponse(Response<dynamic> response) {
+    if (!enableAuthDebugLog) return;
+    final request = response.requestOptions;
+    _logLine(
+      'HTTP RESPONSE | status=${response.statusCode} '
+      'method=${request.method} url=${request.uri} '
+      'query=${_toLogText(request.queryParameters)} '
+      'body=${_toLogText(response.data)}',
+    );
+  }
+
+  static void _logErrorResponse(DioException error) {
+    if (!enableAuthDebugLog) return;
+    final request = error.requestOptions;
+    _logLine(
+      'HTTP ERROR | status=${error.response?.statusCode} '
+      'method=${request.method} url=${request.uri} '
+      'query=${_toLogText(request.queryParameters)} '
+      'requestBody=${_toLogText(request.data)} '
+      'responseBody=${_toLogText(error.response?.data)}',
+    );
+  }
+
+  static String _toLogText(dynamic value) {
+    return value?.toString() ?? 'null';
+  }
+
+  static void _logLine(String message) {
+    if (!enableAuthDebugLog) return;
+    const chunkSize = 900;
+    final line = '[$_logTag] $message';
+    if (line.length <= chunkSize) {
+      debugPrint(line);
+    } else {
+      var part = 1;
+      for (var start = 0; start < line.length; start += chunkSize) {
+        final end = start + chunkSize > line.length
+            ? line.length
+            : start + chunkSize;
+        debugPrint('${line.substring(start, end)} [part=$part]');
+        part += 1;
+      }
+    }
+    developer.log(message, name: _logTag);
   }
 }

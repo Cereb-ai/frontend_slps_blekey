@@ -834,6 +834,20 @@ abstract class AppLocalizations {
   /// **'Bound Key MAC'**
   String get keyUnlockKeyMacReadonly;
 
+  String get keyUnlockConnectionSection;
+
+  String get keyUnlockScanningKey;
+
+  String get keyUnlockConnectingKey;
+
+  String get keyUnlockKeyConnected;
+
+  String get keyUnlockKeyConnectFailed;
+
+  String get keyUnlockRetryConnect;
+
+  String get keyUnlockKeyNotConnected;
+
   String get keyUnlockAuthDenied;
 
   String get clearanceTitle;

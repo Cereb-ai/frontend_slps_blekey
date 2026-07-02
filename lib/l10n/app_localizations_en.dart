@@ -390,6 +390,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyUnlockKeyMacReadonly => 'Bound Key MAC';
 
   @override
+  String get keyUnlockConnectionSection => 'Key Connection';
+
+  @override
+  String get keyUnlockScanningKey => 'Scanning for key…';
+
+  @override
+  String get keyUnlockConnectingKey => 'Connecting to key…';
+
+  @override
+  String get keyUnlockKeyConnected => 'Key connected';
+
+  @override
+  String get keyUnlockKeyConnectFailed =>
+      'Key not found or connection failed. Keep the key nearby and retry.';
+
+  @override
+  String get keyUnlockRetryConnect => 'Scan and connect again';
+
+  @override
+  String get keyUnlockKeyNotConnected =>
+      'Key is not connected yet. Please wait for auto-connect.';
+
+  @override
   String get keyUnlockAuthDenied => 'Authorization denied';
 
   @override

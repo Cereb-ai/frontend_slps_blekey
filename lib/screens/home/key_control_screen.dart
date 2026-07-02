@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_blekey_sdk/flutter_blekey_sdk.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +10,10 @@ import '../../routes.dart';
 import '../ble_key/ble_key_controller.dart';
 import '../../states/global_user.dart';
 import '../clearance/clearance_models.dart';
+import '../../utils/access_decision_time.dart';
 import 'models.dart';
+
+enum _KeyConnectionPhase { idle, scanning, connecting, connected, failed }
 
 /// Key-centric online unlock control.
 ///
@@ -21,6 +26,7 @@ class KeyControlScreen extends StatefulWidget {
     required this.keyId,
     required this.name,
     required this.number,
+    this.bleMac = '',
     required this.keyType,
   });
 
@@ -30,8 +36,11 @@ class KeyControlScreen extends StatefulWidget {
   /// User-facing key name.
   final String name;
 
-  /// Vendor key id, also used as the BLE MAC.
+  /// Vendor/hardware key id from readKeyInfo (e.g. 202606050001).
   final String number;
+
+  /// BLE MAC captured during key provisioning (e.g. 54:6C:50:8F:75:52).
+  final String bleMac;
 
   /// Key capability (`bluetooth`, `fingerprint`, etc.).
   final String keyType;
@@ -42,6 +51,7 @@ class KeyControlScreen extends StatefulWidget {
       keyId: (data['keyId'] ?? '').toString(),
       name: (data['name'] ?? '-').toString(),
       number: (data['number'] ?? '').toString(),
+      bleMac: (data['bleMac'] ?? '').toString(),
       keyType: (data['keyType'] ?? 'standard').toString(),
     );
   }
@@ -56,6 +66,10 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
   String? _selectedMac;
   LockItem? _selectedLock;
   List<LockItem> _availableLocks = <LockItem>[];
+  _KeyConnectionPhase _connectionPhase = _KeyConnectionPhase.idle;
+  bool _autoConnectInFlight = false;
+  bool _wasScanning = false;
+  BleKeyController? _bleController;
 
   final TextEditingController _secretController = TextEditingController(
     text: 'FFFFFFFFFFFFFFFFFFFF',
@@ -70,20 +84,190 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedMac = widget.number.isNotEmpty ? widget.number : null;
+    _selectedMac = _preferredBleMac();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<BleKeyController>().preparePermissions();
+      final controller = context.read<BleKeyController>();
+      _bleController = controller;
+      controller.addListener(_onBleControllerChanged);
       _loadLocks();
+      _beginAutoConnect();
     });
   }
 
   @override
   void dispose() {
+    _bleController?.removeListener(_onBleControllerChanged);
     _secretController.dispose();
     _signController.dispose();
     _licController.dispose();
     super.dispose();
+  }
+
+  void _onBleControllerChanged() {
+    final controller = _bleController;
+    if (controller == null || !mounted) return;
+
+    if (controller.scanning) {
+      _wasScanning = true;
+      if (_connectionPhase != _KeyConnectionPhase.connecting &&
+          _connectionPhase != _KeyConnectionPhase.connected) {
+        setState(() => _connectionPhase = _KeyConnectionPhase.scanning);
+      }
+      _tryConnectWhenTargetFound(controller);
+      return;
+    }
+
+    if (_wasScanning &&
+        _connectionPhase != _KeyConnectionPhase.connected &&
+        !_autoConnectInFlight) {
+      _wasScanning = false;
+      final matchedMac = _findDeviceMac(controller);
+      if (matchedMac != null) {
+        _selectedMac = matchedMac;
+        unawaited(_connectToKey(controller));
+      } else if (_connectionPhase != _KeyConnectionPhase.connecting) {
+        setState(() => _connectionPhase = _KeyConnectionPhase.failed);
+      }
+    }
+  }
+
+  Future<void> _beginAutoConnect() async {
+    final controller = context.read<BleKeyController>();
+    setState(() => _connectionPhase = _KeyConnectionPhase.scanning);
+    try {
+      await controller.preparePermissions();
+      await controller.ensureReady();
+      if (!mounted) return;
+
+      final existingMac = _findDeviceMac(controller);
+      if (existingMac != null) {
+        _selectedMac = existingMac;
+        await _connectToKey(controller);
+        return;
+      }
+
+      _wasScanning = true;
+      await controller.startScan(timeoutMs: 15000);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _connectionPhase = _KeyConnectionPhase.failed);
+      }
+    }
+  }
+
+  Future<void> _retryAutoConnect() async {
+    if (_autoConnectInFlight || _busy) return;
+    final controller = context.read<BleKeyController>();
+    if (controller.scanning) {
+      await controller.stopScan();
+    }
+    setState(() => _connectionPhase = _KeyConnectionPhase.scanning);
+    await _beginAutoConnect();
+  }
+
+  void _tryConnectWhenTargetFound(BleKeyController controller) {
+    if (_autoConnectInFlight ||
+        _connectionPhase == _KeyConnectionPhase.connected ||
+        _connectionPhase == _KeyConnectionPhase.connecting) {
+      return;
+    }
+
+    final matchedMac = _findDeviceMac(controller);
+    if (matchedMac == null) return;
+
+    _selectedMac = matchedMac;
+    unawaited(_connectToKey(controller));
+  }
+
+  Future<void> _connectToKey(BleKeyController controller) async {
+    if (_autoConnectInFlight ||
+        _connectionPhase == _KeyConnectionPhase.connected) {
+      return;
+    }
+    final mac = _selectedMac;
+    if (mac == null || mac.isEmpty) return;
+
+    _autoConnectInFlight = true;
+    if (mounted) {
+      setState(() => _connectionPhase = _KeyConnectionPhase.connecting);
+    }
+    try {
+      if (controller.scanning) {
+        await controller.stopScan();
+      }
+      await controller.executeVendorOperationAndWait(
+        index: 0,
+        expectedOperationName: 'ConnectKey',
+        mac: mac,
+        args: _baseSdkArgs(),
+        timeout: const Duration(seconds: 15),
+      );
+      if (mounted) {
+        setState(() => _connectionPhase = _KeyConnectionPhase.connected);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _connectionPhase = _KeyConnectionPhase.failed);
+      }
+    } finally {
+      _autoConnectInFlight = false;
+    }
+  }
+
+  String? _preferredBleMac() {
+    final bleMac = widget.bleMac.trim();
+    if (bleMac.isNotEmpty) return bleMac;
+    final number = widget.number.trim();
+    if (_looksLikeBleMac(number)) return number;
+    return null;
+  }
+
+  bool _looksLikeBleMac(String value) {
+    final normalized = value.replaceAll(':', '').replaceAll('-', '').trim();
+    return RegExp(r'^[0-9a-fA-F]{12}$').hasMatch(normalized);
+  }
+
+  String? _normalizeMac(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return null;
+    return trimmed.replaceAll(':', '').replaceAll('-', '').toLowerCase();
+  }
+
+  bool _macMatches(String? a, String? b) {
+    final left = _normalizeMac(a);
+    final right = _normalizeMac(b);
+    return left != null && right != null && left == right;
+  }
+
+  String? _findDeviceMac(BleKeyController controller) {
+    final preferredMac = _preferredBleMac();
+    if (preferredMac != null) {
+      for (final device in controller.devices) {
+        final mac = device.mac;
+        if (mac != null && mac.isNotEmpty && _macMatches(mac, preferredMac)) {
+          return mac;
+        }
+      }
+    }
+
+    final vendorKeyId = widget.number.trim();
+    if (vendorKeyId.isNotEmpty) {
+      for (final device in controller.devices) {
+        final deviceKey = device.key?.trim() ?? '';
+        if (deviceKey.isNotEmpty && deviceKey == vendorKeyId) {
+          final mac = device.mac;
+          if (mac != null && mac.isNotEmpty) return mac;
+        }
+      }
+    }
+
+    if (controller.devices.length == 1) {
+      final mac = controller.devices.first.mac;
+      if (mac != null && mac.isNotEmpty) return mac;
+    }
+
+    return null;
   }
 
   Future<void> _loadLocks() async {
@@ -158,10 +342,15 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       ).showSnackBar(SnackBar(content: Text(l10n.keyUnlockNoLockSelected)));
       return;
     }
-    if (_selectedMac == null || _selectedMac!.isEmpty) {
+    if (_connectionPhase != _KeyConnectionPhase.connected ||
+        _selectedMac == null ||
+        _selectedMac!.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.keyUnlockSelectMacFirst)));
+      ).showSnackBar(SnackBar(content: Text(l10n.keyUnlockKeyNotConnected)));
+      if (_connectionPhase == _KeyConnectionPhase.failed) {
+        await _retryAutoConnect();
+      }
       return;
     }
 
@@ -180,21 +369,26 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     try {
       final controller = context.read<BleKeyController>();
 
-      // 1) App connects to the physical key.
-      await controller.executeVendorOperationAndWait(
-        index: 0,
-        expectedOperationName: 'ConnectKey',
-        mac: _selectedMac,
-        args: _sdkArgs(),
-        timeout: const Duration(seconds: 15),
-      );
+      // 1) Ensure BLE connection (auto-connected on entry; reconnect if needed).
+      if (_connectionPhase != _KeyConnectionPhase.connected) {
+        await controller.executeVendorOperationAndWait(
+          index: 0,
+          expectedOperationName: 'ConnectKey',
+          mac: _selectedMac,
+          args: _sdkArgs(),
+          timeout: const Duration(seconds: 15),
+        );
+      }
 
       // 2) Backend authorization for this (key, lock) pair.
+      final provisioningConfig = await Api.getProvisioningConfig(token: token);
+      final decisionAt = AccessDecisionTime.resolveDecisionAt(provisioningConfig);
       final decision = await Api.decideAccess(
         token: token,
         keyId: widget.keyId,
         lockId: lock.id,
-        at: DateTime.now(),
+        at: DateTime.parse(decisionAt),
+        geofenceSatisfied: true,
         clientTraceId:
             'ble_unlock_${DateTime.now().millisecondsSinceEpoch}_${lock.id}',
       );
@@ -211,12 +405,13 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         throw StateError('${l10n.keyUnlockAuthDenied}: $reasons');
       }
 
-      // 3) SetDateTime
+      // 3) SetDateTime (use platform timezone from provisioning config)
+      final keyLocalTime = AccessDecisionTime.resolveKeyLocalTime(provisioningConfig);
       await controller.executeVendorOperationAndWait(
         index: 15,
         expectedOperationName: 'SetDateTime',
         mac: _selectedMac,
-        args: _sdkArgs(),
+        args: _sdkArgs(keyLocalTime: keyLocalTime),
         timeout: const Duration(seconds: 15),
       );
       // 4) SetUserKey with target lockId
@@ -295,15 +490,18 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     }
   }
 
-  Map<String, Object?> _sdkArgs() {
+  Map<String, Object?> _baseSdkArgs({String? keyLocalTime}) {
     return <String, Object?>{
       'secret': _secretController.text.trim(),
       'oldSecret': _secretController.text.trim(),
       'sign': int.tryParse(_signController.text.trim()) ?? 1,
       'lic': _licController.text.trim(),
       'lockIds': _selectedLock?.number ?? '',
+      if (keyLocalTime != null && keyLocalTime.isNotEmpty) 'time': keyLocalTime,
     };
   }
+
+  Map<String, Object?> _sdkArgs({String? keyLocalTime}) => _baseSdkArgs(keyLocalTime: keyLocalTime);
 
   String _formatDecisionReasons(dynamic reasons) {
     if (reasons is List) {
@@ -406,11 +604,6 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     final l10n = AppLocalizations.of(context)!;
     final controller = context.watch<BleKeyController>();
 
-    // If scanning found a device matching our default MAC, keep it visible.
-    if (_selectedMac == null && controller.devices.isNotEmpty) {
-      _selectedMac = controller.devices.first.mac;
-    }
-
     return Scaffold(
       appBar: AppBar(title: Text(l10n.keyUnlockTitle)),
       body: ListView(
@@ -439,25 +632,27 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
             sectionLabel: l10n.keyUnlockTargetLockSection,
           ),
           const SizedBox(height: 12),
-          _SdkConfigCard(
-            controller: controller,
-            selectedMac: _selectedMac,
-            busy: _busy,
-            secretController: _secretController,
-            signController: _signController,
-            licController: _licController,
-            onMacChanged: (value) => setState(() => _selectedMac = value),
-            keyCountLabel: l10n.keyUnlockKeyCount(controller.devices.length),
-            stopScanLabel: l10n.keyUnlockStopScan,
-            scanLabel: l10n.keyWizardScanKey,
-            sdkConfigLabel: l10n.keyUnlockSdkConfig,
-            keyMacLabel: l10n.keyUnlockKeyMac,
-            unnamedDeviceLabel: l10n.unnamedDevice,
+          _KeyConnectionCard(
+            phase: _connectionPhase,
+            vendorKeyId: widget.number,
+            boundMac: widget.bleMac,
+            connectedMac: _selectedMac,
+            busy: _busy || _autoConnectInFlight,
+            scanning: controller.scanning,
+            onRetry: _retryAutoConnect,
+            sectionLabel: l10n.keyUnlockConnectionSection,
             boundKeyMacLabel: l10n.keyUnlockKeyMacReadonly,
+            scanningLabel: l10n.keyUnlockScanningKey,
+            connectingLabel: l10n.keyUnlockConnectingKey,
+            connectedLabel: l10n.keyUnlockKeyConnected,
+            failedLabel: l10n.keyUnlockKeyConnectFailed,
+            retryLabel: l10n.keyUnlockRetryConnect,
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: _busy ? null : () => _setSwitchState('unlocked'),
+            onPressed: _busy || _connectionPhase != _KeyConnectionPhase.connected
+                ? null
+                : () => _setSwitchState('unlocked'),
             icon: const Icon(Icons.lock_open),
             label: Text(l10n.keyUnlockUnlockAction),
             style: FilledButton.styleFrom(
@@ -466,7 +661,9 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
           ),
           const SizedBox(height: 12),
           FilledButton.tonalIcon(
-            onPressed: _busy ? null : () => _setSwitchState('locked'),
+            onPressed: _busy || _connectionPhase != _KeyConnectionPhase.connected
+                ? null
+                : () => _setSwitchState('locked'),
             icon: const Icon(Icons.lock_outline),
             label: Text(l10n.keyUnlockLockAction),
             style: FilledButton.styleFrom(
@@ -665,129 +862,125 @@ class _TargetLockCard extends StatelessWidget {
   }
 }
 
-class _SdkConfigCard extends StatelessWidget {
-  const _SdkConfigCard({
-    required this.controller,
-    required this.selectedMac,
+bool _macLabelMatches(String mac, String vendorKeyId) {
+  final left = mac.replaceAll(':', '').replaceAll('-', '').toLowerCase();
+  final right = vendorKeyId.replaceAll(':', '').replaceAll('-', '').toLowerCase();
+  return left == right;
+}
+
+class _KeyConnectionCard extends StatelessWidget {
+  const _KeyConnectionCard({
+    required this.phase,
+    required this.vendorKeyId,
+    required this.boundMac,
+    required this.connectedMac,
     required this.busy,
-    required this.secretController,
-    required this.signController,
-    required this.licController,
-    required this.onMacChanged,
-    required this.keyCountLabel,
-    required this.stopScanLabel,
-    required this.scanLabel,
-    required this.sdkConfigLabel,
-    required this.keyMacLabel,
-    required this.unnamedDeviceLabel,
+    required this.scanning,
+    required this.onRetry,
+    required this.sectionLabel,
     required this.boundKeyMacLabel,
+    required this.scanningLabel,
+    required this.connectingLabel,
+    required this.connectedLabel,
+    required this.failedLabel,
+    required this.retryLabel,
   });
 
-  final BleKeyController controller;
-  final String? selectedMac;
+  final _KeyConnectionPhase phase;
+  final String vendorKeyId;
+  final String boundMac;
+  final String? connectedMac;
   final bool busy;
-  final TextEditingController secretController;
-  final TextEditingController signController;
-  final TextEditingController licController;
-  final ValueChanged<String?> onMacChanged;
-  final String keyCountLabel;
-  final String stopScanLabel;
-  final String scanLabel;
-  final String sdkConfigLabel;
-  final String keyMacLabel;
-  final String unnamedDeviceLabel;
+  final bool scanning;
+  final VoidCallback onRetry;
+  final String sectionLabel;
   final String boundKeyMacLabel;
+  final String scanningLabel;
+  final String connectingLabel;
+  final String connectedLabel;
+  final String failedLabel;
+  final String retryLabel;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final statusLabel = switch (phase) {
+      _KeyConnectionPhase.scanning => scanningLabel,
+      _KeyConnectionPhase.connecting => connectingLabel,
+      _KeyConnectionPhase.connected => connectedLabel,
+      _KeyConnectionPhase.failed => failedLabel,
+      _ => scanningLabel,
+    };
+    final statusIcon = switch (phase) {
+      _KeyConnectionPhase.connected => Icons.bluetooth_connected,
+      _KeyConnectionPhase.failed => Icons.bluetooth_disabled,
+      _ => Icons.bluetooth_searching,
+    };
+    final statusColor = switch (phase) {
+      _KeyConnectionPhase.connected => theme.colorScheme.primary,
+      _KeyConnectionPhase.failed => theme.colorScheme.error,
+      _ => theme.colorScheme.onSurfaceVariant,
+    };
+    final showSpinner =
+        phase == _KeyConnectionPhase.scanning ||
+        phase == _KeyConnectionPhase.connecting ||
+        scanning;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    sdkConfigLabel,
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ),
-                Text(keyCountLabel),
-              ],
-            ),
+            Text(sectionLabel, style: theme.textTheme.titleMedium),
             const SizedBox(height: 12),
-            FilledButton.tonalIcon(
-              onPressed: busy
-                  ? null
-                  : controller.scanning
-                  ? controller.stopScan
-                  : () => controller.startScan(timeoutMs: 10000),
-              icon: Icon(
-                controller.scanning
-                    ? Icons.bluetooth_disabled
-                    : Icons.bluetooth_searching,
-              ),
-              label: Text(controller.scanning ? stopScanLabel : scanLabel),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              initialValue: selectedMac,
-              decoration: InputDecoration(labelText: keyMacLabel),
-              items: controller.devices
-                  .where((device) => (device.mac ?? '').isNotEmpty)
-                  .map(
-                    (device) => DropdownMenuItem<String>(
-                      value: device.mac,
-                      child: Text(
-                        '${device.name ?? unnamedDeviceLabel}  ${device.mac ?? ''}',
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: busy ? null : onMacChanged,
-            ),
-            const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.link),
-                  const SizedBox(width: 8),
+                  Icon(statusIcon, color: statusColor),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      '$boundKeyMacLabel: ${selectedMac ?? '-'}',
-                      style: theme.textTheme.bodySmall,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(statusLabel, style: theme.textTheme.bodyMedium),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${boundKeyMacLabel}: ${connectedMac ?? (boundMac.isNotEmpty ? boundMac : vendorKeyId)}',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                        if (vendorKeyId.isNotEmpty &&
+                            connectedMac != null &&
+                            !_macLabelMatches(connectedMac!, vendorKeyId))
+                          Text(
+                            'Key ID: $vendorKeyId',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                      ],
                     ),
                   ),
+                  if (showSpinner)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                 ],
               ),
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: secretController,
-              enabled: !busy,
-              decoration: const InputDecoration(labelText: 'secret'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: signController,
-              enabled: !busy,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'sign'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: licController,
-              enabled: !busy,
-              decoration: const InputDecoration(labelText: 'lic'),
-            ),
+            if (phase == _KeyConnectionPhase.failed) ...[
+              const SizedBox(height: 12),
+              FilledButton.tonalIcon(
+                onPressed: busy ? null : onRetry,
+                icon: const Icon(Icons.refresh),
+                label: Text(retryLabel),
+              ),
+            ],
           ],
         ),
       ),

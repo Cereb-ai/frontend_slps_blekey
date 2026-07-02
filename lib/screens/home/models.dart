@@ -6,6 +6,7 @@ class KeyItem {
   final String id;
   final String name;
   final String number;
+  final String bleMac;
   final String keyType;
   final String ownerUserId;
   final String status;
@@ -15,6 +16,7 @@ class KeyItem {
     required this.id,
     required this.name,
     required this.number,
+    this.bleMac = '',
     required this.keyType,
     required this.ownerUserId,
     required this.status,

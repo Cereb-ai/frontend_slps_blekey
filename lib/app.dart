@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
@@ -46,6 +47,11 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       await GlobalUser.instance.clearLocalSession();
       final navigator = NavigationService.navigatorKey.currentState;
       if (navigator == null) return;
+      final context = NavigationService.navigatorKey.currentContext;
+      if (context != null) {
+        final currentRoute = ModalRoute.of(context)?.settings.name;
+        if (currentRoute == Routes.login) return;
+      }
       navigator.pushNamedAndRemoveUntil(Routes.login, (_) => false);
     });
   }
@@ -122,11 +128,14 @@ class _SplashGateState extends State<_SplashGate> {
   }
 
   Future<void> _checkAuth() async {
-    await GlobalUser.instance.loadFromStorage();
-    if (GlobalUser.instance.isLoggedIn) {
-      try {
-        await GlobalUser.instance.fetchProfile();
-      } catch (_) {}
+    Api.suppressUnauthorizedHandler(true);
+    try {
+      await GlobalUser.instance.loadFromStorage();
+      if (GlobalUser.instance.isLoggedIn) {
+        await _validateStoredSession();
+      }
+    } finally {
+      Api.suppressUnauthorizedHandler(false);
     }
     final loggedIn = GlobalUser.instance.isLoggedIn;
     if (!mounted) return;
@@ -135,6 +144,25 @@ class _SplashGateState extends State<_SplashGate> {
         builder: (_) => loggedIn ? const AppHomeScreen() : const LoginScreen(),
       ),
     );
+  }
+
+  Future<void> _validateStoredSession() async {
+    final hasRefreshToken = GlobalUser.instance.refreshToken?.isNotEmpty ?? false;
+    if (hasRefreshToken) {
+      final freshToken = await Api.ensureFreshAccessToken();
+      if (freshToken == null || freshToken.isEmpty) {
+        await GlobalUser.instance.clearLocalSession();
+        return;
+      }
+    }
+
+    try {
+      await GlobalUser.instance.fetchProfile();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        await GlobalUser.instance.clearLocalSession();
+      }
+    } catch (_) {}
   }
 
   @override

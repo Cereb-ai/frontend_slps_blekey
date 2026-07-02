@@ -378,6 +378,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keyUnlockKeyMacReadonly => '已绑定钥匙 MAC';
 
   @override
+  String get keyUnlockConnectionSection => '钥匙连接';
+
+  @override
+  String get keyUnlockScanningKey => '正在扫描钥匙…';
+
+  @override
+  String get keyUnlockConnectingKey => '正在连接钥匙…';
+
+  @override
+  String get keyUnlockKeyConnected => '钥匙已连接';
+
+  @override
+  String get keyUnlockKeyConnectFailed =>
+      '未找到或连接失败，请确认钥匙在附近并重试';
+
+  @override
+  String get keyUnlockRetryConnect => '重新扫描连接';
+
+  @override
+  String get keyUnlockKeyNotConnected => '钥匙尚未连接，请等待自动连接完成';
+
+  @override
   String get keyUnlockAuthDenied => '后端鉴权拒绝';
 
   @override
@@ -834,6 +856,28 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get keyUnlockKeyMacReadonly => '已绑定钥匙 MAC';
 
   @override
+  String get keyUnlockConnectionSection => '钥匙连接';
+
+  @override
+  String get keyUnlockScanningKey => '正在扫描钥匙…';
+
+  @override
+  String get keyUnlockConnectingKey => '正在连接钥匙…';
+
+  @override
+  String get keyUnlockKeyConnected => '钥匙已连接';
+
+  @override
+  String get keyUnlockKeyConnectFailed =>
+      '未找到或连接失败，请确认钥匙在附近并重试';
+
+  @override
+  String get keyUnlockRetryConnect => '重新扫描连接';
+
+  @override
+  String get keyUnlockKeyNotConnected => '钥匙尚未连接，请等待自动连接完成';
+
+  @override
   String get keyUnlockAuthDenied => '后端鉴权拒绝';
 
   @override
@@ -1264,6 +1308,28 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get keyUnlockKeyMacReadonly => '已綁定鑰匙 MAC';
+
+  @override
+  String get keyUnlockConnectionSection => '鑰匙連接';
+
+  @override
+  String get keyUnlockScanningKey => '正在掃描鑰匙…';
+
+  @override
+  String get keyUnlockConnectingKey => '正在連接鑰匙…';
+
+  @override
+  String get keyUnlockKeyConnected => '鑰匙已連接';
+
+  @override
+  String get keyUnlockKeyConnectFailed =>
+      '未找到或連接失敗，請確認鑰匙在附近並重試';
+
+  @override
+  String get keyUnlockRetryConnect => '重新掃描連接';
+
+  @override
+  String get keyUnlockKeyNotConnected => '鑰匙尚未連接，請等待自動連接完成';
 
   @override
   String get keyUnlockAuthDenied => '後端鑑權拒絕';

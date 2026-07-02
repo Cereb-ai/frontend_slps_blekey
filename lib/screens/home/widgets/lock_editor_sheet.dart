@@ -7,6 +7,33 @@ import '../../../l10n/app_localizations.dart';
 import '../../ble_key/ble_key_controller.dart';
 import '../models.dart';
 
+StepState _wizardStepState(int currentStep, int index) {
+  if (currentStep > index) return StepState.complete;
+  if (currentStep == index) return StepState.editing;
+  return StepState.indexed;
+}
+
+Widget _wizardStepBody(int currentStep, int index, Widget child) {
+  if (currentStep != index) return const SizedBox.shrink();
+  return Padding(
+    padding: const EdgeInsets.only(top: 4, bottom: 12),
+    child: child,
+  );
+}
+
+InputDecoration _wizardFieldDecoration(
+  String label, {
+  String? helperText,
+}) {
+  return InputDecoration(
+    labelText: label,
+    helperText: helperText,
+    floatingLabelBehavior: FloatingLabelBehavior.always,
+    isDense: false,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+  );
+}
+
 /// Shows the lock creation/editing step-by-step bottom sheet.
 ///
 /// Returns [LockEditorResult] on save, or `null` if dismissed.
@@ -60,6 +87,7 @@ Future<LockEditorResult?> showLockEditorSheet(
                     child: Stepper(
                       type: StepperType.vertical,
                       currentStep: currentStep,
+                      physics: const ClampingScrollPhysics(),
                       onStepTapped: (value) {
                         setSheetState(() => currentStep = value);
                       },
@@ -132,8 +160,12 @@ Future<LockEditorResult?> showLockEditorSheet(
                         // Step 0: Connect Device
                         Step(
                           title: Text(l10n.keyWizardStepConnect),
+                          state: _wizardStepState(currentStep, 0),
                           isActive: currentStep >= 0,
-                          content: Consumer<BleKeyController>(
+                          content: _wizardStepBody(
+                            currentStep,
+                            0,
+                            Consumer<BleKeyController>(
                             builder: (context, controller, _) {
                               if (selectedMac.isEmpty &&
                                   controller.devices.isNotEmpty) {
@@ -259,12 +291,17 @@ Future<LockEditorResult?> showLockEditorSheet(
                               );
                             },
                           ),
+                          ),
                         ),
                         // Step 1: Read Lock ID
                         Step(
                           title: Text(l10n.lockWizardStepReadId),
+                          state: _wizardStepState(currentStep, 1),
                           isActive: currentStep >= 1,
-                          content: Column(
+                          content: _wizardStepBody(
+                            currentStep,
+                            1,
+                            Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(l10n.lockWizardReadHint),
@@ -332,36 +369,44 @@ Future<LockEditorResult?> showLockEditorSheet(
                               TextField(
                                 controller: numberController,
                                 enabled: initial == null,
-                                decoration: InputDecoration(
-                                  labelText: l10n.lockWizardLockNumber,
+                                decoration: _wizardFieldDecoration(
+                                  l10n.lockWizardLockNumber,
                                   helperText: l10n.lockWizardLockNumberHelper,
                                 ),
                               ),
                             ],
                           ),
+                          ),
                         ),
                         // Step 2: Basic Information
                         Step(
                           title: Text(l10n.lockWizardStepBasic),
+                          state: _wizardStepState(currentStep, 2),
                           isActive: currentStep >= 2,
-                          content: TextField(
-                            controller: nameController,
-                            decoration: InputDecoration(
-                              labelText: l10n.lockWizardLockName,
+                          content: _wizardStepBody(
+                            currentStep,
+                            2,
+                            TextField(
+                              controller: nameController,
+                              decoration: _wizardFieldDecoration(
+                                l10n.lockWizardLockName,
+                              ),
                             ),
                           ),
                         ),
                         // Step 3: Status
                         Step(
                           title: Text(l10n.lockWizardStepStatus),
+                          state: _wizardStepState(currentStep, 3),
                           isActive: currentStep >= 3,
-                          content: Column(
+                          content: _wizardStepBody(
+                            currentStep,
+                            3,
+                            Column(
                             children: [
                               DropdownButtonFormField<String>(
                                 initialValue: lockStatus,
-                                decoration: InputDecoration(
-                                  labelText: 'Lock Status',
-                                ),
+                                decoration: _wizardFieldDecoration('Lock Status'),
                                 items: const [
                                   DropdownMenuItem(
                                     value: 'uninstalled',
@@ -389,8 +434,8 @@ Future<LockEditorResult?> showLockEditorSheet(
                               const SizedBox(height: 16),
                               DropdownButtonFormField<String>(
                                 initialValue: switchState,
-                                decoration: InputDecoration(
-                                  labelText: l10n.lockWizardSwitchState,
+                                decoration: _wizardFieldDecoration(
+                                  l10n.lockWizardSwitchState,
                                 ),
                                 items: [
                                   DropdownMenuItem(
@@ -410,23 +455,33 @@ Future<LockEditorResult?> showLockEditorSheet(
                               ),
                             ],
                           ),
+                          ),
                         ),
                         // Step 4: Location
                         Step(
                           title: Text(l10n.lockWizardStepLocation),
+                          state: _wizardStepState(currentStep, 4),
                           isActive: currentStep >= 4,
-                          content: TextField(
-                            controller: locationController,
-                            decoration: InputDecoration(
-                              labelText: l10n.lockWizardLocation,
+                          content: _wizardStepBody(
+                            currentStep,
+                            4,
+                            TextField(
+                              controller: locationController,
+                              decoration: _wizardFieldDecoration(
+                                l10n.lockWizardLocation,
+                              ),
                             ),
                           ),
                         ),
                         // Step 5: Confirm
                         Step(
                           title: Text(l10n.wizardConfirmStep),
+                          state: _wizardStepState(currentStep, 5),
                           isActive: currentStep >= 5,
-                          content: Container(
+                          content: _wizardStepBody(
+                            currentStep,
+                            5,
+                            Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -457,6 +512,7 @@ Future<LockEditorResult?> showLockEditorSheet(
                                 ),
                               ],
                             ),
+                          ),
                           ),
                         ),
                       ],
