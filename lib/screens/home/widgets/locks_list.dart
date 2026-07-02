@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../api.dart' hide JsonMap;
 import '../../../l10n/app_localizations.dart';
-import '../../../routes.dart';
 import '../../../states/global_user.dart';
 import '../../../widgets/smart_list.dart';
 import '../models.dart';
@@ -11,9 +10,12 @@ import 'lock_editor_sheet.dart';
 /// Standalone lock management list widget.
 ///
 /// Manages its own data fetching, loading state, search filtering, and CRUD.
+///
+/// Note: online unlock (开锁) has moved onto the key side. Lock cards are now
+/// management-only entries; tapping a lock card is no longer wired to a
+/// control screen. Use a key card to perform online unlock.
 class LocksList extends StatefulWidget {
   const LocksList({super.key});
-
 
   @override
   State<LocksList> createState() => _LocksListState();
@@ -85,9 +87,9 @@ class _LocksListState extends State<LocksList> {
       ).showSnackBar(const SnackBar(content: Text('锁已更新')));
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('锁更新失败: ${formatRequestError(error)}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('锁更新失败: ${formatRequestError(error)}')),
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -127,22 +129,6 @@ class _LocksListState extends State<LocksList> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('锁删除失败: $error')));
-    }
-  }
-
-  Future<void> _openControl(LockItem item) async {
-    final updated = await Navigator.of(context).pushNamed(
-      Routes.lockControl,
-      arguments: <String, dynamic>{
-        'lockId': item.id,
-        'name': item.name,
-        'number': item.number,
-        'location': item.location,
-        'switchState': item.switchState,
-      },
-    );
-    if (updated == true) {
-      await _load();
     }
   }
 
@@ -187,7 +173,6 @@ class _LocksListState extends State<LocksList> {
             itemBuilder: (context, item, index) {
               return _LockCard(
                 item: item,
-                onTap: () => _openControl(item),
                 onEdit: () => _edit(item),
                 onDelete: () => _delete(item),
               );
@@ -216,8 +201,9 @@ class _LocksListState extends State<LocksList> {
 
     final switchStateRaw =
         (json['lastState'] ?? metadata['switchState'] ?? 'locked').toString();
-    final switchState =
-        switchStateRaw.toLowerCase() == 'unlocked' ? 'unlocked' : 'locked';
+    final switchState = switchStateRaw.toLowerCase() == 'unlocked'
+        ? 'unlocked'
+        : 'locked';
 
     final updatedAtRaw =
         (json['updatedAt'] ??
@@ -227,7 +213,8 @@ class _LocksListState extends State<LocksList> {
             ?.toString();
     final updatedAt = DateTime.tryParse(updatedAtRaw ?? '') ?? DateTime.now();
 
-    final status = (json['status'] ?? metadata['status'] ?? 'uninstalled').toString();
+    final status = (json['status'] ?? metadata['status'] ?? 'uninstalled')
+        .toString();
 
     return LockItem(
       id: id.isEmpty ? DateTime.now().microsecondsSinceEpoch.toString() : id,
@@ -244,13 +231,11 @@ class _LocksListState extends State<LocksList> {
 class _LockCard extends StatelessWidget {
   const _LockCard({
     required this.item,
-    required this.onTap,
     required this.onEdit,
     required this.onDelete,
   });
 
   final LockItem item;
-  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -258,43 +243,34 @@ class _LockCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      item.name,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.name,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  TextButton(onPressed: onEdit, child: Text(l10n.edit)),
-                  TextButton(onPressed: onDelete, child: Text(l10n.delete)),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text('${l10n.lockWizardLockNumberSummary}: ${item.number}'),
-              const SizedBox(height: 2),
-              Text('${l10n.lockWizardLocationSummary}: ${item.location}'),
-              const SizedBox(height: 2),
-              Text(
-                '${l10n.lockWizardSwitchStateSummary}: ${item.switchState == 'locked' ? l10n.lockStateLocked : l10n.lockStateUnlocked}',
-              ),
-              const SizedBox(height: 2),
-              Text('${l10n.listUpdatedAt}: ${formatDate(item.updatedAt)}'),
-              const SizedBox(height: 6),
-              Text(
-                l10n.lockCardTapHint,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
+                ),
+                TextButton(onPressed: onEdit, child: Text(l10n.edit)),
+                TextButton(onPressed: onDelete, child: Text(l10n.delete)),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text('${l10n.lockWizardLockNumberSummary}: ${item.number}'),
+            const SizedBox(height: 2),
+            Text('${l10n.lockWizardLocationSummary}: ${item.location}'),
+            const SizedBox(height: 2),
+            Text(
+              '${l10n.lockWizardSwitchStateSummary}: ${item.switchState == 'locked' ? l10n.lockStateLocked : l10n.lockStateUnlocked}',
+            ),
+            const SizedBox(height: 2),
+            Text('${l10n.listUpdatedAt}: ${formatDate(item.updatedAt)}'),
+          ],
         ),
       ),
     );

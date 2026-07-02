@@ -158,13 +158,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyWizardStepConnect => 'Connect Device';
 
   @override
-  String get keyWizardConnectHint => 'Scan key, select MAC, then connect and read key info.';
+  String get keyWizardConnectHint =>
+      'Scan key, select MAC, then connect and read key info.';
 
   @override
   String get keyWizardScanning => 'Scanning keys...';
 
   @override
-  String get keyWizardScanStarted => 'Scan started, waiting for device list to refresh';
+  String get keyWizardScanStarted =>
+      'Scan started, waiting for device list to refresh';
 
   @override
   String get keyWizardScanningShort => 'Scanning';
@@ -194,7 +196,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyWizardKeyNumber => 'Key Number / vendorKeyId';
 
   @override
-  String get keyWizardKeyNumberHelper => 'Vendor number cannot be edited while editing';
+  String get keyWizardKeyNumberHelper =>
+      'Vendor number cannot be edited while editing';
 
   @override
   String get keyWizardKeyType => 'Key Type';
@@ -203,7 +206,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyWizardOwnerId => 'Owner User ID';
 
   @override
-  String get keyWizardOwnerIdHelper => 'Only indicates custodian, not unlock permission';
+  String get keyWizardOwnerIdHelper =>
+      'Only indicates custodian, not unlock permission';
 
   @override
   String get keyWizardStatus => 'Key Status';
@@ -227,16 +231,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockWizardEditTitle => 'Edit Lock (Step by step)';
 
   @override
-  String get lockWizardFillRequired => 'Please fill in name, number and location first';
+  String get lockWizardFillRequired =>
+      'Please fill in name, number and location first';
 
   @override
-  String get lockWizardConnectHint => 'Scan key, select MAC, then set it as lock-id collector key.';
+  String get lockWizardConnectHint =>
+      'Scan key, select MAC, then set it as lock-id collector key.';
 
   @override
-  String get lockWizardPreparingCollector => 'Connecting and preparing collector key...';
+  String get lockWizardPreparingCollector =>
+      'Connecting and preparing collector key...';
 
   @override
-  String get lockWizardCollectorReady => 'Collector key is ready, continue and touch target lock with key';
+  String get lockWizardCollectorReady =>
+      'Collector key is ready, continue and touch target lock with key';
 
   @override
   String get lockWizardPrepareFailed => 'Failed to prepare collector key';
@@ -248,10 +256,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockWizardStepReadId => 'Read Lock ID';
 
   @override
-  String get lockWizardReadHint => 'Touch target lock with configured key and wait for CMD=19 in onReport.';
+  String get lockWizardReadHint =>
+      'Touch target lock with configured key and wait for CMD=19 in onReport.';
 
   @override
-  String get lockWizardWaitingReport => 'Waiting lock-id report, please touch lock with key...';
+  String get lockWizardWaitingReport =>
+      'Waiting lock-id report, please touch lock with key...';
 
   @override
   String get lockWizardParseFailed => 'Failed to parse lock id from callback';
@@ -269,7 +279,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockWizardLockNumber => 'Lock Number';
 
   @override
-  String get lockWizardLockNumberHelper => 'Vendor lock number cannot be edited while editing';
+  String get lockWizardLockNumberHelper =>
+      'Vendor lock number cannot be edited while editing';
 
   @override
   String get lockWizardStepBasic => 'Basic Information';
@@ -314,43 +325,67 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockStateUnlocked => 'Unlocked';
 
   @override
-  String get lockCardTapHint => 'Tap card to open lock control';
+  String get keyCardTapHint => 'Tap key card to open online unlock';
 
   @override
-  String get lockControlTitle => 'Lock Control';
+  String get keyUnlockTitle => 'Key Unlock';
 
   @override
-  String get lockControlSelectMacFirst => 'Please scan and select key MAC first';
+  String get keyUnlockSelectMacFirst => 'Please scan and select key MAC first';
 
   @override
-  String get lockControlUnlockSubmitted => 'Unlock command submitted';
+  String get keyUnlockUnlockSubmitted => 'Unlock command submitted';
 
   @override
-  String get lockControlLockSubmitted => 'Lock command submitted';
+  String get keyUnlockLockSubmitted => 'Lock command submitted';
 
   @override
-  String get lockControlFailed => 'Control failed';
+  String get keyUnlockFailed => 'Control failed';
 
   @override
-  String get lockControlCurrentStatus => 'Current Status';
+  String get keyUnlockCurrentStatus => 'Current Status';
 
   @override
-  String get lockControlSdkConfig => 'SDK Control Configuration';
+  String get keyUnlockSdkConfig => 'SDK Control Configuration';
 
   @override
-  String lockControlKeyCount(Object count) {
+  String keyUnlockKeyCount(Object count) {
     return '$count keys';
   }
 
   @override
-  String get lockControlStopScan => 'Stop Scan';
+  String get keyUnlockStopScan => 'Stop Scan';
 
   @override
-  String get lockControlKeyMac => 'Key MAC';
+  String get keyUnlockKeyMac => 'Key MAC';
 
   @override
-  String get lockControlUnlockAction => 'Unlock';
+  String get keyUnlockUnlockAction => 'Unlock';
 
   @override
-  String get lockControlLockAction => 'Lock';
+  String get keyUnlockLockAction => 'Lock';
+
+  @override
+  String get keyUnlockPickLock => 'Pick target lock';
+
+  @override
+  String get keyUnlockSelectedLock => 'Target Lock';
+
+  @override
+  String get keyUnlockPickLockHint => 'Tap a lock below to choose the target';
+
+  @override
+  String get keyUnlockNoLockSelected => 'Please pick a target lock first';
+
+  @override
+  String get keyUnlockNoLockAvailable => 'No locks available';
+
+  @override
+  String get keyUnlockLoadingLocks => 'Loading locks...';
+
+  @override
+  String get keyUnlockTargetLockSection => 'Target Lock';
+
+  @override
+  String get keyUnlockKeyMacReadonly => 'Bound Key MAC';
 }

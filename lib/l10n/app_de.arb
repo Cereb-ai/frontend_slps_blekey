@@ -102,22 +102,30 @@
   "listUpdatedAt": "Aktualisiert am",
   "lockStateLocked": "Verriegelt",
   "lockStateUnlocked": "Entriegelt",
-  "lockCardTapHint": "Zum Sperrsteuerungsbildschirm tippen",
-  "lockControlTitle": "Schlosssteuerung",
-  "lockControlSelectMacFirst": "Bitte zuerst Schlussel-MAC scannen und auswahlen",
-  "lockControlUnlockSubmitted": "Entriegelungsbefehl gesendet",
-  "lockControlLockSubmitted": "Verriegelungsbefehl gesendet",
-  "lockControlFailed": "Steuerung fehlgeschlagen",
-  "lockControlCurrentStatus": "Aktueller Status",
-  "lockControlSdkConfig": "SDK-Steuerungskonfiguration",
-  "lockControlKeyCount": "{count} Schlussel",
-  "@lockControlKeyCount": {
+  "keyCardTapHint": "Tippen Sie auf die Schlüsselkarte, um die Online-Entriegelung zu öffnen",
+  "keyUnlockTitle": "Schlüssel-Entriegelung",
+  "keyUnlockSelectMacFirst": "Bitte zuerst Schlussel-MAC scannen und auswahlen",
+  "keyUnlockUnlockSubmitted": "Entriegelungsbefehl gesendet",
+  "keyUnlockLockSubmitted": "Verriegelungsbefehl gesendet",
+  "keyUnlockFailed": "Steuerung fehlgeschlagen",
+  "keyUnlockCurrentStatus": "Aktueller Status",
+  "keyUnlockSdkConfig": "SDK-Steuerungskonfiguration",
+  "keyUnlockKeyCount": "{count} Schlussel",
+  "@keyUnlockKeyCount": {
     "placeholders": {
       "count": {}
     }
   },
-  "lockControlStopScan": "Scan stoppen",
-  "lockControlKeyMac": "Schlussel-MAC",
-  "lockControlUnlockAction": "Entriegeln",
-  "lockControlLockAction": "Verriegeln"
+  "keyUnlockStopScan": "Scan stoppen",
+  "keyUnlockKeyMac": "Schlussel-MAC",
+  "keyUnlockUnlockAction": "Entriegeln",
+  "keyUnlockLockAction": "Verriegeln",
+  "keyUnlockPickLock": "Zielschloss auswählen",
+  "keyUnlockSelectedLock": "Zielschloss",
+  "keyUnlockPickLockHint": "Tippen Sie unten auf ein Schloss, um es auszuwahlen",
+  "keyUnlockNoLockSelected": "Bitte zuerst ein Zielschloss auswahlen",
+  "keyUnlockNoLockAvailable": "Keine Schlösser verfügbar",
+  "keyUnlockLoadingLocks": "Schlösser werden geladen...",
+  "keyUnlockTargetLockSection": "Zielschloss",
+  "keyUnlockKeyMacReadonly": "Gebundene Schlüssel-MAC"
 }

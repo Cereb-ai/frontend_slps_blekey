@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../api.dart' hide JsonMap;
 import '../../../l10n/app_localizations.dart';
+import '../../../routes.dart';
 import '../../../states/global_user.dart';
 import '../../../widgets/smart_list.dart';
 import '../models.dart';
@@ -82,11 +83,26 @@ class _KeysListState extends State<KeysList> {
       ).showSnackBar(const SnackBar(content: Text('钥匙已更新')));
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('钥匙更新失败: ${formatRequestError(error)}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('钥匙更新失败: ${formatRequestError(error)}')),
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _openControl(KeyItem item) async {
+    final updated = await Navigator.of(context).pushNamed(
+      Routes.keyControl,
+      arguments: <String, dynamic>{
+        'keyId': item.id,
+        'name': item.name,
+        'number': item.number,
+        'keyType': item.keyType,
+      },
+    );
+    if (updated == true) {
+      await _load();
     }
   }
 
@@ -168,6 +184,7 @@ class _KeysListState extends State<KeysList> {
             itemBuilder: (context, item, index) {
               return _KeyCard(
                 item: item,
+                onTap: () => _openControl(item),
                 onEdit: () => _edit(item),
                 onDelete: () => _delete(item),
               );
@@ -184,8 +201,8 @@ class _KeysListState extends State<KeysList> {
     final number = (json['vendorKeyId'] ?? id).toString();
     final status = (json['status'] ?? 'active').toString();
     final keyType = (json['keyType'] ?? 'standard').toString();
-    final ownerUserId =
-        (json['ownerUserId'] ?? json['assignedUserId'] ?? '').toString();
+    final ownerUserId = (json['ownerUserId'] ?? json['assignedUserId'] ?? '')
+        .toString();
     final updatedAtRaw = json['updatedAt']?.toString();
     final updatedAt = DateTime.tryParse(updatedAtRaw ?? '') ?? DateTime.now();
     return KeyItem(
@@ -203,11 +220,13 @@ class _KeysListState extends State<KeysList> {
 class _KeyCard extends StatelessWidget {
   const _KeyCard({
     required this.item,
+    required this.onTap,
     required this.onEdit,
     required this.onDelete,
   });
 
   final KeyItem item;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -215,38 +234,47 @@ class _KeyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    item.name,
-                    style: Theme.of(context).textTheme.titleMedium,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                   ),
-                ),
-                TextButton(onPressed: onEdit, child: Text(l10n.edit)),
-                TextButton(onPressed: onDelete, child: Text(l10n.delete)),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text('${l10n.keyWizardTypeSummary}: ${item.keyType}'),
-            const SizedBox(height: 2),
-            Text('${l10n.keyWizardKeyNumberSummary}: ${item.number}'),
-            if (item.ownerUserId.isNotEmpty) ...[
+                  TextButton(onPressed: onEdit, child: Text(l10n.edit)),
+                  TextButton(onPressed: onDelete, child: Text(l10n.delete)),
+                ],
+              ),
               const SizedBox(height: 2),
-              Text('${l10n.keyWizardOwnerSummary}: ${item.ownerUserId}'),
+              Text('${l10n.keyWizardTypeSummary}: ${item.keyType}'),
+              const SizedBox(height: 2),
+              Text('${l10n.keyWizardKeyNumberSummary}: ${item.number}'),
+              if (item.ownerUserId.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text('${l10n.keyWizardOwnerSummary}: ${item.ownerUserId}'),
+              ],
+              const SizedBox(height: 2),
+              Text(
+                '${l10n.keyWizardStatusSummary}: ${item.status == 'active' ? l10n.keyStatusActive : item.status}',
+              ),
+              const SizedBox(height: 2),
+              Text('${l10n.listUpdatedAt}: ${formatDate(item.updatedAt)}'),
+              const SizedBox(height: 6),
+              Text(
+                l10n.keyCardTapHint,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
-            const SizedBox(height: 2),
-            Text(
-              '${l10n.keyWizardStatusSummary}: ${item.status == 'active' ? l10n.keyStatusActive : item.status}',
-            ),
-            const SizedBox(height: 2),
-            Text('${l10n.listUpdatedAt}: ${formatDate(item.updatedAt)}'),
-          ],
+          ),
         ),
       ),
     );

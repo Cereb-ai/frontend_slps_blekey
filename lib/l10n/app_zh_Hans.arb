@@ -102,22 +102,30 @@
   "listUpdatedAt": "更新时间",
   "lockStateLocked": "已上锁",
   "lockStateUnlocked": "已解锁",
-  "lockCardTapHint": "点击卡片进入开关锁控制",
-  "lockControlTitle": "锁控制",
-  "lockControlSelectMacFirst": "请先扫描并选择钥匙 MAC",
-  "lockControlUnlockSubmitted": "开锁指令已提交",
-  "lockControlLockSubmitted": "关锁指令已提交",
-  "lockControlFailed": "控制失败",
-  "lockControlCurrentStatus": "当前状态",
-  "lockControlSdkConfig": "SDK 控制配置",
-  "lockControlKeyCount": "{count} 台钥匙",
-  "@lockControlKeyCount": {
+  "keyCardTapHint": "点击钥匙卡片进入在线开锁",
+  "keyUnlockTitle": "钥匙开锁",
+  "keyUnlockSelectMacFirst": "请先扫描并选择钥匙 MAC",
+  "keyUnlockUnlockSubmitted": "开锁指令已提交",
+  "keyUnlockLockSubmitted": "关锁指令已提交",
+  "keyUnlockFailed": "控制失败",
+  "keyUnlockCurrentStatus": "当前状态",
+  "keyUnlockSdkConfig": "SDK 控制配置",
+  "keyUnlockKeyCount": "{count} 台钥匙",
+  "@keyUnlockKeyCount": {
     "placeholders": {
       "count": {}
     }
   },
-  "lockControlStopScan": "停止扫描",
-  "lockControlKeyMac": "钥匙 MAC",
-  "lockControlUnlockAction": "开锁",
-  "lockControlLockAction": "关锁"
+  "keyUnlockStopScan": "停止扫描",
+  "keyUnlockKeyMac": "钥匙 MAC",
+  "keyUnlockUnlockAction": "开锁",
+  "keyUnlockLockAction": "关锁",
+  "keyUnlockPickLock": "选择要操作的锁",
+  "keyUnlockSelectedLock": "目标锁",
+  "keyUnlockPickLockHint": "点击下方列表选择目标锁",
+  "keyUnlockNoLockSelected": "请先选择目标锁",
+  "keyUnlockNoLockAvailable": "暂无可操作的锁",
+  "keyUnlockLoadingLocks": "正在加载锁列表...",
+  "keyUnlockTargetLockSection": "目标锁",
+  "keyUnlockKeyMacReadonly": "已绑定钥匙 MAC"
 }

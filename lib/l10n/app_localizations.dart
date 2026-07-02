@@ -63,7 +63,8 @@ import 'app_localizations_zh.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -71,7 +72,8 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -83,12 +85,13 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
@@ -96,7 +99,7 @@ abstract class AppLocalizations {
     Locale('en'),
     Locale('zh'),
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
-    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant')
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
   ];
 
   /// No description provided for @appTitle.
@@ -705,86 +708,135 @@ abstract class AppLocalizations {
   /// **'Unlocked'**
   String get lockStateUnlocked;
 
-  /// No description provided for @lockCardTapHint.
+  /// No description provided for @keyCardTapHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap card to open lock control'**
-  String get lockCardTapHint;
+  /// **'Tap key card to open online unlock'**
+  String get keyCardTapHint;
 
-  /// No description provided for @lockControlTitle.
+  /// No description provided for @keyUnlockTitle.
   ///
   /// In en, this message translates to:
-  /// **'Lock Control'**
-  String get lockControlTitle;
+  /// **'Key Unlock'**
+  String get keyUnlockTitle;
 
-  /// No description provided for @lockControlSelectMacFirst.
+  /// No description provided for @keyUnlockSelectMacFirst.
   ///
   /// In en, this message translates to:
   /// **'Please scan and select key MAC first'**
-  String get lockControlSelectMacFirst;
+  String get keyUnlockSelectMacFirst;
 
-  /// No description provided for @lockControlUnlockSubmitted.
+  /// No description provided for @keyUnlockUnlockSubmitted.
   ///
   /// In en, this message translates to:
   /// **'Unlock command submitted'**
-  String get lockControlUnlockSubmitted;
+  String get keyUnlockUnlockSubmitted;
 
-  /// No description provided for @lockControlLockSubmitted.
+  /// No description provided for @keyUnlockLockSubmitted.
   ///
   /// In en, this message translates to:
   /// **'Lock command submitted'**
-  String get lockControlLockSubmitted;
+  String get keyUnlockLockSubmitted;
 
-  /// No description provided for @lockControlFailed.
+  /// No description provided for @keyUnlockFailed.
   ///
   /// In en, this message translates to:
   /// **'Control failed'**
-  String get lockControlFailed;
+  String get keyUnlockFailed;
 
-  /// No description provided for @lockControlCurrentStatus.
+  /// No description provided for @keyUnlockCurrentStatus.
   ///
   /// In en, this message translates to:
   /// **'Current Status'**
-  String get lockControlCurrentStatus;
+  String get keyUnlockCurrentStatus;
 
-  /// No description provided for @lockControlSdkConfig.
+  /// No description provided for @keyUnlockSdkConfig.
   ///
   /// In en, this message translates to:
   /// **'SDK Control Configuration'**
-  String get lockControlSdkConfig;
+  String get keyUnlockSdkConfig;
 
-  /// No description provided for @lockControlKeyCount.
+  /// No description provided for @keyUnlockKeyCount.
   ///
   /// In en, this message translates to:
   /// **'{count} keys'**
-  String lockControlKeyCount(Object count);
+  String keyUnlockKeyCount(Object count);
 
-  /// No description provided for @lockControlStopScan.
+  /// No description provided for @keyUnlockStopScan.
   ///
   /// In en, this message translates to:
   /// **'Stop Scan'**
-  String get lockControlStopScan;
+  String get keyUnlockStopScan;
 
-  /// No description provided for @lockControlKeyMac.
+  /// No description provided for @keyUnlockKeyMac.
   ///
   /// In en, this message translates to:
   /// **'Key MAC'**
-  String get lockControlKeyMac;
+  String get keyUnlockKeyMac;
 
-  /// No description provided for @lockControlUnlockAction.
+  /// No description provided for @keyUnlockUnlockAction.
   ///
   /// In en, this message translates to:
   /// **'Unlock'**
-  String get lockControlUnlockAction;
+  String get keyUnlockUnlockAction;
 
-  /// No description provided for @lockControlLockAction.
+  /// No description provided for @keyUnlockLockAction.
   ///
   /// In en, this message translates to:
   /// **'Lock'**
-  String get lockControlLockAction;
+  String get keyUnlockLockAction;
+
+  /// No description provided for @keyUnlockPickLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick target lock'**
+  String get keyUnlockPickLock;
+
+  /// No description provided for @keyUnlockSelectedLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Target Lock'**
+  String get keyUnlockSelectedLock;
+
+  /// No description provided for @keyUnlockPickLockHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a lock below to choose the target'**
+  String get keyUnlockPickLockHint;
+
+  /// No description provided for @keyUnlockNoLockSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Please pick a target lock first'**
+  String get keyUnlockNoLockSelected;
+
+  /// No description provided for @keyUnlockNoLockAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No locks available'**
+  String get keyUnlockNoLockAvailable;
+
+  /// No description provided for @keyUnlockLoadingLocks.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading locks...'**
+  String get keyUnlockLoadingLocks;
+
+  /// No description provided for @keyUnlockTargetLockSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Target Lock'**
+  String get keyUnlockTargetLockSection;
+
+  /// No description provided for @keyUnlockKeyMacReadonly.
+  ///
+  /// In en, this message translates to:
+  /// **'Bound Key MAC'**
+  String get keyUnlockKeyMacReadonly;
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -793,36 +845,42 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['de', 'en', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['de', 'en', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
   // Lookup logic when language+script codes are specified.
   switch (locale.languageCode) {
-    case 'zh': {
-  switch (locale.scriptCode) {
-    case 'Hans': return AppLocalizationsZhHans();
-case 'Hant': return AppLocalizationsZhHant();
-   }
-  break;
-   }
+    case 'zh':
+      {
+        switch (locale.scriptCode) {
+          case 'Hans':
+            return AppLocalizationsZhHans();
+          case 'Hant':
+            return AppLocalizationsZhHant();
+        }
+        break;
+      }
   }
 
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'de': return AppLocalizationsDe();
-    case 'en': return AppLocalizationsEn();
-    case 'zh': return AppLocalizationsZh();
+    case 'de':
+      return AppLocalizationsDe();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'zh':
+      return AppLocalizationsZh();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
+    'that was used.',
   );
 }

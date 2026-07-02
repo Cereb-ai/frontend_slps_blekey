@@ -102,22 +102,30 @@
   "listUpdatedAt": "Updated At",
   "lockStateLocked": "Locked",
   "lockStateUnlocked": "Unlocked",
-  "lockCardTapHint": "Tap card to open lock control",
-  "lockControlTitle": "Lock Control",
-  "lockControlSelectMacFirst": "Please scan and select key MAC first",
-  "lockControlUnlockSubmitted": "Unlock command submitted",
-  "lockControlLockSubmitted": "Lock command submitted",
-  "lockControlFailed": "Control failed",
-  "lockControlCurrentStatus": "Current Status",
-  "lockControlSdkConfig": "SDK Control Configuration",
-  "lockControlKeyCount": "{count} keys",
-  "@lockControlKeyCount": {
+  "keyCardTapHint": "Tap key card to open online unlock",
+  "keyUnlockTitle": "Key Unlock",
+  "keyUnlockSelectMacFirst": "Please scan and select key MAC first",
+  "keyUnlockUnlockSubmitted": "Unlock command submitted",
+  "keyUnlockLockSubmitted": "Lock command submitted",
+  "keyUnlockFailed": "Control failed",
+  "keyUnlockCurrentStatus": "Current Status",
+  "keyUnlockSdkConfig": "SDK Control Configuration",
+  "keyUnlockKeyCount": "{count} keys",
+  "@keyUnlockKeyCount": {
     "placeholders": {
       "count": {}
     }
   },
-  "lockControlStopScan": "Stop Scan",
-  "lockControlKeyMac": "Key MAC",
-  "lockControlUnlockAction": "Unlock",
-  "lockControlLockAction": "Lock"
+  "keyUnlockStopScan": "Stop Scan",
+  "keyUnlockKeyMac": "Key MAC",
+  "keyUnlockUnlockAction": "Unlock",
+  "keyUnlockLockAction": "Lock",
+  "keyUnlockPickLock": "Pick target lock",
+  "keyUnlockSelectedLock": "Target Lock",
+  "keyUnlockPickLockHint": "Tap a lock below to choose the target",
+  "keyUnlockNoLockSelected": "Please pick a target lock first",
+  "keyUnlockNoLockAvailable": "No locks available",
+  "keyUnlockLoadingLocks": "Loading locks...",
+  "keyUnlockTargetLockSection": "Target Lock",
+  "keyUnlockKeyMacReadonly": "Bound Key MAC"
 }

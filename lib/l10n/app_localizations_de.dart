@@ -95,7 +95,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get logoutAction => 'Abmelden';
 
   @override
-  String get cannotOpenCerebSite => 'Cereb.AI-Website kann nicht geoffnet werden';
+  String get cannotOpenCerebSite =>
+      'Cereb.AI-Website kann nicht geoffnet werden';
 
   @override
   String get poweredBy => 'powered by';
@@ -157,13 +158,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get keyWizardStepConnect => 'Gerat verbinden';
 
   @override
-  String get keyWizardConnectHint => 'Schlussel scannen, MAC auswahlen, dann verbinden und Schlusselinfo lesen.';
+  String get keyWizardConnectHint =>
+      'Schlussel scannen, MAC auswahlen, dann verbinden und Schlusselinfo lesen.';
 
   @override
   String get keyWizardScanning => 'Schlussel werden gescannt...';
 
   @override
-  String get keyWizardScanStarted => 'Scan gestartet, bitte auf Aktualisierung der Gerateliste warten';
+  String get keyWizardScanStarted =>
+      'Scan gestartet, bitte auf Aktualisierung der Gerateliste warten';
 
   @override
   String get keyWizardScanningShort => 'Scan lauft';
@@ -193,7 +196,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get keyWizardKeyNumber => 'Schlusselnummer / vendorKeyId';
 
   @override
-  String get keyWizardKeyNumberHelper => 'Herstellernummer kann beim Bearbeiten nicht geandert werden';
+  String get keyWizardKeyNumberHelper =>
+      'Herstellernummer kann beim Bearbeiten nicht geandert werden';
 
   @override
   String get keyWizardKeyType => 'Schlusseltyp';
@@ -202,7 +206,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get keyWizardOwnerId => 'Besitzer-ID';
 
   @override
-  String get keyWizardOwnerIdHelper => 'Nur Verwahrer, keine Entriegelungsberechtigung';
+  String get keyWizardOwnerIdHelper =>
+      'Nur Verwahrer, keine Entriegelungsberechtigung';
 
   @override
   String get keyWizardStatus => 'Schlusselstatus';
@@ -226,19 +231,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get lockWizardEditTitle => 'Schloss bearbeiten (Schrittweise)';
 
   @override
-  String get lockWizardFillRequired => 'Bitte zuerst Name, Nummer und Ort eingeben';
+  String get lockWizardFillRequired =>
+      'Bitte zuerst Name, Nummer und Ort eingeben';
 
   @override
-  String get lockWizardConnectHint => 'Schlussel scannen, MAC auswahlen, dann als Lock-ID-Sammler setzen.';
+  String get lockWizardConnectHint =>
+      'Schlussel scannen, MAC auswahlen, dann als Lock-ID-Sammler setzen.';
 
   @override
-  String get lockWizardPreparingCollector => 'Verbinden und Sammlerschlussel vorbereiten...';
+  String get lockWizardPreparingCollector =>
+      'Verbinden und Sammlerschlussel vorbereiten...';
 
   @override
-  String get lockWizardCollectorReady => 'Sammlerschlussel bereit, im nachsten Schritt Schloss beruhren';
+  String get lockWizardCollectorReady =>
+      'Sammlerschlussel bereit, im nachsten Schritt Schloss beruhren';
 
   @override
-  String get lockWizardPrepareFailed => 'Sammlerschlussel konnte nicht vorbereitet werden';
+  String get lockWizardPrepareFailed =>
+      'Sammlerschlussel konnte nicht vorbereitet werden';
 
   @override
   String get lockWizardPrepareAction => 'Verbinden und Sammlerschlussel setzen';
@@ -247,13 +257,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get lockWizardStepReadId => 'Lock-ID lesen';
 
   @override
-  String get lockWizardReadHint => 'Schloss mit konfiguriertem Schlussel beruhren und auf CMD=19 in onReport warten.';
+  String get lockWizardReadHint =>
+      'Schloss mit konfiguriertem Schlussel beruhren und auf CMD=19 in onReport warten.';
 
   @override
-  String get lockWizardWaitingReport => 'Warte auf Lock-ID-Report, bitte Schloss beruhren...';
+  String get lockWizardWaitingReport =>
+      'Warte auf Lock-ID-Report, bitte Schloss beruhren...';
 
   @override
-  String get lockWizardParseFailed => 'Lock-ID konnte aus Callback nicht gelesen werden';
+  String get lockWizardParseFailed =>
+      'Lock-ID konnte aus Callback nicht gelesen werden';
 
   @override
   String get lockWizardReadSuccess => 'Lock-ID erfasst';
@@ -268,7 +281,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get lockWizardLockNumber => 'Schlossnummer';
 
   @override
-  String get lockWizardLockNumberHelper => 'Hersteller-Schlossnummer kann beim Bearbeiten nicht geandert werden';
+  String get lockWizardLockNumberHelper =>
+      'Hersteller-Schlossnummer kann beim Bearbeiten nicht geandert werden';
 
   @override
   String get lockWizardStepBasic => 'Grundinformationen';
@@ -313,43 +327,71 @@ class AppLocalizationsDe extends AppLocalizations {
   String get lockStateUnlocked => 'Entriegelt';
 
   @override
-  String get lockCardTapHint => 'Zum Sperrsteuerungsbildschirm tippen';
+  String get keyCardTapHint =>
+      'Tippen Sie auf die Schlüsselkarte, um die Online-Entriegelung zu öffnen';
 
   @override
-  String get lockControlTitle => 'Schlosssteuerung';
+  String get keyUnlockTitle => 'Schlüssel-Entriegelung';
 
   @override
-  String get lockControlSelectMacFirst => 'Bitte zuerst Schlussel-MAC scannen und auswahlen';
+  String get keyUnlockSelectMacFirst =>
+      'Bitte zuerst Schlussel-MAC scannen und auswahlen';
 
   @override
-  String get lockControlUnlockSubmitted => 'Entriegelungsbefehl gesendet';
+  String get keyUnlockUnlockSubmitted => 'Entriegelungsbefehl gesendet';
 
   @override
-  String get lockControlLockSubmitted => 'Verriegelungsbefehl gesendet';
+  String get keyUnlockLockSubmitted => 'Verriegelungsbefehl gesendet';
 
   @override
-  String get lockControlFailed => 'Steuerung fehlgeschlagen';
+  String get keyUnlockFailed => 'Steuerung fehlgeschlagen';
 
   @override
-  String get lockControlCurrentStatus => 'Aktueller Status';
+  String get keyUnlockCurrentStatus => 'Aktueller Status';
 
   @override
-  String get lockControlSdkConfig => 'SDK-Steuerungskonfiguration';
+  String get keyUnlockSdkConfig => 'SDK-Steuerungskonfiguration';
 
   @override
-  String lockControlKeyCount(Object count) {
+  String keyUnlockKeyCount(Object count) {
     return '$count Schlussel';
   }
 
   @override
-  String get lockControlStopScan => 'Scan stoppen';
+  String get keyUnlockStopScan => 'Scan stoppen';
 
   @override
-  String get lockControlKeyMac => 'Schlussel-MAC';
+  String get keyUnlockKeyMac => 'Schlussel-MAC';
 
   @override
-  String get lockControlUnlockAction => 'Entriegeln';
+  String get keyUnlockUnlockAction => 'Entriegeln';
 
   @override
-  String get lockControlLockAction => 'Verriegeln';
+  String get keyUnlockLockAction => 'Verriegeln';
+
+  @override
+  String get keyUnlockPickLock => 'Zielschloss auswählen';
+
+  @override
+  String get keyUnlockSelectedLock => 'Zielschloss';
+
+  @override
+  String get keyUnlockPickLockHint =>
+      'Tippen Sie unten auf ein Schloss, um es auszuwahlen';
+
+  @override
+  String get keyUnlockNoLockSelected =>
+      'Bitte zuerst ein Zielschloss auswahlen';
+
+  @override
+  String get keyUnlockNoLockAvailable => 'Keine Schlösser verfügbar';
+
+  @override
+  String get keyUnlockLoadingLocks => 'Schlösser werden geladen...';
+
+  @override
+  String get keyUnlockTargetLockSection => 'Zielschloss';
+
+  @override
+  String get keyUnlockKeyMacReadonly => 'Gebundene Schlüssel-MAC';
 }
