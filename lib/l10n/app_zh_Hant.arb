@@ -127,5 +127,55 @@
   "keyUnlockNoLockAvailable": "暫無可操作的鎖",
   "keyUnlockLoadingLocks": "正在載入鎖列表...",
   "keyUnlockTargetLockSection": "目標鎖",
-  "keyUnlockKeyMacReadonly": "已綁定鑰匙 MAC"
+  "keyUnlockKeyMacReadonly": "已綁定鑰匙 MAC",
+  "keyUnlockAuthDenied": "後端鑑權拒絕",
+  "clearanceTitle": "聯簽",
+  "clearanceDetailTitle": "聯簽確認",
+  "clearanceEmpty": "暫無分配給您的聯簽任務",
+  "clearanceRetry": "重試",
+  "clearanceProgress": "已確認 {cleared}/{required}",
+  "@clearanceProgress": {
+    "placeholders": {
+      "cleared": {},
+      "required": {}
+    }
+  },
+  "clearanceUnlockBlocked": "開鎖受阻 — 仍有 {count} 名工人未確認",
+  "@clearanceUnlockBlocked": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "clearanceReady": "可開鎖",
+  "clearanceActive": "進行中",
+  "clearancePending": "待確認",
+  "clearanceWorkerList": "工人列表",
+  "clearanceYou": "我 ({userId})",
+  "@clearanceYou": {
+    "placeholders": {
+      "userId": {}
+    }
+  },
+  "clearanceStatusPending": "作業中",
+  "clearanceStatusCleared": "已確認",
+  "clearanceStatusBlocked": "受阻",
+  "clearanceClearAction": "確認就緒 / Clear",
+  "clearanceBlockAction": "仍在作業",
+  "clearanceClearedSuccess": "已標記為確認就緒",
+  "clearanceBlockedSuccess": "已標記為仍在作業",
+  "clearanceAllReady": "全員已確認 — 允許開鎖",
+  "clearanceExpireAt": "截止時間 {time}",
+  "@clearanceExpireAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "clearanceBlockedDialogTitle": "開鎖受阻",
+  "clearanceBlockedDialogBody": "聯簽尚未完成：{reasons}",
+  "@clearanceBlockedDialogBody": {
+    "placeholders": {
+      "reasons": {}
+    }
+  },
+  "clearanceGoToTasks": "前往聯簽"
 }

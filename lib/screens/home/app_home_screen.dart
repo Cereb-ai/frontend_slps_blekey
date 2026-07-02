@@ -6,6 +6,7 @@ import '../../states/global_user.dart';
 import 'models.dart';
 import 'widgets/keys_list.dart';
 import 'widgets/locks_list.dart';
+import '../clearance/worker_clearance_screen.dart';
 import 'widgets/mine_tab.dart';
 import 'widgets/key_editor_sheet.dart';
 import 'widgets/lock_editor_sheet.dart';
@@ -26,6 +27,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     final l10n = AppLocalizations.of(context)!;
     if (_tabIndex == 0) return l10n.keysManagement;
     if (_tabIndex == 1) return l10n.locksManagement;
+    if (_tabIndex == 2) return l10n.clearanceTitle;
     return l10n.my;
   }
 
@@ -113,6 +115,10 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
             label: AppLocalizations.of(context)!.locksManagement,
           ),
           NavigationDestination(
+            icon: const Icon(Icons.groups_outlined),
+            label: AppLocalizations.of(context)!.clearanceTitle,
+          ),
+          NavigationDestination(
             icon: const Icon(Icons.person_outline),
             label: AppLocalizations.of(context)!.my,
           ),
@@ -134,6 +140,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       return LocksList(
         key: ValueKey<int>(_locksReloadTrigger),
       );
+    }
+    if (_tabIndex == 2) {
+      return const WorkerClearanceScreen();
     }
     return MineTab(
       onOpenCurrentTest: () =>

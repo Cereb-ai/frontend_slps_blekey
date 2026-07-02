@@ -833,6 +833,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bound Key MAC'**
   String get keyUnlockKeyMacReadonly;
+
+  String get keyUnlockAuthDenied;
+
+  String get clearanceTitle;
+
+  String get clearanceDetailTitle;
+
+  String get clearanceEmpty;
+
+  String get clearanceRetry;
+
+  String clearanceProgress(Object cleared, Object required);
+
+  String clearanceUnlockBlocked(Object count);
+
+  String get clearanceReady;
+
+  String get clearanceActive;
+
+  String get clearancePending;
+
+  String get clearanceWorkerList;
+
+  String clearanceYou(Object userId);
+
+  String get clearanceStatusPending;
+
+  String get clearanceStatusCleared;
+
+  String get clearanceStatusBlocked;
+
+  String get clearanceClearAction;
+
+  String get clearanceBlockAction;
+
+  String get clearanceClearedSuccess;
+
+  String get clearanceBlockedSuccess;
+
+  String get clearanceAllReady;
+
+  String clearanceExpireAt(Object time);
+
+  String get clearanceBlockedDialogTitle;
+
+  String clearanceBlockedDialogBody(Object reasons);
+
+  String get clearanceGoToTasks;
 }
 
 class _AppLocalizationsDelegate

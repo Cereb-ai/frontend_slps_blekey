@@ -11,6 +11,7 @@ class GlobalUser extends ChangeNotifier {
   static const _keyToken = 'auth_token';
   static const _keyRefreshToken = 'auth_refresh_token';
   static const _keyUsername = 'auth_username';
+  static const _keyUserId = 'auth_user_id';
   static const _keyRememberMe = 'auth_remember_me';
   static const _keySavedUsername = 'auth_saved_username';
 
@@ -18,6 +19,7 @@ class GlobalUser extends ChangeNotifier {
   String? refreshToken;
   String? username;
   String? email;
+  String? userId;
   bool rememberMe = false;
 
   bool get isLoggedIn => token != null && token!.isNotEmpty;
@@ -27,6 +29,7 @@ class GlobalUser extends ChangeNotifier {
     token = prefs.getString(_keyToken);
     refreshToken = prefs.getString(_keyRefreshToken);
     username = prefs.getString(_keyUsername);
+    userId = prefs.getString(_keyUserId);
     rememberMe = prefs.getBool(_keyRememberMe) ?? false;
     debugPrint(
       '[GlobalUser] loadFromStorage token=${_preview(token)} refresh=${_preview(refreshToken)} user=$username rememberMe=$rememberMe',
@@ -82,11 +85,17 @@ class GlobalUser extends ChangeNotifier {
     final profile = await Api.getProfile(token: token!);
     final profileEmail = profile['email'];
     final profileAlias = profile['alias'];
+    final profileId = profile['id'] ?? profile['userId'] ?? profile['user_id'];
     if (profileEmail != null && profileEmail.toString().isNotEmpty) {
       email = profileEmail.toString();
     }
     if (profileAlias != null && profileAlias.toString().isNotEmpty) {
       username = profileAlias.toString();
+    }
+    if (profileId != null && profileId.toString().isNotEmpty) {
+      userId = profileId.toString();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyUserId, userId!);
     }
     notifyListeners();
   }
@@ -165,11 +174,13 @@ class GlobalUser extends ChangeNotifier {
     await prefs.remove(_keyToken);
     await prefs.remove(_keyRefreshToken);
     await prefs.remove(_keyUsername);
+    await prefs.remove(_keyUserId);
 
     token = null;
     refreshToken = null;
     username = null;
     email = null;
+    userId = null;
     debugPrint('[GlobalUser] local session cleared');
     notifyListeners();
   }

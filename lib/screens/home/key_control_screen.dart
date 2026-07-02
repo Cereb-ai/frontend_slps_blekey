@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 
 import '../../api.dart';
 import '../../l10n/app_localizations.dart';
+import '../../routes.dart';
 import '../ble_key/ble_key_controller.dart';
 import '../../states/global_user.dart';
+import '../clearance/clearance_models.dart';
 import 'models.dart';
 
 /// Key-centric online unlock control.
@@ -199,7 +201,14 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       final allowed = decision['allowed'] == true;
       if (!allowed) {
         final reasons = _formatDecisionReasons(decision['reasons']);
-        throw StateError('后端鉴权拒绝：$reasons');
+        final blockedByGroupLockout = _reasonsIndicateGroupLockout(decision['reasons']);
+        if (blockedByGroupLockout && mounted) {
+          await _showGroupLockoutBlockedDialog(
+            reasons: reasons,
+            taskId: decision['taskId']?.toString(),
+          );
+        }
+        throw StateError('${l10n.keyUnlockAuthDenied}: $reasons');
       }
 
       // 3) SetDateTime
@@ -305,6 +314,44 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       if (values.isNotEmpty) return values.join(', ');
     }
     return 'unknown reason';
+  }
+
+  bool _reasonsIndicateGroupLockout(dynamic reasons) {
+    if (reasons is! List) return false;
+    for (final item in reasons) {
+      if (isGroupLockoutBlockedReason(item.toString())) return true;
+    }
+    return false;
+  }
+
+  Future<void> _showGroupLockoutBlockedDialog({
+    required String reasons,
+    String? taskId,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.clearanceBlockedDialogTitle),
+        content: Text(l10n.clearanceBlockedDialogBody(reasons)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.clearanceGoToTasks),
+          ),
+        ],
+      ),
+    );
+    if (go == true && mounted) {
+      await Navigator.of(context).pushNamed(
+        Routes.workerClearance,
+        arguments: <String, dynamic>{'taskId': taskId},
+      );
+    }
   }
 
   bool _isCmd10SwitchReport(BleKeyOperationResult result) {

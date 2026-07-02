@@ -123,6 +123,11 @@ class _SplashGateState extends State<_SplashGate> {
 
   Future<void> _checkAuth() async {
     await GlobalUser.instance.loadFromStorage();
+    if (GlobalUser.instance.isLoggedIn) {
+      try {
+        await GlobalUser.instance.fetchProfile();
+      } catch (_) {}
+    }
     final loggedIn = GlobalUser.instance.isLoggedIn;
     if (!mounted) return;
     Navigator.of(context).pushReplacement(

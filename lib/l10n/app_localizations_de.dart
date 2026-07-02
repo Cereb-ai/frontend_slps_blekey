@@ -394,4 +394,86 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get keyUnlockKeyMacReadonly => 'Gebundene Schlüssel-MAC';
+
+  @override
+  String get keyUnlockAuthDenied => 'Autorisierung abgelehnt';
+
+  @override
+  String get clearanceTitle => 'Freigabe';
+
+  @override
+  String get clearanceDetailTitle => 'Gruppenfreigabe';
+
+  @override
+  String get clearanceEmpty => 'Keine Gruppenfreigabe-Aufgaben zugewiesen';
+
+  @override
+  String get clearanceRetry => 'Erneut versuchen';
+
+  @override
+  String clearanceProgress(Object cleared, Object required) {
+    return '$cleared/$required bestätigt';
+  }
+
+  @override
+  String clearanceUnlockBlocked(Object count) {
+    return 'ENTSPERRUNG BLOCKIERT — $count Arbeiter noch geschützt';
+  }
+
+  @override
+  String get clearanceReady => 'Bereit';
+
+  @override
+  String get clearanceActive => 'Aktiv';
+
+  @override
+  String get clearancePending => 'Ausstehend';
+
+  @override
+  String get clearanceWorkerList => 'Arbeiter';
+
+  @override
+  String clearanceYou(Object userId) {
+    return 'Sie ($userId)';
+  }
+
+  @override
+  String get clearanceStatusPending => 'Arbeitet noch';
+
+  @override
+  String get clearanceStatusCleared => 'Bestätigt';
+
+  @override
+  String get clearanceStatusBlocked => 'Blockiert';
+
+  @override
+  String get clearanceClearAction => 'Bereit / Freigabe';
+
+  @override
+  String get clearanceBlockAction => 'Arbeitet noch';
+
+  @override
+  String get clearanceClearedSuccess => 'Als bestätigt markiert';
+
+  @override
+  String get clearanceBlockedSuccess => 'Als noch arbeitend markiert';
+
+  @override
+  String get clearanceAllReady => 'Alle bestätigt — Entsperrung erlaubt';
+
+  @override
+  String clearanceExpireAt(Object time) {
+    return 'Läuft ab um $time';
+  }
+
+  @override
+  String get clearanceBlockedDialogTitle => 'Entsperrung blockiert';
+
+  @override
+  String clearanceBlockedDialogBody(Object reasons) {
+    return 'Gruppenfreigabe unvollständig: $reasons';
+  }
+
+  @override
+  String get clearanceGoToTasks => 'Zur Freigabe';
 }

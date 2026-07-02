@@ -127,5 +127,55 @@
   "keyUnlockNoLockAvailable": "Keine Schlösser verfügbar",
   "keyUnlockLoadingLocks": "Schlösser werden geladen...",
   "keyUnlockTargetLockSection": "Zielschloss",
-  "keyUnlockKeyMacReadonly": "Gebundene Schlüssel-MAC"
+  "keyUnlockKeyMacReadonly": "Gebundene Schlüssel-MAC",
+  "keyUnlockAuthDenied": "Autorisierung abgelehnt",
+  "clearanceTitle": "Freigabe",
+  "clearanceDetailTitle": "Gruppenfreigabe",
+  "clearanceEmpty": "Keine Gruppenfreigabe-Aufgaben zugewiesen",
+  "clearanceRetry": "Erneut versuchen",
+  "clearanceProgress": "{cleared}/{required} bestätigt",
+  "@clearanceProgress": {
+    "placeholders": {
+      "cleared": {},
+      "required": {}
+    }
+  },
+  "clearanceUnlockBlocked": "ENTSPERRUNG BLOCKIERT — {count} Arbeiter noch geschützt",
+  "@clearanceUnlockBlocked": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "clearanceReady": "Bereit",
+  "clearanceActive": "Aktiv",
+  "clearancePending": "Ausstehend",
+  "clearanceWorkerList": "Arbeiter",
+  "clearanceYou": "Sie ({userId})",
+  "@clearanceYou": {
+    "placeholders": {
+      "userId": {}
+    }
+  },
+  "clearanceStatusPending": "Arbeitet noch",
+  "clearanceStatusCleared": "Bestätigt",
+  "clearanceStatusBlocked": "Blockiert",
+  "clearanceClearAction": "Bereit / Freigabe",
+  "clearanceBlockAction": "Arbeitet noch",
+  "clearanceClearedSuccess": "Als bestätigt markiert",
+  "clearanceBlockedSuccess": "Als noch arbeitend markiert",
+  "clearanceAllReady": "Alle bestätigt — Entsperrung erlaubt",
+  "clearanceExpireAt": "Läuft ab um {time}",
+  "@clearanceExpireAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "clearanceBlockedDialogTitle": "Entsperrung blockiert",
+  "clearanceBlockedDialogBody": "Gruppenfreigabe unvollständig: {reasons}",
+  "@clearanceBlockedDialogBody": {
+    "placeholders": {
+      "reasons": {}
+    }
+  },
+  "clearanceGoToTasks": "Zur Freigabe"
 }

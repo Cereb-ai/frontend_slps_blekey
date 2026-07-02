@@ -388,4 +388,86 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keyUnlockKeyMacReadonly => 'Bound Key MAC';
+
+  @override
+  String get keyUnlockAuthDenied => 'Authorization denied';
+
+  @override
+  String get clearanceTitle => 'Clearance';
+
+  @override
+  String get clearanceDetailTitle => 'Group Clearance';
+
+  @override
+  String get clearanceEmpty => 'No group clearance tasks assigned to you';
+
+  @override
+  String get clearanceRetry => 'Retry';
+
+  @override
+  String clearanceProgress(Object cleared, Object required) {
+    return '$cleared/$required cleared';
+  }
+
+  @override
+  String clearanceUnlockBlocked(Object count) {
+    return 'UNLOCK BLOCKED — $count workers still protected';
+  }
+
+  @override
+  String get clearanceReady => 'Ready';
+
+  @override
+  String get clearanceActive => 'Active';
+
+  @override
+  String get clearancePending => 'Pending';
+
+  @override
+  String get clearanceWorkerList => 'Workers';
+
+  @override
+  String clearanceYou(Object userId) {
+    return 'You ($userId)';
+  }
+
+  @override
+  String get clearanceStatusPending => 'Still Working';
+
+  @override
+  String get clearanceStatusCleared => 'Cleared';
+
+  @override
+  String get clearanceStatusBlocked => 'Blocked';
+
+  @override
+  String get clearanceClearAction => 'Clear / Ready for Release';
+
+  @override
+  String get clearanceBlockAction => 'Still Working';
+
+  @override
+  String get clearanceClearedSuccess => 'Marked as cleared';
+
+  @override
+  String get clearanceBlockedSuccess => 'Marked as still working';
+
+  @override
+  String get clearanceAllReady => 'All workers cleared — unlock allowed';
+
+  @override
+  String clearanceExpireAt(Object time) {
+    return 'Expires at $time';
+  }
+
+  @override
+  String get clearanceBlockedDialogTitle => 'Unlock Blocked';
+
+  @override
+  String clearanceBlockedDialogBody(Object reasons) {
+    return 'Group clearance is not complete: $reasons';
+  }
+
+  @override
+  String get clearanceGoToTasks => 'Go to Clearance';
 }

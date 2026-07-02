@@ -405,6 +405,61 @@ abstract final class Api {
     return _asJsonMap(response.data);
   }
 
+  static Future<List<JsonMap>> listAuthorizationTasks({
+    required String token,
+    Map<String, dynamic> query = const <String, dynamic>{},
+  }) async {
+    final response = await dio.get<dynamic>(
+      '/slps/authorization-tasks',
+      queryParameters: query,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return _extractList(response.data);
+  }
+
+  static Future<List<JsonMap>> listTaskClearances({
+    required String token,
+    required String taskId,
+  }) async {
+    final response = await dio.get<dynamic>(
+      '/slps/authorization-tasks/$taskId/clearances',
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return _extractList(response.data);
+  }
+
+  static Future<JsonMap> clearGroupLockoutTask({
+    required String token,
+    required String taskId,
+    String method = 'app',
+    String? note,
+  }) async {
+    final payload = <String, dynamic>{'method': method};
+    if (note != null && note.isNotEmpty) payload['note'] = note;
+    final response = await dio.post<dynamic>(
+      '/slps/authorization-tasks/$taskId/clear',
+      data: payload,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return _asJsonMap(response.data);
+  }
+
+  static Future<JsonMap> blockGroupLockoutTask({
+    required String token,
+    required String taskId,
+    String method = 'app',
+    String? note,
+  }) async {
+    final payload = <String, dynamic>{'method': method};
+    if (note != null && note.isNotEmpty) payload['note'] = note;
+    final response = await dio.post<dynamic>(
+      '/slps/authorization-tasks/$taskId/block',
+      data: payload,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return _asJsonMap(response.data);
+  }
+
   static Future<JsonMap> decideAccess({
     required String token,
     required String keyId,
@@ -412,6 +467,7 @@ abstract final class Api {
     DateTime? at,
     bool? geofenceSatisfied,
     String? clientTraceId,
+    String? groupLockoutTaskId,
   }) async {
     final payload = <String, dynamic>{'keyId': keyId, 'lockId': lockId};
     if (at != null) payload['at'] = at.toIso8601String();
@@ -420,6 +476,9 @@ abstract final class Api {
     }
     if (clientTraceId?.isNotEmpty ?? false) {
       payload['clientTraceId'] = clientTraceId;
+    }
+    if (groupLockoutTaskId?.isNotEmpty ?? false) {
+      payload['groupLockoutTaskId'] = groupLockoutTaskId;
     }
     final response = await dio.post<dynamic>(
       '/slps/access/decide',
@@ -437,6 +496,26 @@ abstract final class Api {
       '/slps/locks/$id',
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
+  }
+
+  static List<JsonMap> _extractList(dynamic data) {
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final items = map['items'] ?? map['list'] ?? map['data'];
+      if (items is List) {
+        return items
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    }
+    return const <JsonMap>[];
   }
 
   static JsonMap _asJsonMap(dynamic data) {

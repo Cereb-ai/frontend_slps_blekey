@@ -127,5 +127,55 @@
   "keyUnlockNoLockAvailable": "No locks available",
   "keyUnlockLoadingLocks": "Loading locks...",
   "keyUnlockTargetLockSection": "Target Lock",
-  "keyUnlockKeyMacReadonly": "Bound Key MAC"
+  "keyUnlockKeyMacReadonly": "Bound Key MAC",
+  "keyUnlockAuthDenied": "Authorization denied",
+  "clearanceTitle": "Clearance",
+  "clearanceDetailTitle": "Group Clearance",
+  "clearanceEmpty": "No group clearance tasks assigned to you",
+  "clearanceRetry": "Retry",
+  "clearanceProgress": "{cleared}/{required} cleared",
+  "@clearanceProgress": {
+    "placeholders": {
+      "cleared": {},
+      "required": {}
+    }
+  },
+  "clearanceUnlockBlocked": "UNLOCK BLOCKED — {count} workers still protected",
+  "@clearanceUnlockBlocked": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "clearanceReady": "Ready",
+  "clearanceActive": "Active",
+  "clearancePending": "Pending",
+  "clearanceWorkerList": "Workers",
+  "clearanceYou": "You ({userId})",
+  "@clearanceYou": {
+    "placeholders": {
+      "userId": {}
+    }
+  },
+  "clearanceStatusPending": "Still Working",
+  "clearanceStatusCleared": "Cleared",
+  "clearanceStatusBlocked": "Blocked",
+  "clearanceClearAction": "Clear / Ready for Release",
+  "clearanceBlockAction": "Still Working",
+  "clearanceClearedSuccess": "Marked as cleared",
+  "clearanceBlockedSuccess": "Marked as still working",
+  "clearanceAllReady": "All workers cleared — unlock allowed",
+  "clearanceExpireAt": "Expires at {time}",
+  "@clearanceExpireAt": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "clearanceBlockedDialogTitle": "Unlock Blocked",
+  "clearanceBlockedDialogBody": "Group clearance is not complete: {reasons}",
+  "@clearanceBlockedDialogBody": {
+    "placeholders": {
+      "reasons": {}
+    }
+  },
+  "clearanceGoToTasks": "Go to Clearance"
 }

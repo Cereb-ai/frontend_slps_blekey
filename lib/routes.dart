@@ -4,6 +4,7 @@ import 'screens/ble_key/online_switch_lock_screen.dart';
 import 'screens/ble_key/vendor_ble_key_screen.dart';
 import 'screens/home/app_home_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/clearance/worker_clearance_screen.dart';
 import 'screens/home/key_control_screen.dart';
 import 'screens/login/login_screen.dart';
 
@@ -16,6 +17,7 @@ abstract final class Routes {
   static const vendorTest = '/vendor-test';
   static const onlineSwitchLock = '/online-switch-lock';
   static const keyControl = '/key-control';
+  static const workerClearance = '/worker-clearance';
 }
 
 final Map<String, RouteHandler> routes = <String, RouteHandler>{
@@ -26,4 +28,10 @@ final Map<String, RouteHandler> routes = <String, RouteHandler>{
   Routes.vendorTest: (context, {args}) => const VendorBleKeyScreen(),
   Routes.onlineSwitchLock: (context, {args}) => const OnlineSwitchLockScreen(),
   Routes.keyControl: (context, {args}) => KeyControlScreen.fromArgs(args),
+  Routes.workerClearance: (context, {args}) {
+    final data = args ?? const <String, dynamic>{};
+    return WorkerClearanceScreen(
+      initialTaskId: data['taskId']?.toString(),
+    );
+  },
 };

@@ -376,6 +376,88 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get keyUnlockKeyMacReadonly => '已绑定钥匙 MAC';
+
+  @override
+  String get keyUnlockAuthDenied => '后端鉴权拒绝';
+
+  @override
+  String get clearanceTitle => '联签';
+
+  @override
+  String get clearanceDetailTitle => '联签确认';
+
+  @override
+  String get clearanceEmpty => '暂无分配给您的联签任务';
+
+  @override
+  String get clearanceRetry => '重试';
+
+  @override
+  String clearanceProgress(Object cleared, Object required) {
+    return '已确认 $cleared/$required';
+  }
+
+  @override
+  String clearanceUnlockBlocked(Object count) {
+    return '开锁受阻 — 仍有 $count 名工人未确认';
+  }
+
+  @override
+  String get clearanceReady => '可开锁';
+
+  @override
+  String get clearanceActive => '进行中';
+
+  @override
+  String get clearancePending => '待确认';
+
+  @override
+  String get clearanceWorkerList => '工人列表';
+
+  @override
+  String clearanceYou(Object userId) {
+    return '我 ($userId)';
+  }
+
+  @override
+  String get clearanceStatusPending => '作业中';
+
+  @override
+  String get clearanceStatusCleared => '已确认';
+
+  @override
+  String get clearanceStatusBlocked => '受阻';
+
+  @override
+  String get clearanceClearAction => '确认就绪 / Clear';
+
+  @override
+  String get clearanceBlockAction => '仍在作业';
+
+  @override
+  String get clearanceClearedSuccess => '已标记为确认就绪';
+
+  @override
+  String get clearanceBlockedSuccess => '已标记为仍在作业';
+
+  @override
+  String get clearanceAllReady => '全员已确认 — 允许开锁';
+
+  @override
+  String clearanceExpireAt(Object time) {
+    return '截止时间 $time';
+  }
+
+  @override
+  String get clearanceBlockedDialogTitle => '开锁受阻';
+
+  @override
+  String clearanceBlockedDialogBody(Object reasons) {
+    return '联签尚未完成：$reasons';
+  }
+
+  @override
+  String get clearanceGoToTasks => '前往联签';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -750,6 +832,88 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get keyUnlockKeyMacReadonly => '已绑定钥匙 MAC';
+
+  @override
+  String get keyUnlockAuthDenied => '后端鉴权拒绝';
+
+  @override
+  String get clearanceTitle => '联签';
+
+  @override
+  String get clearanceDetailTitle => '联签确认';
+
+  @override
+  String get clearanceEmpty => '暂无分配给您的联签任务';
+
+  @override
+  String get clearanceRetry => '重试';
+
+  @override
+  String clearanceProgress(Object cleared, Object required) {
+    return '已确认 $cleared/$required';
+  }
+
+  @override
+  String clearanceUnlockBlocked(Object count) {
+    return '开锁受阻 — 仍有 $count 名工人未确认';
+  }
+
+  @override
+  String get clearanceReady => '可开锁';
+
+  @override
+  String get clearanceActive => '进行中';
+
+  @override
+  String get clearancePending => '待确认';
+
+  @override
+  String get clearanceWorkerList => '工人列表';
+
+  @override
+  String clearanceYou(Object userId) {
+    return '我 ($userId)';
+  }
+
+  @override
+  String get clearanceStatusPending => '作业中';
+
+  @override
+  String get clearanceStatusCleared => '已确认';
+
+  @override
+  String get clearanceStatusBlocked => '受阻';
+
+  @override
+  String get clearanceClearAction => '确认就绪 / Clear';
+
+  @override
+  String get clearanceBlockAction => '仍在作业';
+
+  @override
+  String get clearanceClearedSuccess => '已标记为确认就绪';
+
+  @override
+  String get clearanceBlockedSuccess => '已标记为仍在作业';
+
+  @override
+  String get clearanceAllReady => '全员已确认 — 允许开锁';
+
+  @override
+  String clearanceExpireAt(Object time) {
+    return '截止时间 $time';
+  }
+
+  @override
+  String get clearanceBlockedDialogTitle => '开锁受阻';
+
+  @override
+  String clearanceBlockedDialogBody(Object reasons) {
+    return '联签尚未完成：$reasons';
+  }
+
+  @override
+  String get clearanceGoToTasks => '前往联签';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -1100,4 +1264,86 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get keyUnlockKeyMacReadonly => '已綁定鑰匙 MAC';
+
+  @override
+  String get keyUnlockAuthDenied => '後端鑑權拒絕';
+
+  @override
+  String get clearanceTitle => '聯簽';
+
+  @override
+  String get clearanceDetailTitle => '聯簽確認';
+
+  @override
+  String get clearanceEmpty => '暫無分配給您的聯簽任務';
+
+  @override
+  String get clearanceRetry => '重試';
+
+  @override
+  String clearanceProgress(Object cleared, Object required) {
+    return '已確認 $cleared/$required';
+  }
+
+  @override
+  String clearanceUnlockBlocked(Object count) {
+    return '開鎖受阻 — 仍有 $count 名工人未確認';
+  }
+
+  @override
+  String get clearanceReady => '可開鎖';
+
+  @override
+  String get clearanceActive => '進行中';
+
+  @override
+  String get clearancePending => '待確認';
+
+  @override
+  String get clearanceWorkerList => '工人列表';
+
+  @override
+  String clearanceYou(Object userId) {
+    return '我 ($userId)';
+  }
+
+  @override
+  String get clearanceStatusPending => '作業中';
+
+  @override
+  String get clearanceStatusCleared => '已確認';
+
+  @override
+  String get clearanceStatusBlocked => '受阻';
+
+  @override
+  String get clearanceClearAction => '確認就緒 / Clear';
+
+  @override
+  String get clearanceBlockAction => '仍在作業';
+
+  @override
+  String get clearanceClearedSuccess => '已標記為確認就緒';
+
+  @override
+  String get clearanceBlockedSuccess => '已標記為仍在作業';
+
+  @override
+  String get clearanceAllReady => '全員已確認 — 允許開鎖';
+
+  @override
+  String clearanceExpireAt(Object time) {
+    return '截止時間 $time';
+  }
+
+  @override
+  String get clearanceBlockedDialogTitle => '開鎖受阻';
+
+  @override
+  String clearanceBlockedDialogBody(Object reasons) {
+    return '聯簽尚未完成：$reasons';
+  }
+
+  @override
+  String get clearanceGoToTasks => '前往聯簽';
 }
