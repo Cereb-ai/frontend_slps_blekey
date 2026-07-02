@@ -404,6 +404,10 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       final decisionAt = AccessDecisionTime.resolveDecisionAt(
         provisioningConfig,
       );
+      final groupLockoutTaskId = await _resolveGroupLockoutTaskId(
+        token: token,
+        lockId: lock.id,
+      );
       final decision = await Api.decideAccess(
         token: token,
         keyId: widget.keyId,
@@ -412,6 +416,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         geofenceSatisfied: true,
         clientTraceId:
             'ble_unlock_${DateTime.now().millisecondsSinceEpoch}_${lock.id}',
+        groupLockoutTaskId: groupLockoutTaskId,
       );
       final allowed = decision['allowed'] == true;
       if (!allowed) {
@@ -529,6 +534,26 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
 
   Map<String, Object?> _sdkArgs({String? keyLocalTime}) =>
       _baseSdkArgs(keyLocalTime: keyLocalTime);
+
+  Future<String?> _resolveGroupLockoutTaskId({
+    required String token,
+    required String lockId,
+  }) async {
+    try {
+      final response = await Api.listAuthorizationTasks(
+        token: token,
+        query: const <String, dynamic>{'groupMode': 'group'},
+      );
+      final tasks = response.map(AuthorizationTaskItem.fromJson).toList();
+      return findGroupLockoutTaskForPair(
+        tasks: tasks,
+        keyId: widget.keyId,
+        lockId: lockId,
+      )?.id;
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<Map<String, dynamic>?> _getProvisioningConfigSafely({
     required String token,

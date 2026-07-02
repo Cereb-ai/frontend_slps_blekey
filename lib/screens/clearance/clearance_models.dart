@@ -123,3 +123,22 @@ bool isGroupLockoutBlockedReason(String reason) {
   return normalized.contains('group lockout not cleared') ||
       normalized.contains('group lockout expired');
 }
+
+AuthorizationTaskItem? findGroupLockoutTaskForPair({
+  required List<AuthorizationTaskItem> tasks,
+  required String keyId,
+  required String lockId,
+}) {
+  final matches = tasks
+      .where((task) => task.isGroup)
+      .where((task) => task.status == 'pending' || task.status == 'active')
+      .where((task) => task.keyIds.contains(keyId) && task.lockIds.contains(lockId))
+      .toList();
+  if (matches.isEmpty) return null;
+  matches.sort((a, b) {
+    final aTime = a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final bTime = b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return bTime.compareTo(aTime);
+  });
+  return matches.first;
+}
