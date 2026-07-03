@@ -434,6 +434,18 @@ abstract final class Api {
     return _asJsonMap(response.data);
   }
 
+  static Future<JsonMap> createLockEvent({
+    required String token,
+    required JsonMap payload,
+  }) async {
+    final response = await dio.post<dynamic>(
+      '/slps/events',
+      data: payload,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    return _asJsonMap(response.data);
+  }
+
   static Future<List<JsonMap>> listAuthorizationTasks({
     required String token,
     Map<String, dynamic> query = const <String, dynamic>{},

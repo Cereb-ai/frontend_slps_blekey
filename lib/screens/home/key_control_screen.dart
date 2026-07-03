@@ -380,7 +380,6 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     }
 
     final lock = _selectedLock!;
-    if (nextState == lock.switchState) return;
 
     setState(() => _busy = true);
     try {
@@ -472,21 +471,21 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         timeout: const Duration(seconds: 90),
       );
 
-      await Api.updateLockDevice(
-        token: token,
-        id: lock.id,
-        payload: <String, dynamic>{
-          'metadata': <String, dynamic>{
-            'switchState': nextState,
-            'source': 'app_key_control',
-            'controlMac': _selectedMac,
-            'controlChannel': 'flutter_blekey_sdk',
-            'controlledAt': DateTime.now().toIso8601String(),
-            'controlReport': report.obj,
-            'controlReportText': report.objText,
-            'controlledByKeyId': widget.keyId,
-          },
-        },
+      unawaited(
+        Api.createLockEvent(
+          token: token,
+          payload: _buildSwitchEventPayload(
+            lock: lock,
+            requestedState: nextState,
+            report: report,
+          ),
+        ).catchError((Object error) {
+          if (!mounted) return <String, dynamic>{};
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('开关锁事件上报失败: $error')),
+          );
+          return <String, dynamic>{};
+        }),
       );
       if (!mounted) return;
       setState(() {
@@ -495,7 +494,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
           name: lock.name,
           number: lock.number,
           location: lock.location,
-          switchState: nextState,
+          switchState: lock.switchState,
           status: lock.status,
           updatedAt: DateTime.now(),
         );
@@ -518,6 +517,47 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Map<String, dynamic> _buildSwitchEventPayload({
+    required LockItem lock,
+    required String requestedState,
+    required BleKeyOperationResult report,
+  }) {
+    final eventTime = DateTime.now().toUtc().toIso8601String();
+    final command = _extractCommand(report.obj) ?? 10;
+    return <String, dynamic>{
+      'source': 'flutter_app_ble_key',
+      'deviceId': _selectedMac ?? widget.keyId,
+      'vendorEventId':
+          'ble_${DateTime.now().millisecondsSinceEpoch}_${lock.id}',
+      'lockId': lock.id,
+      'keyId': widget.keyId,
+      'vendorLockId': lock.number,
+      'vendorKeyId': widget.number,
+      'command': command,
+      'status': requestedState == 'unlocked' ? 1 : 0,
+      'eventTime': eventTime,
+      'result': 'success',
+      'rawPayload': <String, dynamic>{
+        'flow': 'app_key_control',
+        'requestedState': requestedState,
+        'previousDisplayState': lock.switchState,
+        'control': <String, dynamic>{
+          'controlMac': _selectedMac,
+          'controlChannel': 'flutter_blekey_sdk',
+          'controlledAt': DateTime.now().toIso8601String(),
+          'controlledByKeyId': widget.keyId,
+        },
+        'report': <String, dynamic>{
+          'code': report.code,
+          'ret': report.ret,
+          if (report.msg != null) 'msg': report.msg,
+          if (report.obj != null) 'obj': report.obj,
+          if (report.objText != null) 'objText': report.objText,
+        },
+      },
+    };
   }
 
   Map<String, Object?> _baseSdkArgs({String? keyLocalTime}) {
