@@ -21,8 +21,6 @@ class LocaleStore extends ChangeNotifier {
   static const String _keyLocaleCode = 'app_locale_code';
 
   static const List<LocaleOption> options = <LocaleOption>[
-    LocaleOption(code: 'en', locale: Locale('en'), label: 'English'),
-    LocaleOption(code: 'de', locale: Locale('de'), label: 'Deutsch'),
     LocaleOption(
       code: 'zh_Hant',
       locale: Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
@@ -33,16 +31,18 @@ class LocaleStore extends ChangeNotifier {
       locale: Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
       label: '简体中文',
     ),
+    LocaleOption(code: 'en', locale: Locale('en'), label: 'English'),
+    LocaleOption(code: 'de', locale: Locale('de'), label: 'Deutsch'),
   ];
 
   static const List<Locale> supportedLocales = <Locale>[
-    Locale('en'),
-    Locale('de'),
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
+    Locale('en'),
+    Locale('de'),
   ];
 
-  String _localeCode = 'en';
+  String _localeCode = 'zh_Hant';
 
   String get localeCode => _localeCode;
 
@@ -52,7 +52,7 @@ class LocaleStore extends ChangeNotifier {
         return item.locale;
       }
     }
-    return const Locale('en');
+    return const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant');
   }
 
   Future<void> loadFromStorage() async {
