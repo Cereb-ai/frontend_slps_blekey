@@ -45,10 +45,11 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     );
     Api.registerUnauthorizedHandler(() async {
       await GlobalUser.instance.clearLocalSession();
+      if (!mounted) return;
       final navigator = NavigationService.navigatorKey.currentState;
       if (navigator == null) return;
       final context = NavigationService.navigatorKey.currentContext;
-      if (context != null) {
+      if (context != null && context.mounted) {
         final currentRoute = ModalRoute.of(context)?.settings.name;
         if (currentRoute == Routes.login) return;
       }

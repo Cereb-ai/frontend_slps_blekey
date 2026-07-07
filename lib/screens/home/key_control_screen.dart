@@ -1029,6 +1029,8 @@ class _KeyConnectionCard extends StatelessWidget {
         phase == _KeyConnectionPhase.scanning ||
         phase == _KeyConnectionPhase.connecting ||
         scanning;
+    final boundKeyMacText =
+        connectedMac ?? (boundMac.isNotEmpty ? boundMac : vendorKeyId);
 
     return Card(
       child: Padding(
@@ -1055,7 +1057,7 @@ class _KeyConnectionCard extends StatelessWidget {
                         Text(statusLabel, style: theme.textTheme.bodyMedium),
                         const SizedBox(height: 4),
                         Text(
-                          '${boundKeyMacLabel}: ${connectedMac ?? (boundMac.isNotEmpty ? boundMac : vendorKeyId)}',
+                          '$boundKeyMacLabel: $boundKeyMacText',
                           style: theme.textTheme.bodySmall,
                         ),
                         if (vendorKeyId.isNotEmpty &&

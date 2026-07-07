@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../api.dart' hide JsonMap;
 import '../../l10n/app_localizations.dart';
+import '../../routes.dart';
 import '../../states/global_user.dart';
 import 'models.dart';
 import 'widgets/keys_list.dart';
@@ -145,6 +146,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       return const WorkerClearanceScreen();
     }
     return MineTab(
+      onOpenDemoList: () => Navigator.of(context).pushNamed(Routes.demoList),
       onOpenCurrentTest: () =>
           Navigator.of(context).pushNamed('/current-test'),
       onOpenVendorTest: () =>

@@ -10,11 +10,13 @@ import '../../../states/locale_store.dart';
 class MineTab extends StatefulWidget {
   const MineTab({
     super.key,
+    required this.onOpenDemoList,
     required this.onOpenCurrentTest,
     required this.onOpenVendorTest,
     required this.onOpenOnlineSwitchLock,
   });
 
+  final VoidCallback onOpenDemoList;
   final VoidCallback onOpenCurrentTest;
   final VoidCallback onOpenVendorTest;
   final VoidCallback onOpenOnlineSwitchLock;
@@ -73,14 +75,13 @@ class _MineTabState extends State<MineTab> {
 
   Future<void> _openCerebSite() async {
     final url = Uri.parse('http://cereb.ai');
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication) &&
-        mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.cannotOpenCerebSite),
-        ),
-      );
-    }
+    final opened = await launchUrl(url, mode: LaunchMode.externalApplication);
+    if (!mounted || opened) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.cannotOpenCerebSite),
+      ),
+    );
   }
 
   @override
@@ -148,6 +149,14 @@ class _MineTabState extends State<MineTab> {
           ),
           child: Column(
             children: [
+              ListTile(
+                leading: const Icon(Icons.view_list_outlined),
+                title: const Text('测试'),
+                subtitle: const Text('进入 Demo 列表'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: widget.onOpenDemoList,
+              ),
+              const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.science_outlined),
                 title: Text(l10n.currentTestHome),

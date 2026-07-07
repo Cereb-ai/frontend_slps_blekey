@@ -1,8 +1,10 @@
 import 'common/route_tool.dart';
 import 'screens/ble_key/ble_key_screen.dart';
+import 'screens/ble_key/fingerprint_unlock_demo_screen.dart';
 import 'screens/ble_key/online_switch_lock_screen.dart';
 import 'screens/ble_key/vendor_ble_key_screen.dart';
 import 'screens/home/app_home_screen.dart';
+import 'screens/home/demo_list_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/clearance/worker_clearance_screen.dart';
 import 'screens/home/key_control_screen.dart';
@@ -16,6 +18,8 @@ abstract final class Routes {
   static const currentTest = '/current-test';
   static const vendorTest = '/vendor-test';
   static const onlineSwitchLock = '/online-switch-lock';
+  static const demoList = '/demo-list';
+  static const fingerprintUnlockDemo = '/fingerprint-unlock-demo';
   static const keyControl = '/key-control';
   static const workerClearance = '/worker-clearance';
 }
@@ -27,6 +31,9 @@ final Map<String, RouteHandler> routes = <String, RouteHandler>{
   Routes.currentTest: (context, {args}) => const BleKeyScreen(),
   Routes.vendorTest: (context, {args}) => const VendorBleKeyScreen(),
   Routes.onlineSwitchLock: (context, {args}) => const OnlineSwitchLockScreen(),
+  Routes.demoList: (context, {args}) => const DemoListScreen(),
+  Routes.fingerprintUnlockDemo: (context, {args}) =>
+      const FingerprintUnlockDemoScreen(),
   Routes.keyControl: (context, {args}) => KeyControlScreen.fromArgs(args),
   Routes.workerClearance: (context, {args}) {
     final data = args ?? const <String, dynamic>{};
