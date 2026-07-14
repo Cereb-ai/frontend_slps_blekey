@@ -28,6 +28,9 @@ class KeyControlScreen extends StatefulWidget {
     required this.number,
     this.bleMac = '',
     required this.keyType,
+    this.sign = 1,
+    this.lic = 'FFFFFFFFFFFFFFFF',
+    this.secret = 'FFFFFFFFFFFFFFFFFFFF',
   });
 
   /// Platform key id (matches `/slps/keys` record id).
@@ -45,6 +48,11 @@ class KeyControlScreen extends StatefulWidget {
   /// Key capability (`bluetooth`, `fingerprint`, etc.).
   final String keyType;
 
+  /// Per-key SDK connection parameters returned by `/slps/keys`.
+  final int sign;
+  final String lic;
+  final String secret;
+
   factory KeyControlScreen.fromArgs(Map<String, dynamic>? args) {
     final data = args ?? const <String, dynamic>{};
     return KeyControlScreen(
@@ -53,6 +61,11 @@ class KeyControlScreen extends StatefulWidget {
       number: (data['number'] ?? '').toString(),
       bleMac: (data['bleMac'] ?? '').toString(),
       keyType: (data['keyType'] ?? 'standard').toString(),
+      sign: data['sign'] is num
+          ? (data['sign'] as num).toInt()
+          : int.tryParse(data['sign']?.toString() ?? '') ?? 1,
+      lic: (data['lic'] ?? data['license'] ?? 'FFFFFFFFFFFFFFFF').toString(),
+      secret: (data['secret'] ?? 'FFFFFFFFFFFFFFFFFFFF').toString(),
     );
   }
 
@@ -71,19 +84,16 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
   bool _wasScanning = false;
   BleKeyController? _bleController;
 
-  final TextEditingController _secretController = TextEditingController(
-    text: 'FFFFFFFFFFFFFFFFFFFF',
-  );
-  final TextEditingController _signController = TextEditingController(
-    text: '1',
-  );
-  final TextEditingController _licController = TextEditingController(
-    text: 'FFFFFFFFFFFFFFFF',
-  );
+  late final TextEditingController _secretController;
+  late final TextEditingController _signController;
+  late final TextEditingController _licController;
 
   @override
   void initState() {
     super.initState();
+    _secretController = TextEditingController(text: widget.secret);
+    _signController = TextEditingController(text: widget.sign.toString());
+    _licController = TextEditingController(text: widget.lic);
     _selectedMac = _preferredBleMac();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -91,7 +101,6 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       _bleController = controller;
       controller.addListener(_onBleControllerChanged);
       _loadLocks();
-      _beginAutoConnect();
     });
   }
 
@@ -481,9 +490,9 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
           ),
         ).catchError((Object error) {
           if (!mounted) return <String, dynamic>{};
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('开关锁事件上报失败: $error')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('开关锁事件上报失败: $error')));
           return <String, dynamic>{};
         }),
       );
@@ -567,8 +576,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       'sign': int.tryParse(_signController.text.trim()) ?? 1,
       'lic': _licController.text.trim(),
       'lockIds': _selectedLock?.number ?? '',
-      if (keyLocalTime != null && keyLocalTime.isNotEmpty)
-        'time': keyLocalTime,
+      if (keyLocalTime != null && keyLocalTime.isNotEmpty) 'time': keyLocalTime,
     };
   }
 
@@ -736,6 +744,17 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
             sectionLabel: l10n.keyUnlockTargetLockSection,
           ),
           const SizedBox(height: 12),
+          _KeyConnectionSettingsCard(
+            signController: _signController,
+            licController: _licController,
+            secretController: _secretController,
+            enabled:
+                !_busy &&
+                !_autoConnectInFlight &&
+                _connectionPhase != _KeyConnectionPhase.connecting &&
+                _connectionPhase != _KeyConnectionPhase.connected,
+          ),
+          const SizedBox(height: 12),
           _KeyConnectionCard(
             phase: _connectionPhase,
             vendorKeyId: widget.number,
@@ -751,10 +770,13 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
             connectedLabel: l10n.keyUnlockKeyConnected,
             failedLabel: l10n.keyUnlockKeyConnectFailed,
             retryLabel: l10n.keyUnlockRetryConnect,
+            idleLabel: l10n.keyUnlockReadyToConnect,
+            connectLabel: l10n.keyUnlockConnectAction,
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: _busy || _connectionPhase != _KeyConnectionPhase.connected
+            onPressed:
+                _busy || _connectionPhase != _KeyConnectionPhase.connected
                 ? null
                 : () => _setSwitchState('unlocked'),
             icon: const Icon(Icons.lock_open),
@@ -765,7 +787,8 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
           ),
           const SizedBox(height: 12),
           FilledButton.tonalIcon(
-            onPressed: _busy || _connectionPhase != _KeyConnectionPhase.connected
+            onPressed:
+                _busy || _connectionPhase != _KeyConnectionPhase.connected
                 ? null
                 : () => _setSwitchState('locked'),
             icon: const Icon(Icons.lock_outline),
@@ -968,7 +991,10 @@ class _TargetLockCard extends StatelessWidget {
 
 bool _macLabelMatches(String mac, String vendorKeyId) {
   final left = mac.replaceAll(':', '').replaceAll('-', '').toLowerCase();
-  final right = vendorKeyId.replaceAll(':', '').replaceAll('-', '').toLowerCase();
+  final right = vendorKeyId
+      .replaceAll(':', '')
+      .replaceAll('-', '')
+      .toLowerCase();
   return left == right;
 }
 
@@ -988,6 +1014,8 @@ class _KeyConnectionCard extends StatelessWidget {
     required this.connectedLabel,
     required this.failedLabel,
     required this.retryLabel,
+    required this.idleLabel,
+    required this.connectLabel,
   });
 
   final _KeyConnectionPhase phase;
@@ -1004,6 +1032,8 @@ class _KeyConnectionCard extends StatelessWidget {
   final String connectedLabel;
   final String failedLabel;
   final String retryLabel;
+  final String idleLabel;
+  final String connectLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -1013,7 +1043,7 @@ class _KeyConnectionCard extends StatelessWidget {
       _KeyConnectionPhase.connecting => connectingLabel,
       _KeyConnectionPhase.connected => connectedLabel,
       _KeyConnectionPhase.failed => failedLabel,
-      _ => scanningLabel,
+      _ => idleLabel,
     };
     final statusIcon = switch (phase) {
       _KeyConnectionPhase.connected => Icons.bluetooth_connected,
@@ -1079,16 +1109,70 @@ class _KeyConnectionCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (phase == _KeyConnectionPhase.failed) ...[
+            if (phase == _KeyConnectionPhase.failed ||
+                phase == _KeyConnectionPhase.idle) ...[
               const SizedBox(height: 12),
               FilledButton.tonalIcon(
                 onPressed: busy ? null : onRetry,
-                icon: const Icon(Icons.refresh),
-                label: Text(retryLabel),
+                icon: Icon(
+                  phase == _KeyConnectionPhase.idle
+                      ? Icons.bluetooth
+                      : Icons.refresh,
+                ),
+                label: Text(
+                  phase == _KeyConnectionPhase.idle ? connectLabel : retryLabel,
+                ),
               ),
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _KeyConnectionSettingsCard extends StatelessWidget {
+  const _KeyConnectionSettingsCard({
+    required this.signController,
+    required this.licController,
+    required this.secretController,
+    required this.enabled,
+  });
+
+  final TextEditingController signController;
+  final TextEditingController licController;
+  final TextEditingController secretController;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Card(
+      child: ExpansionTile(
+        title: Text(l10n.keyAdvancedConnectionSettings),
+        subtitle: Text(l10n.keyAdvancedUnlockSettingsHint),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          TextField(
+            controller: signController,
+            enabled: enabled,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'sign'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: licController,
+            enabled: enabled,
+            decoration: const InputDecoration(labelText: 'lic'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: secretController,
+            enabled: enabled,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'secret'),
+          ),
+        ],
       ),
     );
   }

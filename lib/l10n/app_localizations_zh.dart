@@ -110,17 +110,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionExpired => '登录状态已失效，请重新登录';
 
   @override
-  String get keyCreatedSuccess => '钥匙创建成功';
-
-  @override
-  String get keyCreateFailed => '钥匙创建失败';
-
-  @override
-  String get lockCreatedSuccess => '锁创建成功';
-
-  @override
-  String get lockCreateFailed => '锁创建失败';
-  @override
   String get smartListEmpty => '暂无数据';
 
   @override
@@ -137,6 +126,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get keyWizardCreateTitle => '新增钥匙（分步）';
+
+  @override
+  String get keyCreatedSuccess => '钥匙创建成功';
+
+  @override
+  String get keyCreateFailed => '钥匙创建失败';
+
+  @override
+  String get lockCreatedSuccess => '锁创建成功';
+
+  @override
+  String get lockCreateFailed => '锁创建失败';
 
   @override
   String get keyWizardEditTitle => '编辑钥匙（分步）';
@@ -158,6 +159,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get keyWizardConnectHint => '扫描钥匙，选择 MAC 后连接并读取钥匙信息。';
+
+  @override
+  String get keyAdvancedConnectionSettings => '高级连接设置';
+
+  @override
+  String get keyAdvancedConnectionSettingsHint => '连接前可设置 sign、lic 和 secret；sign=0 会按数字 0 发送。';
+
+  @override
+  String get keyAdvancedUnlockSettingsHint => '这些参数将用于本次连接和开关锁操作。';
 
   @override
   String get keyWizardScanning => '正在扫描钥匙...';
@@ -390,11 +400,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keyUnlockKeyConnected => '钥匙已连接';
 
   @override
-  String get keyUnlockKeyConnectFailed =>
-      '未找到或连接失败，请确认钥匙在附近并重试';
+  String get keyUnlockKeyConnectFailed => '未找到或连接失败，请确认钥匙在附近并重试';
 
   @override
   String get keyUnlockRetryConnect => '重新扫描连接';
+
+  @override
+  String get keyUnlockReadyToConnect => '请先核对高级设置，然后连接钥匙。';
+
+  @override
+  String get keyUnlockConnectAction => '扫描并连接';
 
   @override
   String get keyUnlockKeyNotConnected => '钥匙尚未连接，请等待自动连接完成';
@@ -484,7 +499,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
 class AppLocalizationsZhHans extends AppLocalizationsZh {
-  AppLocalizationsZhHans() : super('zh_Hans');
+  AppLocalizationsZhHans(): super('zh_Hans');
 
   @override
   String get appTitle => '智能门锁';
@@ -588,17 +603,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get sessionExpired => '登录状态已失效，请重新登录';
 
   @override
-  String get keyCreatedSuccess => '钥匙创建成功';
-
-  @override
-  String get keyCreateFailed => '钥匙创建失败';
-
-  @override
-  String get lockCreatedSuccess => '锁创建成功';
-
-  @override
-  String get lockCreateFailed => '锁创建失败';
-  @override
   String get smartListEmpty => '暂无数据';
 
   @override
@@ -615,6 +619,18 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get keyWizardCreateTitle => '新增钥匙（分步）';
+
+  @override
+  String get keyCreatedSuccess => '钥匙创建成功';
+
+  @override
+  String get keyCreateFailed => '钥匙创建失败';
+
+  @override
+  String get lockCreatedSuccess => '锁创建成功';
+
+  @override
+  String get lockCreateFailed => '锁创建失败';
 
   @override
   String get keyWizardEditTitle => '编辑钥匙（分步）';
@@ -636,6 +652,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get keyWizardConnectHint => '扫描钥匙，选择 MAC 后连接并读取钥匙信息。';
+
+  @override
+  String get keyAdvancedConnectionSettings => '高级连接设置';
+
+  @override
+  String get keyAdvancedConnectionSettingsHint => '连接前可设置 sign、lic 和 secret；sign=0 会按数字 0 发送。';
+
+  @override
+  String get keyAdvancedUnlockSettingsHint => '这些参数将用于本次连接和开关锁操作。';
 
   @override
   String get keyWizardScanning => '正在扫描钥匙...';
@@ -868,11 +893,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get keyUnlockKeyConnected => '钥匙已连接';
 
   @override
-  String get keyUnlockKeyConnectFailed =>
-      '未找到或连接失败，请确认钥匙在附近并重试';
+  String get keyUnlockKeyConnectFailed => '未找到或连接失败，请确认钥匙在附近并重试';
 
   @override
   String get keyUnlockRetryConnect => '重新扫描连接';
+
+  @override
+  String get keyUnlockReadyToConnect => '请先核对高级设置，然后连接钥匙。';
+
+  @override
+  String get keyUnlockConnectAction => '扫描并连接';
 
   @override
   String get keyUnlockKeyNotConnected => '钥匙尚未连接，请等待自动连接完成';
@@ -962,7 +992,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
 class AppLocalizationsZhHant extends AppLocalizationsZh {
-  AppLocalizationsZhHant() : super('zh_Hant');
+  AppLocalizationsZhHant(): super('zh_Hant');
 
   @override
   String get appTitle => '智慧門鎖';
@@ -1066,17 +1096,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get sessionExpired => '登入狀態已失效，請重新登入';
 
   @override
-  String get keyCreatedSuccess => '鑰匙創建成功';
-
-  @override
-  String get keyCreateFailed => '鑰匙創建失敗';
-
-  @override
-  String get lockCreatedSuccess => '鎖創建成功';
-
-  @override
-  String get lockCreateFailed => '鎖創建失敗';
-  @override
   String get smartListEmpty => '暫無資料';
 
   @override
@@ -1093,6 +1112,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get keyWizardCreateTitle => '新增鑰匙（分步）';
+
+  @override
+  String get keyCreatedSuccess => '鑰匙創建成功';
+
+  @override
+  String get keyCreateFailed => '鑰匙創建失敗';
+
+  @override
+  String get lockCreatedSuccess => '鎖創建成功';
+
+  @override
+  String get lockCreateFailed => '鎖創建失敗';
 
   @override
   String get keyWizardEditTitle => '編輯鑰匙（分步）';
@@ -1114,6 +1145,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get keyWizardConnectHint => '掃描鑰匙，選擇 MAC 後連接並讀取鑰匙資訊。';
+
+  @override
+  String get keyAdvancedConnectionSettings => '進階連線設定';
+
+  @override
+  String get keyAdvancedConnectionSettingsHint => '連線前可設定 sign、lic 和 secret；sign=0 會以數字 0 傳送。';
+
+  @override
+  String get keyAdvancedUnlockSettingsHint => '這些參數將用於本次連線和開關鎖操作。';
 
   @override
   String get keyWizardScanning => '正在掃描鑰匙...';
@@ -1245,6 +1285,30 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get lockWizardLocation => '位置';
 
   @override
+  String get lockWizardLockNameSummary => '鎖名稱';
+
+  @override
+  String get lockWizardLockNumberSummary => '鎖編號';
+
+  @override
+  String get lockWizardLocationSummary => '位置';
+
+  @override
+  String get lockWizardSwitchStateSummary => '開關狀態';
+
+  @override
+  String get keyStatusActive => '正常';
+
+  @override
+  String get listUpdatedAt => '更新時間';
+
+  @override
+  String get lockStateLocked => '已上鎖';
+
+  @override
+  String get lockStateUnlocked => '已解鎖';
+
+  @override
   String get keyCardTapHint => '點擊鑰匙卡片進入線上開鎖';
 
   @override
@@ -1322,11 +1386,16 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get keyUnlockKeyConnected => '鑰匙已連接';
 
   @override
-  String get keyUnlockKeyConnectFailed =>
-      '未找到或連接失敗，請確認鑰匙在附近並重試';
+  String get keyUnlockKeyConnectFailed => '未找到或連接失敗，請確認鑰匙在附近並重試';
 
   @override
   String get keyUnlockRetryConnect => '重新掃描連接';
+
+  @override
+  String get keyUnlockReadyToConnect => '請先核對進階設定，然後連接鑰匙。';
+
+  @override
+  String get keyUnlockConnectAction => '掃描並連接';
 
   @override
   String get keyUnlockKeyNotConnected => '鑰匙尚未連接，請等待自動連接完成';

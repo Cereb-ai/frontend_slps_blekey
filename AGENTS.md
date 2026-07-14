@@ -1,5 +1,15 @@
 # Agent Notes
 
+## Related Projects
+
+This repository is part of the same SLPS project as the following sibling repositories in the parent directory:
+
+- `../frontend-project-slps`: SLPS frontend project.
+- `../backend-project-slps`: SLPS backend project.
+- `.` (`frontend_slps_blekey`): SLPS Flutter BLE key app (this repository).
+
+When a task involves shared APIs, data models, or end-to-end behavior, inspect and coordinate changes across these repositories as needed.
+
 ## App SDK Provisioning Flows
 
 When implementing app-side add/edit for locks and keys, use the in-app `flutter_blekey_sdk` flow before saving SLPS backend records.
@@ -13,13 +23,13 @@ scan key -> select MAC -> connectToKey -> readKeyInfo -> fill vendorKeyId/keyTyp
 Implementation notes:
 
 - Scan with `flutter_blekey_sdk` and let the user select the target `mac`.
-- Connect with `connectToKey` using the same `secret`, `sign`, and `lic` defaults used by the existing SDK test pages.
+- Connect with `connectToKey` using the key record's `secret`, numeric `sign`, and `lic`; use the SDK test-page defaults only when the key has no stored connection parameters yet.
 - After connection, call `readKeyInfo`.
 - Fill `vendorKeyId` from the vendor key id in the SDK result, usually `readKeyInfo.data.id` or `keyId`.
 - Map device capability to `keyType`: Bluetooth -> `bluetooth`, fingerprint -> `fingerprint`, 4G/cellular -> `cellular`, display key -> `display`.
 - Preserve the raw SDK response in `metadata.readKeyInfo`.
-- Save the platform record with `POST /slps/keys`.
-- For edit, do not change the vendor id unless the hardware is re-read intentionally. Update platform fields with `PATCH /slps/keys/{id}`.
+- Save `secret`, numeric `sign` (including `0`), and `lic` as top-level key fields with `POST /slps/keys`; use `lic`, not the legacy `license` alias.
+- For edit, do not change the vendor id unless the hardware is re-read intentionally. Update platform fields and per-key connection parameters with `PATCH /slps/keys/{id}`.
 
 ### Add Lock
 

@@ -2,6 +2,16 @@
 
 A new Flutter project.
 
+## 关联项目
+
+当前仓库与上一层目录中的以下仓库共同组成同一个 SLPS 项目：
+
+- `../frontend-project-slps`：SLPS 前端项目。
+- `../backend-project-slps`：SLPS 后端项目。
+- `.`（`frontend_slps_blekey`）：SLPS Flutter 蓝牙钥匙 App，即当前仓库。
+
+涉及共享 API、数据模型或端到端功能时，需要根据实际情况同步检查和协调这些仓库中的实现。
+
 ## App 端锁/钥匙添加编辑流程
 
 目标：添加/编辑锁和钥匙时，优先通过 app 内的 `flutter_blekey_sdk` 采集真实设备信息，再调用 SLPS 后端保存平台记录。
@@ -17,14 +27,14 @@ A new Flutter project.
 实现要点：
 
 - 使用 `flutter_blekey_sdk` 扫描附近蓝牙钥匙，用户选择目标 `mac`。
-- 调用厂家 SDK `connectToKey`，连接参数沿用测试页当前默认值：`secret`、`sign`、`lic`。
+- 调用厂家 SDK `connectToKey` 时优先使用当前钥匙记录自己的 `secret`、数字类型 `sign` 和 `lic`；仅在尚未保存这些字段时使用测试页默认值。
 - 连接成功后调用 `readKeyInfo`。
 - 从 `readKeyInfo` 结果回填：
   - `vendorKeyId`: 钥匙厂商 ID，例如 `keyId` 或 `readKeyInfo.data.id`。
   - `keyType`: 根据设备能力映射，蓝牙钥匙为 `bluetooth`，指纹钥匙为 `fingerprint`，4G/屏显钥匙为 `cellular` 或 `display`。
   - `metadata.readKeyInfo`: 保存厂家 SDK 原始返回，方便排查。
-- 用户确认名称、归属用户、状态后，调用 `POST /slps/keys`。
-- 编辑钥匙时，如果不重新读取硬件，只允许编辑平台字段：`name`、`keyType`、`assignedUserId`、`ownerUserId`、`status`、`metadata`，并调用 `PATCH /slps/keys/{id}`。
+- 用户确认名称、归属用户、状态以及连接参数后，调用 `POST /slps/keys`；`sign` 必须按数字发送并保留合法值 `0`，许可字段统一使用 `lic`，不使用旧别名 `license`。
+- 编辑钥匙时，如果不重新读取硬件，保持 `vendorKeyId` 不变；平台字段及每把钥匙自己的 `secret`、`sign`、`lic` 通过 `PATCH /slps/keys/{id}` 更新。
 
 ### 新增锁
 

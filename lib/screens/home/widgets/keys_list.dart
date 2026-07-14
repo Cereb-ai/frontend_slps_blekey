@@ -100,6 +100,9 @@ class _KeysListState extends State<KeysList> {
         'number': item.number,
         'bleMac': item.bleMac,
         'keyType': item.keyType,
+        'sign': item.sign,
+        'lic': item.lic,
+        'secret': item.secret,
       },
     );
     if (updated == true) {
@@ -217,6 +220,11 @@ class _KeysListState extends State<KeysList> {
       number: number,
       bleMac: bleMac,
       keyType: keyType,
+      sign: json['sign'] is num
+          ? (json['sign'] as num).toInt()
+          : int.tryParse(json['sign']?.toString() ?? '') ?? 1,
+      lic: (json['lic'] ?? json['license'] ?? 'FFFFFFFFFFFFFFFF').toString(),
+      secret: (json['secret'] ?? 'FFFFFFFFFFFFFFFFFFFF').toString(),
       ownerUserId: ownerUserId,
       status: status,
       updatedAt: updatedAt,

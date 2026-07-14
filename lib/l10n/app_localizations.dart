@@ -63,8 +63,7 @@ import 'app_localizations_zh.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -72,8 +71,7 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -85,13 +83,12 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
-      <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
@@ -99,7 +96,7 @@ abstract class AppLocalizations {
     Locale('en'),
     Locale('zh'),
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
-    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant')
   ];
 
   /// No description provided for @appTitle.
@@ -300,30 +297,6 @@ abstract class AppLocalizations {
   /// **'Session expired, please log in again'**
   String get sessionExpired;
 
-  /// No description provided for @keyCreatedSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Key created successfully'**
-  String get keyCreatedSuccess;
-
-  /// No description provided for @keyCreateFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to create key'**
-  String get keyCreateFailed;
-
-  /// No description provided for @lockCreatedSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Lock created successfully'**
-  String get lockCreatedSuccess;
-
-  /// No description provided for @lockCreateFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to create lock'**
-  String get lockCreateFailed;
-
   /// No description provided for @smartListEmpty.
   ///
   /// In en, this message translates to:
@@ -359,6 +332,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create Key (Step by step)'**
   String get keyWizardCreateTitle;
+
+  /// No description provided for @keyCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Key created successfully'**
+  String get keyCreatedSuccess;
+
+  /// No description provided for @keyCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create key'**
+  String get keyCreateFailed;
+
+  /// No description provided for @lockCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock created successfully'**
+  String get lockCreatedSuccess;
+
+  /// No description provided for @lockCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create lock'**
+  String get lockCreateFailed;
 
   /// No description provided for @keyWizardEditTitle.
   ///
@@ -401,6 +398,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scan key, select MAC, then connect and read key info.'**
   String get keyWizardConnectHint;
+
+  /// No description provided for @keyAdvancedConnectionSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced connection settings'**
+  String get keyAdvancedConnectionSettings;
+
+  /// No description provided for @keyAdvancedConnectionSettingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Set sign, lic, and secret before connecting. sign=0 is sent as numeric 0.'**
+  String get keyAdvancedConnectionSettingsHint;
+
+  /// No description provided for @keyAdvancedUnlockSettingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'These parameters are used for this connection and unlock operation.'**
+  String get keyAdvancedUnlockSettingsHint;
 
   /// No description provided for @keyWizardScanning.
   ///
@@ -834,71 +849,206 @@ abstract class AppLocalizations {
   /// **'Bound Key MAC'**
   String get keyUnlockKeyMacReadonly;
 
+  /// No description provided for @keyUnlockConnectionSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Connection'**
   String get keyUnlockConnectionSection;
 
+  /// No description provided for @keyUnlockScanningKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning for key…'**
   String get keyUnlockScanningKey;
 
+  /// No description provided for @keyUnlockConnectingKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to key…'**
   String get keyUnlockConnectingKey;
 
+  /// No description provided for @keyUnlockKeyConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Key connected'**
   String get keyUnlockKeyConnected;
 
+  /// No description provided for @keyUnlockKeyConnectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Key not found or connection failed. Keep the key nearby and retry.'**
   String get keyUnlockKeyConnectFailed;
 
+  /// No description provided for @keyUnlockRetryConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan and connect again'**
   String get keyUnlockRetryConnect;
 
+  /// No description provided for @keyUnlockReadyToConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Review advanced settings, then connect the key.'**
+  String get keyUnlockReadyToConnect;
+
+  /// No description provided for @keyUnlockConnectAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan and connect'**
+  String get keyUnlockConnectAction;
+
+  /// No description provided for @keyUnlockKeyNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Key is not connected yet. Please wait for auto-connect.'**
   String get keyUnlockKeyNotConnected;
 
+  /// No description provided for @keyUnlockAuthDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorization denied'**
   String get keyUnlockAuthDenied;
 
+  /// No description provided for @clearanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clearance'**
   String get clearanceTitle;
 
+  /// No description provided for @clearanceDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Clearance'**
   String get clearanceDetailTitle;
 
+  /// No description provided for @clearanceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No group clearance tasks assigned to you'**
   String get clearanceEmpty;
 
+  /// No description provided for @clearanceRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
   String get clearanceRetry;
 
+  /// No description provided for @clearanceProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{cleared}/{required} cleared'**
   String clearanceProgress(Object cleared, Object required);
 
+  /// No description provided for @clearanceUnlockBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'UNLOCK BLOCKED — {count} workers still protected'**
   String clearanceUnlockBlocked(Object count);
 
+  /// No description provided for @clearanceReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
   String get clearanceReady;
 
+  /// No description provided for @clearanceActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
   String get clearanceActive;
 
+  /// No description provided for @clearancePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
   String get clearancePending;
 
+  /// No description provided for @clearanceWorkerList.
+  ///
+  /// In en, this message translates to:
+  /// **'Workers'**
   String get clearanceWorkerList;
 
+  /// No description provided for @clearanceYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You ({userId})'**
   String clearanceYou(Object userId);
 
+  /// No description provided for @clearanceStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Still Working'**
   String get clearanceStatusPending;
 
+  /// No description provided for @clearanceStatusCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleared'**
   String get clearanceStatusCleared;
 
+  /// No description provided for @clearanceStatusBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
   String get clearanceStatusBlocked;
 
+  /// No description provided for @clearanceClearAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear / Ready for Release'**
   String get clearanceClearAction;
 
+  /// No description provided for @clearanceBlockAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Still Working'**
   String get clearanceBlockAction;
 
+  /// No description provided for @clearanceClearedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as cleared'**
   String get clearanceClearedSuccess;
 
+  /// No description provided for @clearanceBlockedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as still working'**
   String get clearanceBlockedSuccess;
 
+  /// No description provided for @clearanceAllReady.
+  ///
+  /// In en, this message translates to:
+  /// **'All workers cleared — unlock allowed'**
   String get clearanceAllReady;
 
+  /// No description provided for @clearanceExpireAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires at {time}'**
   String clearanceExpireAt(Object time);
 
+  /// No description provided for @clearanceBlockedDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Blocked'**
   String get clearanceBlockedDialogTitle;
 
+  /// No description provided for @clearanceBlockedDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Group clearance is not complete: {reasons}'**
   String clearanceBlockedDialogBody(Object reasons);
 
+  /// No description provided for @clearanceGoToTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Clearance'**
   String get clearanceGoToTasks;
 }
 
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -907,42 +1057,36 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['de', 'en', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['de', 'en', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+
   // Lookup logic when language+script codes are specified.
   switch (locale.languageCode) {
-    case 'zh':
-      {
-        switch (locale.scriptCode) {
-          case 'Hans':
-            return AppLocalizationsZhHans();
-          case 'Hant':
-            return AppLocalizationsZhHant();
-        }
-        break;
-      }
+    case 'zh': {
+  switch (locale.scriptCode) {
+    case 'Hans': return AppLocalizationsZhHans();
+case 'Hant': return AppLocalizationsZhHant();
+   }
+  break;
+   }
   }
 
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'de':
-      return AppLocalizationsDe();
-    case 'en':
-      return AppLocalizationsEn();
-    case 'zh':
-      return AppLocalizationsZh();
+    case 'de': return AppLocalizationsDe();
+    case 'en': return AppLocalizationsEn();
+    case 'zh': return AppLocalizationsZh();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
+    'that was used.'
   );
 }

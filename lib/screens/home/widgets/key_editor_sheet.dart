@@ -17,6 +17,15 @@ Future<KeyEditorResult?> showKeyEditorSheet(
   final l10n = AppLocalizations.of(context)!;
   final nameController = TextEditingController(text: initial?.name ?? '');
   final numberController = TextEditingController(text: initial?.number ?? '');
+  final signController = TextEditingController(
+    text: (initial?.sign ?? 1).toString(),
+  );
+  final licController = TextEditingController(
+    text: initial?.lic ?? 'FFFFFFFFFFFFFFFF',
+  );
+  final secretController = TextEditingController(
+    text: initial?.secret ?? 'FFFFFFFFFFFFFFFFFFFF',
+  );
   var keyType = _normalizeKeyType(initial?.keyType) ?? 'standard';
   var status = initial?.status ?? 'active';
   var currentStep = 0;
@@ -68,8 +77,8 @@ Future<KeyEditorResult?> showKeyEditorSheet(
                               onPressed: isLast
                                   ? () {
                                       final name = nameController.text.trim();
-                                      final number =
-                                          numberController.text.trim();
+                                      final number = numberController.text
+                                          .trim();
                                       if (name.isEmpty || number.isEmpty) {
                                         ScaffoldMessenger.of(
                                           context,
@@ -84,20 +93,34 @@ Future<KeyEditorResult?> showKeyEditorSheet(
                                       }
                                       Navigator.of(context).pop(
                                         KeyEditorResult(
-                                          createPayload:
-                                              _buildKeyCreatePayload(
+                                          createPayload: _buildKeyCreatePayload(
                                             name: name,
                                             vendorKeyId: number,
                                             keyType: keyType,
                                             status: status,
                                             bleMac: selectedMac,
                                             readKeyInfo: readKeyInfo,
+                                            sign:
+                                                int.tryParse(
+                                                  signController.text.trim(),
+                                                ) ??
+                                                1,
+                                            lic: licController.text.trim(),
+                                            secret: secretController.text
+                                                .trim(),
                                           ),
-                                          updatePayload:
-                                              _buildKeyUpdatePayload(
+                                          updatePayload: _buildKeyUpdatePayload(
                                             name: name,
                                             keyType: keyType,
                                             status: status,
+                                            sign:
+                                                int.tryParse(
+                                                  signController.text.trim(),
+                                                ) ??
+                                                1,
+                                            lic: licController.text.trim(),
+                                            secret: secretController.text
+                                                .trim(),
                                           ),
                                         ),
                                       );
@@ -138,6 +161,12 @@ Future<KeyEditorResult?> showKeyEditorSheet(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(l10n.keyWizardConnectHint),
+                                  const SizedBox(height: 8),
+                                  _ConnectionSettingsExpansion(
+                                    signController: signController,
+                                    licController: licController,
+                                    secretController: secretController,
+                                  ),
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
@@ -209,7 +238,8 @@ Future<KeyEditorResult?> showKeyEditorSheet(
                                     onChanged: sdkBusy
                                         ? null
                                         : (value) => setSheetState(
-                                            () => selectedMac = value ?? ''),
+                                            () => selectedMac = value ?? '',
+                                          ),
                                   ),
                                   const SizedBox(height: 8),
                                   FilledButton.tonalIcon(
@@ -224,25 +254,52 @@ Future<KeyEditorResult?> showKeyEditorSheet(
                                             try {
                                               final info =
                                                   await _readKeyHardware(
-                                                context.read<BleKeyController>(),
-                                                selectedMac,
-                                              );
+                                                    context
+                                                        .read<
+                                                          BleKeyController
+                                                        >(),
+                                                    selectedMac,
+                                                    sign:
+                                                        int.tryParse(
+                                                          signController.text
+                                                              .trim(),
+                                                        ) ??
+                                                        1,
+                                                    lic: licController.text
+                                                        .trim(),
+                                                    secret: secretController
+                                                        .text
+                                                        .trim(),
+                                                  );
                                               final vendorKeyId =
                                                   _extractHardwareId(info) ??
-                                                      selectedMac;
+                                                  selectedMac;
                                               final generatedName =
                                                   _defaultBleKeyName(
-                                                      vendorKeyId);
+                                                    vendorKeyId,
+                                                  );
                                               setSheetState(() {
                                                 readKeyInfo = info;
                                                 numberController.text =
                                                     vendorKeyId;
-                                                keyType = _keyTypeFromInfo(info);
+                                                keyType = _keyTypeFromInfo(
+                                                  info,
+                                                );
+                                                final deviceSign =
+                                                    _extractIntFromObject(
+                                                      info,
+                                                      'sign',
+                                                    );
+                                                if (deviceSign != null) {
+                                                  signController.text =
+                                                      deviceSign.toString();
+                                                }
                                                 final currentName =
                                                     nameController.text.trim();
                                                 if (currentName.isEmpty ||
                                                     currentName.startsWith(
-                                                        'BLE Key ')) {
+                                                      'BLE Key ',
+                                                    )) {
                                                   nameController.text =
                                                       generatedName;
                                                 }
@@ -264,8 +321,7 @@ Future<KeyEditorResult?> showKeyEditorSheet(
                                         ? const SizedBox(
                                             width: 16,
                                             height: 16,
-                                            child:
-                                                CircularProgressIndicator(
+                                            child: CircularProgressIndicator(
                                               strokeWidth: 2,
                                             ),
                                           )
@@ -393,13 +449,9 @@ Future<KeyEditorResult?> showKeyEditorSheet(
                                   '${l10n.keyWizardKeyNumberSummary}: ${numberController.text.trim().isEmpty ? '-' : numberController.text.trim()}',
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  '${l10n.keyWizardTypeSummary}: $keyType',
-                                ),
+                                Text('${l10n.keyWizardTypeSummary}: $keyType'),
                                 const SizedBox(height: 4),
-                                Text(
-                                  '${l10n.keyWizardStatusSummary}: $status',
-                                ),
+                                Text('${l10n.keyWizardStatusSummary}: $status'),
                               ],
                             ),
                           ),
@@ -417,38 +469,82 @@ Future<KeyEditorResult?> showKeyEditorSheet(
   );
 }
 
-// ─── SDK helper methods ──────────────────────────────────────────────────────
+class _ConnectionSettingsExpansion extends StatelessWidget {
+  const _ConnectionSettingsExpansion({
+    required this.signController,
+    required this.licController,
+    required this.secretController,
+  });
 
-const Map<String, Object?> _sdkConnectArgs = <String, Object?>{
-  'secret': 'FFFFFFFFFFFFFFFFFFFF',
-  'oldSecret': 'FFFFFFFFFFFFFFFFFFFF',
-  'sign': 1,
-  'lic': 'FFFFFFFFFFFFFFFF',
-};
+  final TextEditingController signController;
+  final TextEditingController licController;
+  final TextEditingController secretController;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ExpansionTile(
+        title: Text(l10n.keyAdvancedConnectionSettings),
+        subtitle: Text(l10n.keyAdvancedConnectionSettingsHint),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          TextField(
+            controller: signController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'sign'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: licController,
+            decoration: const InputDecoration(labelText: 'lic'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: secretController,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'secret'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── SDK helper methods ──────────────────────────────────────────────────────
 
 Future<JsonMap> _readKeyHardware(
   BleKeyController controller,
-  String mac,
-) async {
+  String mac, {
+  required int sign,
+  required String lic,
+  required String secret,
+}) async {
+  final sdkConnectArgs = <String, Object?>{
+    'secret': secret,
+    'oldSecret': secret,
+    'sign': sign,
+    'lic': lic,
+  };
   await controller.executeVendorOperationAndWait(
     index: 0,
     expectedOperationName: 'ConnectKey',
     mac: mac,
-    args: _sdkConnectArgs,
+    args: sdkConnectArgs,
     timeout: const Duration(seconds: 15),
   );
   final result = await controller.executeVendorOperationAndWait(
     index: 2,
     expectedOperationName: 'ReadKeyInfo',
     mac: mac,
-    args: _sdkConnectArgs,
+    args: sdkConnectArgs,
     timeout: const Duration(seconds: 15),
   );
   return _sdkResultToJson('ReadKeyInfo', result);
 }
 
-JsonMap _sdkResultToJson(
-    String operationName, BleKeyOperationResult result) {
+JsonMap _sdkResultToJson(String operationName, BleKeyOperationResult result) {
   final obj = _normalizeSdkObject(result.obj);
   final objText = result.objText ?? obj.toString();
   final json = <String, dynamic>{
@@ -459,8 +555,8 @@ JsonMap _sdkResultToJson(
     'obj': obj,
     'objText': objText,
   };
-  final id = _extractHardwareIdFromObject(obj) ??
-      _extractHardwareIdFromText(objText);
+  final id =
+      _extractHardwareIdFromObject(obj) ?? _extractHardwareIdFromText(objText);
   if (id != null) json['id'] = id;
   final cmd = _extractCommand(objText);
   if (cmd != null) json['cmd'] = cmd;
@@ -482,7 +578,8 @@ Object _normalizeSdkObject(Object? value) {
 String _defaultBleKeyName(String identifier) => 'BLE Key $identifier';
 
 String? _extractHardwareId(JsonMap sdkResult) {
-  final direct = _extractHardwareIdFromObject(sdkResult['id']) ??
+  final direct =
+      _extractHardwareIdFromObject(sdkResult['id']) ??
       _extractHardwareIdFromObject(sdkResult['obj']);
   if (direct != null && direct.isNotEmpty) return direct;
   return _extractHardwareIdFromText(
@@ -493,7 +590,7 @@ String? _extractHardwareId(JsonMap sdkResult) {
 String? _extractHardwareIdFromObject(Object? value) {
   if (value is Map) {
     final json = Map<String, dynamic>.from(value);
-    for (final key in const ['mac', 'vendorKeyId', 'keyId', 'id', 'sign']) {
+    for (final key in const ['mac', 'vendorKeyId', 'keyId', 'id']) {
       final candidate = json[key]?.toString().trim();
       if (candidate != null && candidate.isNotEmpty) {
         return candidate;
@@ -512,9 +609,7 @@ String? _extractHardwareIdFromObject(Object? value) {
     }
     return null;
   }
-  return value == null
-      ? null
-      : _extractHardwareIdFromText(value.toString());
+  return value == null ? null : _extractHardwareIdFromText(value.toString());
 }
 
 String? _extractHardwareIdFromText(String text) {
@@ -532,8 +627,10 @@ String? _extractHardwareIdFromText(String text) {
 }
 
 int? _extractCommand(String text) {
-  final match =
-      RegExp(r'cmd\s*[=:]\s*(\d+)', caseSensitive: false).firstMatch(text);
+  final match = RegExp(
+    r'cmd\s*[=:]\s*(\d+)',
+    caseSensitive: false,
+  ).firstMatch(text);
   if (match == null) return null;
   return int.tryParse(match.group(1) ?? '');
 }
@@ -541,17 +638,16 @@ int? _extractCommand(String text) {
 /// Map legacy key type values to the canonical set
 String? _normalizeKeyType(String? raw) {
   if (raw == null || raw.isEmpty) return null;
-  const legacyMap = <String, String>{
-    '4g': 'cellular',
-    '4G': 'cellular',
-  };
+  const legacyMap = <String, String>{'4g': 'cellular', '4G': 'cellular'};
   return legacyMap[raw] ?? raw;
 }
 
 String _keyTypeFromInfo(JsonMap sdkResult) {
-  final objText =
-      (sdkResult['objText'] ?? sdkResult['obj'] ?? '').toString().toLowerCase();
-  final mode = _extractIntFromObject(sdkResult['obj'], 'mode') ??
+  final objText = (sdkResult['objText'] ?? sdkResult['obj'] ?? '')
+      .toString()
+      .toLowerCase();
+  final mode =
+      _extractIntFromObject(sdkResult['obj'], 'mode') ??
       _extractIntFromText(objText, 'mode');
 
   if (objText.contains('bluetooth') || objText.contains('ble')) {
@@ -588,9 +684,10 @@ int? _extractIntFromObject(Object? value, String key) {
 }
 
 int? _extractIntFromText(String text, String field) {
-  final match =
-      RegExp('$field\\s*[=:]\\s*(\\d+)', caseSensitive: false)
-          .firstMatch(text);
+  final match = RegExp(
+    '$field\\s*[=:]\\s*(\\d+)',
+    caseSensitive: false,
+  ).firstMatch(text);
   if (match == null) return null;
   return int.tryParse(match.group(1) ?? '');
 }
@@ -601,6 +698,9 @@ JsonMap _buildKeyCreatePayload({
   required String keyType,
   required String status,
   required String bleMac,
+  required int sign,
+  required String lic,
+  required String secret,
   JsonMap? readKeyInfo,
 }) {
   final metadata = <String, dynamic>{
@@ -621,7 +721,9 @@ JsonMap _buildKeyCreatePayload({
     'keyType': keyType,
     'name': name,
     'ownerUserId': null,
-    'sign': 1,
+    'sign': sign,
+    'lic': lic,
+    'secret': secret,
     'metadata': metadata,
   };
 }
@@ -630,10 +732,16 @@ JsonMap _buildKeyUpdatePayload({
   required String name,
   required String keyType,
   required String status,
+  required int sign,
+  required String lic,
+  required String secret,
 }) {
   return <String, dynamic>{
     'name': name,
     'keyType': keyType,
+    'sign': sign,
+    'lic': lic,
+    'secret': secret,
     'metadata': <String, dynamic>{
       'status': status,
       'department': 'Cereb',

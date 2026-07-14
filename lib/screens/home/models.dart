@@ -8,6 +8,9 @@ class KeyItem {
   final String number;
   final String bleMac;
   final String keyType;
+  final int sign;
+  final String lic;
+  final String secret;
   final String ownerUserId;
   final String status;
   final DateTime updatedAt;
@@ -18,6 +21,9 @@ class KeyItem {
     required this.number,
     this.bleMac = '',
     required this.keyType,
+    this.sign = 1,
+    this.lic = 'FFFFFFFFFFFFFFFF',
+    this.secret = 'FFFFFFFFFFFFFFFFFFFF',
     required this.ownerUserId,
     required this.status,
     required this.updatedAt,

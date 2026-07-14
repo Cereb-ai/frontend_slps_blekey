@@ -110,18 +110,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionExpired => 'Session expired, please log in again';
 
   @override
-  String get keyCreatedSuccess => 'Key created successfully';
-
-  @override
-  String get keyCreateFailed => 'Failed to create key';
-
-  @override
-  String get lockCreatedSuccess => 'Lock created successfully';
-
-  @override
-  String get lockCreateFailed => 'Failed to create lock';
-
-  @override
   String get smartListEmpty => 'No data';
 
   @override
@@ -138,6 +126,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keyWizardCreateTitle => 'Create Key (Step by step)';
+
+  @override
+  String get keyCreatedSuccess => 'Key created successfully';
+
+  @override
+  String get keyCreateFailed => 'Failed to create key';
+
+  @override
+  String get lockCreatedSuccess => 'Lock created successfully';
+
+  @override
+  String get lockCreateFailed => 'Failed to create lock';
 
   @override
   String get keyWizardEditTitle => 'Edit Key (Step by step)';
@@ -158,15 +158,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyWizardStepConnect => 'Connect Device';
 
   @override
-  String get keyWizardConnectHint =>
-      'Scan key, select MAC, then connect and read key info.';
+  String get keyWizardConnectHint => 'Scan key, select MAC, then connect and read key info.';
+
+  @override
+  String get keyAdvancedConnectionSettings => 'Advanced connection settings';
+
+  @override
+  String get keyAdvancedConnectionSettingsHint => 'Set sign, lic, and secret before connecting. sign=0 is sent as numeric 0.';
+
+  @override
+  String get keyAdvancedUnlockSettingsHint => 'These parameters are used for this connection and unlock operation.';
 
   @override
   String get keyWizardScanning => 'Scanning keys...';
 
   @override
-  String get keyWizardScanStarted =>
-      'Scan started, waiting for device list to refresh';
+  String get keyWizardScanStarted => 'Scan started, waiting for device list to refresh';
 
   @override
   String get keyWizardScanningShort => 'Scanning';
@@ -196,8 +203,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyWizardKeyNumber => 'Key Number / vendorKeyId';
 
   @override
-  String get keyWizardKeyNumberHelper =>
-      'Vendor number cannot be edited while editing';
+  String get keyWizardKeyNumberHelper => 'Vendor number cannot be edited while editing';
 
   @override
   String get keyWizardKeyType => 'Key Type';
@@ -206,8 +212,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyWizardOwnerId => 'Owner User ID';
 
   @override
-  String get keyWizardOwnerIdHelper =>
-      'Only indicates custodian, not unlock permission';
+  String get keyWizardOwnerIdHelper => 'Only indicates custodian, not unlock permission';
 
   @override
   String get keyWizardStatus => 'Key Status';
@@ -231,20 +236,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockWizardEditTitle => 'Edit Lock (Step by step)';
 
   @override
-  String get lockWizardFillRequired =>
-      'Please fill in name, number and location first';
+  String get lockWizardFillRequired => 'Please fill in name, number and location first';
 
   @override
-  String get lockWizardConnectHint =>
-      'Scan key, select MAC, then set it as lock-id collector key.';
+  String get lockWizardConnectHint => 'Scan key, select MAC, then set it as lock-id collector key.';
 
   @override
-  String get lockWizardPreparingCollector =>
-      'Connecting and preparing collector key...';
+  String get lockWizardPreparingCollector => 'Connecting and preparing collector key...';
 
   @override
-  String get lockWizardCollectorReady =>
-      'Collector key is ready, continue and touch target lock with key';
+  String get lockWizardCollectorReady => 'Collector key is ready, continue and touch target lock with key';
 
   @override
   String get lockWizardPrepareFailed => 'Failed to prepare collector key';
@@ -256,12 +257,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockWizardStepReadId => 'Read Lock ID';
 
   @override
-  String get lockWizardReadHint =>
-      'Touch target lock with configured key and wait for CMD=19 in onReport.';
+  String get lockWizardReadHint => 'Touch target lock with configured key and wait for CMD=19 in onReport.';
 
   @override
-  String get lockWizardWaitingReport =>
-      'Waiting lock-id report, please touch lock with key...';
+  String get lockWizardWaitingReport => 'Waiting lock-id report, please touch lock with key...';
 
   @override
   String get lockWizardParseFailed => 'Failed to parse lock id from callback';
@@ -279,8 +278,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockWizardLockNumber => 'Lock Number';
 
   @override
-  String get lockWizardLockNumberHelper =>
-      'Vendor lock number cannot be edited while editing';
+  String get lockWizardLockNumberHelper => 'Vendor lock number cannot be edited while editing';
 
   @override
   String get lockWizardStepBasic => 'Basic Information';
@@ -402,15 +400,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyUnlockKeyConnected => 'Key connected';
 
   @override
-  String get keyUnlockKeyConnectFailed =>
-      'Key not found or connection failed. Keep the key nearby and retry.';
+  String get keyUnlockKeyConnectFailed => 'Key not found or connection failed. Keep the key nearby and retry.';
 
   @override
   String get keyUnlockRetryConnect => 'Scan and connect again';
 
   @override
-  String get keyUnlockKeyNotConnected =>
-      'Key is not connected yet. Please wait for auto-connect.';
+  String get keyUnlockReadyToConnect => 'Review advanced settings, then connect the key.';
+
+  @override
+  String get keyUnlockConnectAction => 'Scan and connect';
+
+  @override
+  String get keyUnlockKeyNotConnected => 'Key is not connected yet. Please wait for auto-connect.';
 
   @override
   String get keyUnlockAuthDenied => 'Authorization denied';
