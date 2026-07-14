@@ -237,6 +237,11 @@ abstract class AppLocalizations {
   /// **'Edit'**
   String get edit;
 
+  String get rename;
+  String get renameKeyTitle;
+  String get renameLockTitle;
+  String get renameSuccess;
+
   /// No description provided for @delete.
   ///
   /// In en, this message translates to:

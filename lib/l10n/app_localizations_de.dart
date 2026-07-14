@@ -78,6 +78,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get edit => 'Bearbeiten';
 
   @override
+  String get rename => 'Umbenennen';
+  @override
+  String get renameKeyTitle => 'Schlüssel umbenennen';
+  @override
+  String get renameLockTitle => 'Schloss umbenennen';
+  @override
+  String get renameSuccess => 'Name erfolgreich geändert';
+
+  @override
   String get delete => 'Loschen';
 
   @override

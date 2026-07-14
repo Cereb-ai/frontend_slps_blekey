@@ -91,6 +91,34 @@ class _KeysListState extends State<KeysList> {
     }
   }
 
+  Future<void> _rename(KeyItem item) async {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController(text: item.name);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.renameKeyTitle),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(labelText: l10n.keyWizardKeyName),
+          onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.cancel)),
+          FilledButton(onPressed: () => Navigator.of(context).pop(controller.text.trim()), child: Text(l10n.rename)),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || name.isEmpty || name == item.name) return;
+    final token = _requireToken();
+    if (token == null) return;
+    await Api.updateLockKey(token: token, id: item.id, payload: <String, dynamic>{'name': name});
+    await _load();
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.renameSuccess)));
+  }
+
   Future<void> _openControl(KeyItem item) async {
     final updated = await Navigator.of(context).pushNamed(
       Routes.keyControl,
@@ -190,6 +218,7 @@ class _KeysListState extends State<KeysList> {
                 item: item,
                 onTap: () => _openControl(item),
                 onEdit: () => _edit(item),
+                onRename: () => _rename(item),
                 onDelete: () => _delete(item),
               );
             },
@@ -260,12 +289,14 @@ class _KeyCard extends StatelessWidget {
     required this.item,
     required this.onTap,
     required this.onEdit,
+    required this.onRename,
     required this.onDelete,
   });
 
   final KeyItem item;
   final VoidCallback onTap;
   final VoidCallback onEdit;
+  final VoidCallback onRename;
   final VoidCallback onDelete;
 
   @override
@@ -289,6 +320,7 @@ class _KeyCard extends StatelessWidget {
                     ),
                   ),
                   TextButton(onPressed: onEdit, child: Text(l10n.edit)),
+                  TextButton(onPressed: onRename, child: Text(l10n.rename)),
                   TextButton(onPressed: onDelete, child: Text(l10n.delete)),
                 ],
               ),

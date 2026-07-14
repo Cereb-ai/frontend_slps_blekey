@@ -95,6 +95,34 @@ class _LocksListState extends State<LocksList> {
     }
   }
 
+  Future<void> _rename(LockItem item) async {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController(text: item.name);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.renameLockTitle),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(labelText: l10n.lockWizardLockName),
+          onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.cancel)),
+          FilledButton(onPressed: () => Navigator.of(context).pop(controller.text.trim()), child: Text(l10n.rename)),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || name.isEmpty || name == item.name) return;
+    final token = _requireToken();
+    if (token == null) return;
+    await Api.updateLockDevice(token: token, id: item.id, payload: <String, dynamic>{'name': name});
+    await _load();
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.renameSuccess)));
+  }
+
   Future<void> _delete(LockItem item) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
@@ -174,6 +202,7 @@ class _LocksListState extends State<LocksList> {
               return _LockCard(
                 item: item,
                 onEdit: () => _edit(item),
+                onRename: () => _rename(item),
                 onDelete: () => _delete(item),
               );
             },
@@ -232,11 +261,13 @@ class _LockCard extends StatelessWidget {
   const _LockCard({
     required this.item,
     required this.onEdit,
+    required this.onRename,
     required this.onDelete,
   });
 
   final LockItem item;
   final VoidCallback onEdit;
+  final VoidCallback onRename;
   final VoidCallback onDelete;
 
   @override
@@ -257,6 +288,7 @@ class _LockCard extends StatelessWidget {
                   ),
                 ),
                 TextButton(onPressed: onEdit, child: Text(l10n.edit)),
+                TextButton(onPressed: onRename, child: Text(l10n.rename)),
                 TextButton(onPressed: onDelete, child: Text(l10n.delete)),
               ],
             ),

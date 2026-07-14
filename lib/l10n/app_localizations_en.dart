@@ -78,6 +78,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get edit => 'Edit';
 
   @override
+  String get rename => 'Rename';
+  @override
+  String get renameKeyTitle => 'Rename Key';
+  @override
+  String get renameLockTitle => 'Rename Lock';
+  @override
+  String get renameSuccess => 'Name updated successfully';
+
+  @override
   String get delete => 'Delete';
 
   @override

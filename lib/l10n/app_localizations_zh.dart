@@ -78,6 +78,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get edit => '编辑';
 
   @override
+  String get rename => '改名字';
+  @override
+  String get renameKeyTitle => '修改钥匙名称';
+  @override
+  String get renameLockTitle => '修改锁具名称';
+  @override
+  String get renameSuccess => '名称修改成功';
+
+  @override
   String get delete => '删除';
 
   @override
@@ -571,6 +580,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get edit => '编辑';
 
   @override
+  String get rename => '改名字';
+  @override
+  String get renameKeyTitle => '修改钥匙名称';
+  @override
+  String get renameLockTitle => '修改锁具名称';
+  @override
+  String get renameSuccess => '名称修改成功';
+
+  @override
   String get delete => '删除';
 
   @override
@@ -1062,6 +1080,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get edit => '編輯';
+
+  @override
+  String get rename => '改名字';
+  @override
+  String get renameKeyTitle => '修改鑰匙名稱';
+  @override
+  String get renameLockTitle => '修改鎖具名稱';
+  @override
+  String get renameSuccess => '名稱修改成功';
 
   @override
   String get delete => '刪除';

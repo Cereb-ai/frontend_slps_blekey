@@ -8,6 +8,7 @@ import '../../api.dart';
 import '../../l10n/app_localizations.dart';
 import '../ble_key/ble_key_controller.dart';
 import '../../states/global_user.dart';
+import '../../states/location_provider.dart';
 import '../../utils/access_decision_time.dart';
 import 'models.dart';
 
@@ -387,9 +388,12 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     }
 
     final lock = _selectedLock!;
-
     setState(() => _busy = true);
     try {
+      final operationLocation = (await context
+          .read<LocationProvider>()
+          .getEventLocation())
+          ?.toRawPayload();
       final controller = context.read<BleKeyController>();
 
       // 1) Ensure BLE connection (auto-connected on entry; reconnect if needed).
@@ -403,11 +407,35 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         );
       }
 
-      // 2) Load the platform time configuration. Unlock starts directly and
-      // does not query authorization tasks before issuing the BLE commands.
+      // 2) Resolve authorization for the currently selected lock. The app
+      // deliberately does not send a task id; the backend selects the active
+      // task for this key/lock pair.
       final provisioningConfig = await _getProvisioningConfigSafely(
         token: token,
       );
+      final decisionAt = AccessDecisionTime.resolveDecisionAt(
+        provisioningConfig,
+      );
+      final decision = await Api.decideAccess(
+        token: token,
+        keyId: widget.keyId,
+        lockId: lock.id,
+        at: DateTime.parse(decisionAt),
+        geofenceSatisfied: true,
+        clientTraceId:
+            'ble_control_${DateTime.now().millisecondsSinceEpoch}_${lock.id}',
+      );
+      if (decision['allowed'] != true) {
+        final reasons = decision['reasons'];
+        final reasonText = reasons is List
+            ? reasons.map((item) => item.toString()).join(', ')
+            : reasons?.toString() ?? l10n.keyUnlockAuthDenied;
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${l10n.keyUnlockAuthDenied}: $reasonText')),
+        );
+        return;
+      }
 
       // 3) SetDateTime (use platform timezone from provisioning config)
       final keyLocalTime = AccessDecisionTime.resolveKeyLocalTime(
@@ -455,6 +483,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
             lock: lock,
             requestedState: nextState,
             report: report,
+            operationLocation: operationLocation,
           ),
         ).catchError((Object error) {
           if (!mounted) return <String, dynamic>{};
@@ -466,15 +495,19 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       );
       if (!mounted) return;
       setState(() {
-        _selectedLock = LockItem(
+        final updatedLock = LockItem(
           id: lock.id,
           name: lock.name,
           number: lock.number,
           location: lock.location,
-          switchState: lock.switchState,
+          switchState: nextState,
           status: lock.status,
           updatedAt: DateTime.now(),
         );
+        _selectedLock = updatedLock;
+        _availableLocks = _availableLocks
+            .map((item) => item.id == lock.id ? updatedLock : item)
+            .toList();
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -485,7 +518,6 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
           ),
         ),
       );
-      Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -500,6 +532,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     required LockItem lock,
     required String requestedState,
     required BleKeyOperationResult report,
+    Map<String, dynamic>? operationLocation,
   }) {
     final eventTime = DateTime.now().toUtc().toIso8601String();
     final command = _extractCommand(report.obj) ?? 10;
@@ -517,6 +550,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       'eventTime': eventTime,
       'result': 'success',
       'rawPayload': <String, dynamic>{
+        if (operationLocation != null) ...operationLocation,
         'flow': 'app_key_control',
         'requestedState': requestedState,
         'previousDisplayState': lock.switchState,

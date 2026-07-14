@@ -37,6 +37,7 @@ dependencies:
   flutter_blekey_sdk:
     path: /Users/zhuang/Documents/cereb/flutter_blekey_sdk_upgraded
   permission_handler: ^12.0.1
+  geolocator: ^14.0.2
   provider: ^6.1.5
   shared_preferences: ^2.5.3
   dio: ^5.8.0+1
