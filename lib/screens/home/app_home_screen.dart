@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../api.dart' hide JsonMap;
 import '../../l10n/app_localizations.dart';
 import '../../routes.dart';
 import '../../states/global_user.dart';
+import '../../states/location_provider.dart';
 import 'models.dart';
 import 'widgets/keys_list.dart';
 import 'widgets/locks_list.dart';
@@ -23,6 +27,15 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
   int _tabIndex = 0;
   int _keysReloadTrigger = 0;
   int _locksReloadTrigger = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(context.read<LocationProvider>().getEventLocation());
+    });
+  }
 
   String get _title {
     final l10n = AppLocalizations.of(context)!;

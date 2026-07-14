@@ -46,11 +46,6 @@ class LocationProvider extends ChangeNotifier {
     _update(AppLocationState.checking);
     error = null;
     try {
-      if (!await Geolocator.isLocationServiceEnabled()) {
-        _update(AppLocationState.serviceDisabled);
-        return null;
-      }
-
       var permission = await permissions.Permission.locationWhenInUse.status;
       if (permission.isDenied) {
         permission = await permissions.Permission.locationWhenInUse.request();
@@ -61,6 +56,11 @@ class LocationProvider extends ChangeNotifier {
       }
       if (!permission.isGranted && !permission.isLimited) {
         _update(AppLocationState.denied);
+        return null;
+      }
+
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        _update(AppLocationState.serviceDisabled);
         return null;
       }
 

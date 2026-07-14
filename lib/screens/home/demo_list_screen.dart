@@ -14,6 +14,14 @@ class DemoListScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           children: [
             _DemoItem(
+              icon: Icons.my_location_outlined,
+              title: '定位测试',
+              subtitle: '检查定位权限、定位服务并显示 lat、lng 和精度',
+              onTap: () =>
+                  Navigator.of(context).pushNamed(Routes.locationTest),
+            ),
+            const SizedBox(height: 12),
+            _DemoItem(
               icon: Icons.fingerprint,
               title: '指纹钥匙开锁',
               subtitle: '纯界面演示指纹验证、触碰锁具和开锁记录状态',

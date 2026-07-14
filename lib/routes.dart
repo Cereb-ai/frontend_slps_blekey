@@ -8,6 +8,7 @@ import 'screens/home/demo_list_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/clearance/worker_clearance_screen.dart';
 import 'screens/home/key_control_screen.dart';
+import 'screens/home/location_test_screen.dart';
 import 'screens/login/login_screen.dart';
 
 abstract final class Routes {
@@ -20,6 +21,7 @@ abstract final class Routes {
   static const onlineSwitchLock = '/online-switch-lock';
   static const demoList = '/demo-list';
   static const fingerprintUnlockDemo = '/fingerprint-unlock-demo';
+  static const locationTest = '/location-test';
   static const keyControl = '/key-control';
   static const workerClearance = '/worker-clearance';
 }
@@ -34,6 +36,7 @@ final Map<String, RouteHandler> routes = <String, RouteHandler>{
   Routes.demoList: (context, {args}) => const DemoListScreen(),
   Routes.fingerprintUnlockDemo: (context, {args}) =>
       const FingerprintUnlockDemoScreen(),
+  Routes.locationTest: (context, {args}) => const LocationTestScreen(),
   Routes.keyControl: (context, {args}) => KeyControlScreen.fromArgs(args),
   Routes.workerClearance: (context, {args}) {
     final data = args ?? const <String, dynamic>{};
