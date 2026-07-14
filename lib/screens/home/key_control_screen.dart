@@ -6,10 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../../api.dart';
 import '../../l10n/app_localizations.dart';
-import '../../routes.dart';
 import '../ble_key/ble_key_controller.dart';
 import '../../states/global_user.dart';
-import '../clearance/clearance_models.dart';
 import '../../utils/access_decision_time.dart';
 import 'models.dart';
 
@@ -405,41 +403,11 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         );
       }
 
-      // 2) Backend authorization for this (key, lock) pair.
+      // 2) Load the platform time configuration. Unlock starts directly and
+      // does not query authorization tasks before issuing the BLE commands.
       final provisioningConfig = await _getProvisioningConfigSafely(
         token: token,
       );
-      final decisionAt = AccessDecisionTime.resolveDecisionAt(
-        provisioningConfig,
-      );
-      final groupLockoutTaskId = await _resolveGroupLockoutTaskId(
-        token: token,
-        lockId: lock.id,
-      );
-      final decision = await Api.decideAccess(
-        token: token,
-        keyId: widget.keyId,
-        lockId: lock.id,
-        at: DateTime.parse(decisionAt),
-        geofenceSatisfied: true,
-        clientTraceId:
-            'ble_unlock_${DateTime.now().millisecondsSinceEpoch}_${lock.id}',
-        groupLockoutTaskId: groupLockoutTaskId,
-      );
-      final allowed = decision['allowed'] == true;
-      if (!allowed) {
-        final reasons = _formatDecisionReasons(decision['reasons']);
-        final blockedByGroupLockout = _reasonsIndicateGroupLockout(
-          decision['reasons'],
-        );
-        if (blockedByGroupLockout && mounted) {
-          await _showGroupLockoutBlockedDialog(
-            reasons: reasons,
-            taskId: decision['taskId']?.toString(),
-          );
-        }
-        throw StateError('${l10n.keyUnlockAuthDenied}: $reasons');
-      }
 
       // 3) SetDateTime (use platform timezone from provisioning config)
       final keyLocalTime = AccessDecisionTime.resolveKeyLocalTime(
@@ -583,26 +551,6 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
   Map<String, Object?> _sdkArgs({String? keyLocalTime}) =>
       _baseSdkArgs(keyLocalTime: keyLocalTime);
 
-  Future<String?> _resolveGroupLockoutTaskId({
-    required String token,
-    required String lockId,
-  }) async {
-    try {
-      final response = await Api.listAuthorizationTasks(
-        token: token,
-        query: const <String, dynamic>{'groupMode': 'group'},
-      );
-      final tasks = response.map(AuthorizationTaskItem.fromJson).toList();
-      return findGroupLockoutTaskForPair(
-        tasks: tasks,
-        keyId: widget.keyId,
-        lockId: lockId,
-      )?.id;
-    } catch (_) {
-      return null;
-    }
-  }
-
   Future<Map<String, dynamic>?> _getProvisioningConfigSafely({
     required String token,
   }) async {
@@ -612,55 +560,6 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       ).timeout(const Duration(seconds: 5));
     } catch (_) {
       return null;
-    }
-  }
-
-  String _formatDecisionReasons(dynamic reasons) {
-    if (reasons is List) {
-      final values = reasons
-          .map((item) => item.toString())
-          .where((item) => item.isNotEmpty)
-          .toList();
-      if (values.isNotEmpty) return values.join(', ');
-    }
-    return 'unknown reason';
-  }
-
-  bool _reasonsIndicateGroupLockout(dynamic reasons) {
-    if (reasons is! List) return false;
-    for (final item in reasons) {
-      if (isGroupLockoutBlockedReason(item.toString())) return true;
-    }
-    return false;
-  }
-
-  Future<void> _showGroupLockoutBlockedDialog({
-    required String reasons,
-    String? taskId,
-  }) async {
-    final l10n = AppLocalizations.of(context)!;
-    final go = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.clearanceBlockedDialogTitle),
-        content: Text(l10n.clearanceBlockedDialogBody(reasons)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.clearanceGoToTasks),
-          ),
-        ],
-      ),
-    );
-    if (go == true && mounted) {
-      await Navigator.of(context).pushNamed(
-        Routes.workerClearance,
-        arguments: <String, dynamic>{'taskId': taskId},
-      );
     }
   }
 

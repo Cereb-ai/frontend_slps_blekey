@@ -516,7 +516,6 @@ abstract final class Api {
     DateTime? at,
     bool? geofenceSatisfied,
     String? clientTraceId,
-    String? groupLockoutTaskId,
   }) async {
     final payload = <String, dynamic>{'keyId': keyId, 'lockId': lockId};
     if (at != null) payload['at'] = at.toIso8601String();
@@ -525,9 +524,6 @@ abstract final class Api {
     }
     if (clientTraceId?.isNotEmpty ?? false) {
       payload['clientTraceId'] = clientTraceId;
-    }
-    if (groupLockoutTaskId?.isNotEmpty ?? false) {
-      payload['groupLockoutTaskId'] = groupLockoutTaskId;
     }
     final response = await dio.post<dynamic>(
       '/slps/access/decide',
