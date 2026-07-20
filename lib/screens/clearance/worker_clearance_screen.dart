@@ -455,7 +455,7 @@ class _WorkerClearanceDetailScreenState
                       icon: const Icon(Icons.check_circle_outline),
                       label: Text(l10n.clearanceClearAction),
                       style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
+                        minimumSize: const Size.fromHeight(60),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -466,7 +466,7 @@ class _WorkerClearanceDetailScreenState
                       icon: const Icon(Icons.handyman_outlined),
                       label: Text(l10n.clearanceBlockAction),
                       style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
+                        minimumSize: const Size.fromHeight(60),
                       ),
                     ),
                   ],
@@ -526,7 +526,7 @@ class _StatusChip extends StatelessWidget {
         label,
         style: TextStyle(
           color: foreground,
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
       ),

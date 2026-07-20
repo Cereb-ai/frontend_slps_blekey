@@ -35,6 +35,12 @@ abstract final class AppTheme {
         elevation: 0,
         backgroundColor: _bg,
         foregroundColor: _text,
+        titleTextStyle: TextStyle(
+          color: _text,
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+        ),
+        iconTheme: IconThemeData(size: 28),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: _surface,
@@ -43,12 +49,16 @@ abstract final class AppTheme {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
             color: selected ? _text : _textMuted,
+            fontSize: 14,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((states) {
           final selected = states.contains(WidgetState.selected);
-          return IconThemeData(color: selected ? _accent : _textMuted);
+          return IconThemeData(
+            color: selected ? _accent : _textMuted,
+            size: 26,
+          );
         }),
       ),
       cardTheme: CardThemeData(
@@ -80,17 +90,28 @@ abstract final class AppTheme {
         isDense: true,
       ),
       textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: _text),
-        bodyMedium: TextStyle(color: _text),
-        bodySmall: TextStyle(color: _textMuted),
-        titleLarge: TextStyle(color: _text, fontWeight: FontWeight.w700),
-        titleMedium: TextStyle(color: _text, fontWeight: FontWeight.w600),
-        titleSmall: TextStyle(color: _text),
+        bodyLarge: TextStyle(color: _text, fontSize: 18),
+        bodyMedium: TextStyle(color: _text, fontSize: 16),
+        bodySmall: TextStyle(color: _textMuted, fontSize: 14),
+        titleLarge: TextStyle(
+          color: _text,
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+        ),
+        titleMedium: TextStyle(
+          color: _text,
+          fontSize: 19,
+          fontWeight: FontWeight.w600,
+        ),
+        titleSmall: TextStyle(color: _text, fontSize: 16),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: _brand,
           foregroundColor: Colors.white,
+          minimumSize: const Size(48, 56),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
@@ -98,11 +119,18 @@ abstract final class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: _text,
           side: const BorderSide(color: _outline),
+          minimumSize: const Size(48, 56),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: _accent),
+        style: TextButton.styleFrom(
+          foregroundColor: _accent,
+          minimumSize: const Size(48, 48),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: _surface,

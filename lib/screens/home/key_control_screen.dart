@@ -81,6 +81,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
   _KeyConnectionPhase _connectionPhase = _KeyConnectionPhase.idle;
   bool _autoConnectInFlight = false;
   bool _wasScanning = false;
+  Completer<void>? _connectionCompleter;
   BleKeyController? _bleController;
 
   late final TextEditingController _secretController;
@@ -153,6 +154,9 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         unawaited(_connectToKey(controller));
       } else if (_connectionPhase != _KeyConnectionPhase.connecting) {
         setState(() => _connectionPhase = _KeyConnectionPhase.failed);
+        _completeConnectionAttempt(
+          StateError('The configured BLE key was not found.'),
+        );
       }
     }
   }
@@ -178,6 +182,9 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       if (mounted) {
         setState(() => _connectionPhase = _KeyConnectionPhase.failed);
       }
+      _completeConnectionAttempt(
+        StateError('Unable to start BLE scan.'),
+      );
     }
   }
 
@@ -231,12 +238,48 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       if (mounted) {
         setState(() => _connectionPhase = _KeyConnectionPhase.connected);
       }
-    } catch (_) {
+      _completeConnectionAttempt();
+    } catch (error) {
       if (mounted) {
         setState(() => _connectionPhase = _KeyConnectionPhase.failed);
       }
+      _completeConnectionAttempt(error);
     } finally {
       _autoConnectInFlight = false;
+    }
+  }
+
+  void _completeConnectionAttempt([Object? error]) {
+    final completer = _connectionCompleter;
+    if (completer == null || completer.isCompleted) return;
+    if (error == null) {
+      completer.complete();
+    } else {
+      completer.completeError(error);
+    }
+  }
+
+  Future<void> _ensureConnected() async {
+    if (_connectionPhase == _KeyConnectionPhase.connected &&
+        _selectedMac != null &&
+        _selectedMac!.isNotEmpty) {
+      return;
+    }
+
+    final activeAttempt = _connectionCompleter;
+    if (activeAttempt != null && !activeAttempt.isCompleted) {
+      return activeAttempt.future;
+    }
+
+    final completer = Completer<void>();
+    _connectionCompleter = completer;
+    unawaited(_beginAutoConnect());
+    try {
+      await completer.future.timeout(const Duration(seconds: 35));
+    } finally {
+      if (identical(_connectionCompleter, completer)) {
+        _connectionCompleter = null;
+      }
     }
   }
 
@@ -367,18 +410,6 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       ).showSnackBar(SnackBar(content: Text(l10n.keyUnlockNoLockSelected)));
       return;
     }
-    if (_connectionPhase != _KeyConnectionPhase.connected ||
-        _selectedMac == null ||
-        _selectedMac!.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.keyUnlockKeyNotConnected)));
-      if (_connectionPhase == _KeyConnectionPhase.failed) {
-        await _retryAutoConnect();
-      }
-      return;
-    }
-
     final token = GlobalUser.instance.token;
     if (token == null || token.isEmpty) {
       ScaffoldMessenger.of(
@@ -390,24 +421,18 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     final lock = _selectedLock!;
     setState(() => _busy = true);
     try {
+      // A single tap now performs scan + connection when needed, then carries
+      // on with authorization and control. Connection failures are surfaced by
+      // the common error handler below.
+      await _ensureConnected();
+
       final operationLocation = (await context
           .read<LocationProvider>()
           .getEventLocation())
           ?.toRawPayload();
       final controller = context.read<BleKeyController>();
 
-      // 1) Ensure BLE connection (auto-connected on entry; reconnect if needed).
-      if (_connectionPhase != _KeyConnectionPhase.connected) {
-        await controller.executeVendorOperationAndWait(
-          index: 0,
-          expectedOperationName: 'ConnectKey',
-          mac: _selectedMac,
-          args: _sdkArgs(),
-          timeout: const Duration(seconds: 15),
-        );
-      }
-
-      // 2) Resolve authorization for the currently selected lock. The app
+      // 1) Resolve authorization for the currently selected lock. The app
       // deliberately does not send a task id; the backend selects the active
       // task for this key/lock pair.
       final provisioningConfig = await _getProvisioningConfigSafely(
@@ -437,7 +462,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         return;
       }
 
-      // 3) SetDateTime (use platform timezone from provisioning config)
+      // 2) SetDateTime (use platform timezone from provisioning config)
       final keyLocalTime = AccessDecisionTime.resolveKeyLocalTime(
         provisioningConfig,
       );
@@ -448,7 +473,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         args: _sdkArgs(keyLocalTime: keyLocalTime),
         timeout: const Duration(seconds: 15),
       );
-      // 4) SetUserKey with target lockId
+      // 3) SetUserKey with target lockId
       await controller.executeVendorOperationAndWait(
         index: 6,
         expectedOperationName: 'SetUserKey',
@@ -456,7 +481,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         args: _sdkArgs(),
         timeout: const Duration(seconds: 20),
       );
-      // 5) SetOnline
+      // 4) SetOnline
       await controller.executeVendorOperationAndWait(
         index: 7,
         expectedOperationName: 'SetOnline',
@@ -469,7 +494,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('已完成在线授权，请保持蓝牙连接并用钥匙操作锁体。')));
-      // 6) Wait for CMD=10 report confirming the switch happened.
+      // 5) Wait for CMD=10 report confirming the switch happened.
       final report = await controller.waitForOperationResult(
         expectedOperationName: 'Report',
         where: _isCmd10SwitchReport,
@@ -708,26 +733,20 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed:
-                _busy || _connectionPhase != _KeyConnectionPhase.connected
-                ? null
-                : () => _setSwitchState('unlocked'),
+            onPressed: _busy ? null : () => _setSwitchState('unlocked'),
             icon: const Icon(Icons.lock_open),
             label: Text(l10n.keyUnlockUnlockAction),
             style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
+              minimumSize: const Size.fromHeight(60),
             ),
           ),
           const SizedBox(height: 12),
           FilledButton.tonalIcon(
-            onPressed:
-                _busy || _connectionPhase != _KeyConnectionPhase.connected
-                ? null
-                : () => _setSwitchState('locked'),
+            onPressed: _busy ? null : () => _setSwitchState('locked'),
             icon: const Icon(Icons.lock_outline),
             label: Text(l10n.keyUnlockLockAction),
             style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
+              minimumSize: const Size.fromHeight(60),
             ),
           ),
           if (_busy) ...[
