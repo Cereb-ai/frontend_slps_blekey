@@ -9,6 +9,7 @@ import 'screens/home/home_screen.dart';
 import 'screens/clearance/worker_clearance_screen.dart';
 import 'screens/home/key_control_screen.dart';
 import 'screens/home/location_test_screen.dart';
+import 'screens/home/offline_task_cache_screen.dart';
 import 'screens/login/login_screen.dart';
 
 abstract final class Routes {
@@ -24,6 +25,7 @@ abstract final class Routes {
   static const locationTest = '/location-test';
   static const keyControl = '/key-control';
   static const workerClearance = '/worker-clearance';
+  static const offlineTaskCache = '/offline-task-cache';
 }
 
 final Map<String, RouteHandler> routes = <String, RouteHandler>{
@@ -38,10 +40,9 @@ final Map<String, RouteHandler> routes = <String, RouteHandler>{
       const FingerprintUnlockDemoScreen(),
   Routes.locationTest: (context, {args}) => const LocationTestScreen(),
   Routes.keyControl: (context, {args}) => KeyControlScreen.fromArgs(args),
+  Routes.offlineTaskCache: (context, {args}) => const OfflineTaskCacheScreen(),
   Routes.workerClearance: (context, {args}) {
     final data = args ?? const <String, dynamic>{};
-    return WorkerClearanceScreen(
-      initialTaskId: data['taskId']?.toString(),
-    );
+    return WorkerClearanceScreen(initialTaskId: data['taskId']?.toString());
   },
 };

@@ -81,6 +81,8 @@ class KeyControlScreen extends StatefulWidget {
 class _KeyControlScreenState extends State<KeyControlScreen>
     with WidgetsBindingObserver {
   static const _pendingEventsKeyPrefix = 'ble_key_pending_lock_events_v1_';
+  static const _localSyncStatusKey = '_localSyncStatus';
+  static const _localSyncedAtKey = '_localSyncedAt';
 
   bool _busy = false;
   bool _locksLoading = false;
@@ -719,7 +721,10 @@ class _KeyControlScreenState extends State<KeyControlScreen>
   }
 
   Future<void> _enqueuePendingEvent(Map<String, dynamic> payload) async {
-    _pendingEvents = <Map<String, dynamic>>[..._pendingEvents, payload];
+    _pendingEvents = <Map<String, dynamic>>[
+      ..._pendingEvents,
+      <String, dynamic>{...payload, _localSyncStatusKey: 'pending'},
+    ];
     await _savePendingEvents();
     if (mounted) setState(() {});
   }
@@ -743,15 +748,28 @@ class _KeyControlScreenState extends State<KeyControlScreen>
     }
     _syncingPendingEvents = true;
     try {
-      while (_pendingEvents.isNotEmpty) {
-        await Api.createLockEvent(token: token, payload: _pendingEvents.first);
-        _pendingEvents = _pendingEvents.sublist(1);
+      while (true) {
+        final index = _pendingEvents.indexWhere(
+          (event) => event[_localSyncStatusKey] != 'uploaded',
+        );
+        if (index < 0) break;
+        final payload = Map<String, dynamic>.from(_pendingEvents[index])
+          ..remove(_localSyncStatusKey)
+          ..remove(_localSyncedAtKey);
+        await Api.createLockEvent(token: token, payload: payload);
+        final uploaded = <String, dynamic>{
+          ..._pendingEvents[index],
+          _localSyncStatusKey: 'uploaded',
+          _localSyncedAtKey: DateTime.now().toUtc().toIso8601String(),
+        };
+        _pendingEvents = List<Map<String, dynamic>>.from(_pendingEvents)
+          ..[index] = uploaded;
         await _savePendingEvents();
         if (mounted) setState(() {});
       }
     } catch (_) {
-      // Keep the remaining records. Opening this page again, receiving another
-      // report, or tapping retry will resume from the first unsent record.
+      // Keep every record and its current state. Opening this page again,
+      // receiving another report, or tapping retry resumes pending uploads.
     } finally {
       _syncingPendingEvents = false;
     }
@@ -1004,6 +1022,12 @@ class _EventSyncCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final visibleEvents = pendingEvents.reversed.take(5).toList();
+    final pendingCount = pendingEvents
+        .where(
+          (event) =>
+              event[_KeyControlScreenState._localSyncStatusKey] != 'uploaded',
+        )
+        .length;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1043,18 +1067,18 @@ class _EventSyncCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              pendingEvents.isEmpty
-                  ? '所有开关锁记录已上报'
-                  : '待上报 ${pendingEvents.length} 条（网络恢复后自动补传）',
+              '本地记录 ${pendingEvents.length} 条 · '
+              '${pendingCount == 0 ? '全部已上报' : '待上报 $pendingCount 条'}',
             ),
             for (final event in visibleEvents) ...[
               const Divider(height: 16),
               Text(
-                '${_eventStateLabel(event)} · ${event['vendorLockId'] ?? '-'} · ${event['eventTime'] ?? '-'}',
+                '${_eventStateLabel(event)} · ${event['vendorLockId'] ?? '-'} '
+                '· ${_syncStateLabel(event)} · ${event['eventTime'] ?? '-'}',
                 style: theme.textTheme.bodySmall,
               ),
             ],
-            if (pendingEvents.isNotEmpty) ...[
+            if (pendingCount > 0) ...[
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () => unawaited(onRetry()),
@@ -1070,6 +1094,12 @@ class _EventSyncCard extends StatelessWidget {
 
   static String _eventStateLabel(Map<String, dynamic> event) {
     return event['status'] == 1 ? '开锁' : '关锁';
+  }
+
+  static String _syncStateLabel(Map<String, dynamic> event) {
+    return event[_KeyControlScreenState._localSyncStatusKey] == 'uploaded'
+        ? '已上报'
+        : '待上报';
   }
 }
 

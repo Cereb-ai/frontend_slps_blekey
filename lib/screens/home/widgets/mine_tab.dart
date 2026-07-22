@@ -158,6 +158,15 @@ class _MineTabState extends State<MineTab> {
               ),
               const Divider(height: 1),
               ListTile(
+                leading: const Icon(Icons.offline_pin_outlined),
+                title: const Text('离线任务缓存'),
+                subtitle: const Text('查看本机已同步的普通与联签任务'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () =>
+                    Navigator.of(context).pushNamed(Routes.offlineTaskCache),
+              ),
+              const Divider(height: 1),
+              ListTile(
                 leading: const Icon(Icons.science_outlined),
                 title: Text(l10n.currentTestHome),
                 subtitle: Text(l10n.keepOriginalTestFlow),
@@ -203,11 +212,9 @@ class _MineTabState extends State<MineTab> {
             Text(
               '${l10n.poweredBy} ',
               style: TextStyle(
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withValues(alpha: 0.7),
+                color: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                 fontSize: 12,
               ),
             ),
