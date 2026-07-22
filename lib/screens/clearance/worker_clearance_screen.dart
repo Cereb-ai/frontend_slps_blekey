@@ -269,12 +269,34 @@ class _WorkerClearanceDetailScreenState
       });
     }
 
+    final cachedTasks = await OfflineDataStore.readList('tasks');
+    final cachedClearances = await OfflineDataStore.readTaskClearances(
+      widget.task.id,
+    );
+    final cachedTask = cachedTasks
+        .map(AuthorizationTaskItem.fromJson)
+        .where((task) => task.id == widget.task.id)
+        .firstOrNull;
+    if (mounted && (cachedTask != null || cachedClearances.isNotEmpty)) {
+      setState(() {
+        if (cachedTask != null) _task = cachedTask;
+        if (cachedClearances.isNotEmpty) {
+          _clearances = cachedClearances
+              .map(UserClearanceItem.fromJson)
+              .toList();
+        }
+        _loading = false;
+      });
+    }
+
     try {
       final tasks = await Api.listAuthorizationTasks(token: token);
       final clearances = await Api.listTaskClearances(
         token: token,
         taskId: widget.task.id,
       );
+      await OfflineDataStore.saveList('tasks', tasks);
+      await OfflineDataStore.saveTaskClearances(widget.task.id, clearances);
       final refreshed = tasks
           .map(AuthorizationTaskItem.fromJson)
           .where((task) => task.id == widget.task.id)
@@ -290,7 +312,7 @@ class _WorkerClearanceDetailScreenState
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = formatRequestError(error);
+        if (_clearances.isEmpty) _error = formatRequestError(error);
       });
     }
   }

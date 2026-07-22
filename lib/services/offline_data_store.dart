@@ -32,10 +32,7 @@ abstract final class OfflineDataStore {
       await Future.wait<void>([
         _refreshList('keys', () => Api.listLockKeys(token: accessToken)),
         _refreshList('locks', () => Api.listLockDevices(token: accessToken)),
-        _refreshList(
-          'tasks',
-          () => Api.listAuthorizationTasks(token: accessToken),
-        ),
+        _refreshTasksAndClearances(accessToken),
         _refreshObject(
           'provisioning_config',
           () => Api.getProvisioningConfig(token: accessToken),
@@ -83,6 +80,33 @@ abstract final class OfflineDataStore {
     }
   }
 
+  static Future<void> _refreshTasksAndClearances(String token) async {
+    try {
+      final tasks = await Api.listAuthorizationTasks(token: token);
+      await saveList('tasks', tasks);
+      final jointTasks = tasks.where(
+        (task) => task['groupMode']?.toString() == 'group',
+      );
+      await Future.wait<void>(
+        jointTasks.map((task) async {
+          final taskId = task['id']?.toString() ?? '';
+          if (taskId.isEmpty) return;
+          try {
+            final clearances = await Api.listTaskClearances(
+              token: token,
+              taskId: taskId,
+            );
+            await saveTaskClearances(taskId, clearances);
+          } catch (error) {
+            debugPrint('Offline sync clearances for $taskId skipped: $error');
+          }
+        }),
+      );
+    } catch (error) {
+      debugPrint('Offline sync tasks skipped: $error');
+    }
+  }
+
   static Future<void> saveList(
     String collection,
     List<Map<String, dynamic>> values,
@@ -104,6 +128,17 @@ abstract final class OfflineDataStore {
     } catch (_) {
       return <Map<String, dynamic>>[];
     }
+  }
+
+  static Future<void> saveTaskClearances(
+    String taskId,
+    List<Map<String, dynamic>> values,
+  ) {
+    return saveList('task_clearances_$taskId', values);
+  }
+
+  static Future<List<Map<String, dynamic>>> readTaskClearances(String taskId) {
+    return readList('task_clearances_$taskId');
   }
 
   static Future<void> saveObject(

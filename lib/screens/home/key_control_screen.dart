@@ -85,7 +85,7 @@ class _KeyControlScreenState extends State<KeyControlScreen>
   bool _busy = false;
   bool _locksLoading = false;
   String? _selectedMac;
-  LockItem? _selectedLock;
+  List<LockItem> _selectedLocks = <LockItem>[];
   List<LockItem> _availableLocks = <LockItem>[];
   _KeyConnectionPhase _connectionPhase = _KeyConnectionPhase.idle;
   bool _autoConnectInFlight = false;
@@ -447,7 +447,7 @@ class _KeyControlScreenState extends State<KeyControlScreen>
     final l10n = AppLocalizations.of(context)!;
     if (_busy) return;
 
-    if (_selectedLock == null) {
+    if (_selectedLocks.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.keyUnlockNoLockSelected)));
@@ -461,7 +461,7 @@ class _KeyControlScreenState extends State<KeyControlScreen>
       return;
     }
 
-    final lock = _selectedLock!;
+    final locks = List<LockItem>.from(_selectedLocks);
     final controller = context.read<BleKeyController>();
     setState(() => _busy = true);
     try {
@@ -470,30 +470,39 @@ class _KeyControlScreenState extends State<KeyControlScreen>
       // the common error handler below.
       await _ensureConnected();
 
-      // 1) Resolve authorization for the currently selected lock. The app
-      // deliberately does not send a task id; the backend selects the active
-      // task for this key/lock pair.
+      // 1) Resolve authorization for every selected lock. The app deliberately
+      // does not send a task id; the backend selects the active task for each
+      // key/lock pair.
       final provisioningConfig = await _getProvisioningConfigSafely(
         token: token,
       );
       final decisionAt = AccessDecisionTime.resolveDecisionAt(
         provisioningConfig,
       );
-      final decision = await _decideAccess(
-        token: token,
-        lock: lock,
-        decisionAt: DateTime.parse(decisionAt),
-      );
-      if (decision['allowed'] != true) {
-        final reasons = decision['reasons'];
-        final reasonText = reasons is List
-            ? reasons.map((item) => item.toString()).join(', ')
-            : reasons?.toString() ?? l10n.keyUnlockAuthDenied;
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.keyUnlockAuthDenied}: $reasonText')),
+      var usedOfflineDecision = false;
+      for (final lock in locks) {
+        final decision = await _decideAccess(
+          token: token,
+          lock: lock,
+          decisionAt: DateTime.parse(decisionAt),
         );
-        return;
+        usedOfflineDecision =
+            usedOfflineDecision || decision['offline'] == true;
+        if (decision['allowed'] != true) {
+          final reasons = decision['reasons'];
+          final reasonText = reasons is List
+              ? reasons.map((item) => item.toString()).join(', ')
+              : reasons?.toString() ?? l10n.keyUnlockAuthDenied;
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${lock.name} ${l10n.keyUnlockAuthDenied}: $reasonText',
+              ),
+            ),
+          );
+          return;
+        }
       }
 
       // 2) SetDateTime (use platform timezone from provisioning config)
@@ -507,7 +516,7 @@ class _KeyControlScreenState extends State<KeyControlScreen>
         args: _sdkArgs(keyLocalTime: keyLocalTime),
         timeout: const Duration(seconds: 15),
       );
-      // 3) SetUserKey with target lockId
+      // 3) SetUserKey with all selected vendor lock ids as CSV.
       await controller.executeVendorOperationAndWait(
         index: 6,
         expectedOperationName: 'SetUserKey',
@@ -529,9 +538,9 @@ class _KeyControlScreenState extends State<KeyControlScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            decision['offline'] == true
+            usedOfflineDecision
                 ? '离线授权成功，记录已本地缓存，联网后自动上报。'
-                : '授权成功，现在可持续开关锁，所有记录都会自动上报。',
+                : '已授权 ${locks.length} 把锁，现在可连续操作，所有记录都会自动上报。',
           ),
         ),
       );
@@ -578,7 +587,7 @@ class _KeyControlScreenState extends State<KeyControlScreen>
         event.operationName != 'Report' ||
         report == null ||
         !_isCmd10SwitchReport(report) ||
-        _selectedLock == null) {
+        _selectedLocks.isEmpty) {
       return;
     }
     _reportProcessing = _reportProcessing.then(
@@ -596,7 +605,13 @@ class _KeyControlScreenState extends State<KeyControlScreen>
 
   Future<void> _handleSwitchReport(BleKeyOperationResult report) async {
     if (!mounted) return;
-    final lock = _selectedLock;
+    final reportLockId = _extractReportLockId(report.obj);
+    final matches = _selectedLocks.where(
+      (lock) => lock.number == reportLockId || lock.id == reportLockId,
+    );
+    final lock =
+        matches.firstOrNull ??
+        (_selectedLocks.length == 1 ? _selectedLocks.first : null);
     if (lock == null) return;
     final reportStatus = _extractReportStatus(report.obj);
     if (reportStatus == null) return;
@@ -623,7 +638,9 @@ class _KeyControlScreenState extends State<KeyControlScreen>
         status: lock.status,
         updatedAt: DateTime.now(),
       );
-      _selectedLock = updatedLock;
+      _selectedLocks = _selectedLocks
+          .map((item) => item.id == lock.id ? updatedLock : item)
+          .toList();
       _availableLocks = _availableLocks
           .map((item) => item.id == lock.id ? updatedLock : item)
           .toList();
@@ -638,6 +655,21 @@ class _KeyControlScreenState extends State<KeyControlScreen>
       for (final nested in map.values) {
         final status = _extractReportStatus(nested);
         if (status != null) return status;
+      }
+    }
+    return null;
+  }
+
+  String? _extractReportLockId(Object? value) {
+    if (value is Map) {
+      final map = Map<String, dynamic>.from(value);
+      final direct = map['lockid'] ?? map['lockId'] ?? map['vendorLockId'];
+      if (direct != null && direct.toString().isNotEmpty) {
+        return direct.toString();
+      }
+      for (final nested in map.values) {
+        final lockId = _extractReportLockId(nested);
+        if (lockId != null) return lockId;
       }
     }
     return null;
@@ -790,7 +822,7 @@ class _KeyControlScreenState extends State<KeyControlScreen>
       'oldSecret': _secretController.text.trim(),
       'sign': int.tryParse(_signController.text.trim()) ?? 1,
       'lic': _licController.text.trim(),
-      'lockIds': _selectedLock?.number ?? '',
+      'lockIds': _selectedLocks.map((lock) => lock.number).join(','),
       if (keyLocalTime != null && keyLocalTime.isNotEmpty) 'time': keyLocalTime,
     };
   }
@@ -877,10 +909,18 @@ class _KeyControlScreenState extends State<KeyControlScreen>
           _TargetLockCard(
             locks: _availableLocks,
             loading: _locksLoading,
-            selected: _selectedLock,
+            selected: _selectedLocks,
             onSelect: _busy || _authorized
                 ? null
-                : (lock) => setState(() => _selectedLock = lock),
+                : (lock) => setState(() {
+                    if (_selectedLocks.any((item) => item.id == lock.id)) {
+                      _selectedLocks = _selectedLocks
+                          .where((item) => item.id != lock.id)
+                          .toList();
+                    } else {
+                      _selectedLocks = <LockItem>[..._selectedLocks, lock];
+                    }
+                  }),
             onRetry: _busy ? null : _loadLocks,
             pickLockLabel: l10n.keyUnlockPickLock,
             selectedLockLabel: l10n.keyUnlockSelectedLock,
@@ -1089,7 +1129,7 @@ class _TargetLockCard extends StatelessWidget {
 
   final List<LockItem> locks;
   final bool loading;
-  final LockItem? selected;
+  final List<LockItem> selected;
   final ValueChanged<LockItem>? onSelect;
   final VoidCallback? onRetry;
   final String pickLockLabel;
@@ -1122,7 +1162,7 @@ class _TargetLockCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            if (selected != null)
+            if (selected.isNotEmpty)
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -1137,7 +1177,8 @@ class _TargetLockCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '$selectedLockLabel: ${selected!.name} · ${selected!.number}',
+                        '$selectedLockLabel ${selected.length} 把: '
+                        '${selected.map((lock) => lock.name).join('、')}',
                         style: theme.textTheme.bodyMedium,
                       ),
                     ),
@@ -1174,8 +1215,9 @@ class _TargetLockCard extends StatelessWidget {
                   separatorBuilder: (_, _) => const SizedBox(height: 6),
                   itemBuilder: (context, index) {
                     final lock = locks[index];
-                    final isSelected =
-                        selected != null && selected!.id == lock.id;
+                    final isSelected = selected.any(
+                      (item) => item.id == lock.id,
+                    );
                     return Material(
                       color: isSelected
                           ? theme.colorScheme.primaryContainer.withValues(
@@ -1188,18 +1230,33 @@ class _TargetLockCard extends StatelessWidget {
                         onTap: onSelect == null ? null : () => onSelect!(lock),
                         child: Padding(
                           padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
                             children: [
-                              Text(
-                                lock.name,
-                                style: theme.textTheme.titleSmall,
+                              Icon(
+                                isSelected
+                                    ? Icons.check_box
+                                    : Icons.check_box_outline_blank,
+                                color: isSelected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurfaceVariant,
                               ),
-                              const SizedBox(height: 2),
-                              Text('Number: ${lock.number}'),
-                              if (lock.location.isNotEmpty &&
-                                  lock.location != '-')
-                                Text('Location: ${lock.location}'),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      lock.name,
+                                      style: theme.textTheme.titleSmall,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text('Number: ${lock.number}'),
+                                    if (lock.location.isNotEmpty &&
+                                        lock.location != '-')
+                                      Text('Location: ${lock.location}'),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                         ),
