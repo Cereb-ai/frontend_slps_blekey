@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../routes.dart';
 import '../../states/global_user.dart';
 import '../../states/location_provider.dart';
+import '../../services/offline_data_store.dart';
 import 'models.dart';
 import 'widgets/keys_list.dart';
 import 'widgets/locks_list.dart';
@@ -34,6 +35,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       unawaited(context.read<LocationProvider>().getEventLocation());
+      unawaited(OfflineDataStore.syncAll());
     });
   }
 
@@ -51,11 +53,9 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     final l10n = AppLocalizations.of(context)!;
     final token = GlobalUser.instance.token;
     if (token == null || token.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.sessionExpired),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.sessionExpired)));
       return;
     }
     if (_tabIndex == 0) {
@@ -64,15 +64,17 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       try {
         await Api.createLockKey(token: token, payload: result.createPayload);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.keyCreatedSuccess)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.keyCreatedSuccess)));
         setState(() => _keysReloadTrigger++);
       } catch (error) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${l10n.keyCreateFailed}: ${formatRequestError(error)}'),
+            content: Text(
+              '${l10n.keyCreateFailed}: ${formatRequestError(error)}',
+            ),
           ),
         );
       }
@@ -82,20 +84,19 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
       final result = await showLockEditorSheet(context);
       if (result == null) return;
       try {
-        await Api.createLockDevice(
-          token: token,
-          payload: result.createPayload,
-        );
+        await Api.createLockDevice(token: token, payload: result.createPayload);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.lockCreatedSuccess)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.lockCreatedSuccess)));
         setState(() => _locksReloadTrigger++);
       } catch (error) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${l10n.lockCreateFailed}: ${formatRequestError(error)}'),
+            content: Text(
+              '${l10n.lockCreateFailed}: ${formatRequestError(error)}',
+            ),
           ),
         );
       }
@@ -146,24 +147,18 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
 
   Widget _buildBody() {
     if (_tabIndex == 0) {
-      return KeysList(
-        key: ValueKey<int>(_keysReloadTrigger),
-      );
+      return KeysList(key: ValueKey<int>(_keysReloadTrigger));
     }
     if (_tabIndex == 1) {
-      return LocksList(
-        key: ValueKey<int>(_locksReloadTrigger),
-      );
+      return LocksList(key: ValueKey<int>(_locksReloadTrigger));
     }
     if (_tabIndex == 2) {
       return const WorkerClearanceScreen();
     }
     return MineTab(
       onOpenDemoList: () => Navigator.of(context).pushNamed(Routes.demoList),
-      onOpenCurrentTest: () =>
-          Navigator.of(context).pushNamed('/current-test'),
-      onOpenVendorTest: () =>
-          Navigator.of(context).pushNamed('/vendor-test'),
+      onOpenCurrentTest: () => Navigator.of(context).pushNamed('/current-test'),
+      onOpenVendorTest: () => Navigator.of(context).pushNamed('/vendor-test'),
       onOpenOnlineSwitchLock: () =>
           Navigator.of(context).pushNamed('/online-switch-lock'),
     );

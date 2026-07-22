@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blekey_sdk/flutter_blekey_sdk.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../api.dart';
 import '../../l10n/app_localizations.dart';
+import '../../services/offline_access_decision.dart';
+import '../../services/offline_data_store.dart';
 import '../ble_key/ble_key_controller.dart';
 import '../../states/global_user.dart';
 import '../../states/location_provider.dart';
@@ -73,6 +78,8 @@ class KeyControlScreen extends StatefulWidget {
 }
 
 class _KeyControlScreenState extends State<KeyControlScreen> {
+  static const _pendingEventsKeyPrefix = 'ble_key_pending_lock_events_v1_';
+
   bool _busy = false;
   bool _locksLoading = false;
   String? _selectedMac;
@@ -83,6 +90,11 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
   bool _wasScanning = false;
   Completer<void>? _connectionCompleter;
   BleKeyController? _bleController;
+  StreamSubscription<BleKeyEvent>? _reportSubscription;
+  Future<void> _reportProcessing = Future<void>.value();
+  bool _authorized = false;
+  bool _syncingPendingEvents = false;
+  List<Map<String, dynamic>> _pendingEvents = <Map<String, dynamic>>[];
 
   late final TextEditingController _secretController;
   late final TextEditingController _signController;
@@ -100,6 +112,8 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       final controller = context.read<BleKeyController>();
       _bleController = controller;
       controller.addListener(_onBleControllerChanged);
+      _reportSubscription = controller.operationEvents.listen(_onSdkEvent);
+      unawaited(_loadPendingEventsAndSync());
       _loadLocks();
     });
   }
@@ -108,6 +122,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
   void dispose() {
     final controller = _bleController;
     controller?.removeListener(_onBleControllerChanged);
+    unawaited(_reportSubscription?.cancel());
     if (controller != null) {
       unawaited(_releaseBleResources(controller));
     }
@@ -182,9 +197,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       if (mounted) {
         setState(() => _connectionPhase = _KeyConnectionPhase.failed);
       }
-      _completeConnectionAttempt(
-        StateError('Unable to start BLE scan.'),
-      );
+      _completeConnectionAttempt(StateError('Unable to start BLE scan.'));
     }
   }
 
@@ -342,9 +355,16 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     final token = GlobalUser.instance.token;
     if (token == null || token.isEmpty) return;
     setState(() => _locksLoading = true);
+    final cached = (await OfflineDataStore.readList(
+      'locks',
+    )).map(_mapApiLock).toList();
+    if (mounted && cached.isNotEmpty) {
+      setState(() => _availableLocks = cached);
+    }
     try {
       final response = await Api.listLockDevices(token: token);
       final mapped = response.map(_mapApiLock).toList();
+      await OfflineDataStore.saveList('locks', response);
       if (!mounted) return;
       setState(() {
         _availableLocks = mapped;
@@ -352,12 +372,20 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() => _locksLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('锁列表加载失败: $error')));
+      setState(() {
+        _locksLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            cached.isEmpty ? '锁列表加载失败: $error' : '网络不可用，已加载本地缓存的锁列表',
+          ),
+        ),
+      );
     }
   }
+
+  String get _pendingEventsKey => '$_pendingEventsKeyPrefix${widget.keyId}';
 
   LockItem _mapApiLock(Map<String, dynamic> json) {
     final id = (json['id'] ?? '').toString();
@@ -400,7 +428,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     );
   }
 
-  Future<void> _setSwitchState(String nextState) async {
+  Future<void> _authorizeKey() async {
     final l10n = AppLocalizations.of(context)!;
     if (_busy) return;
 
@@ -419,18 +447,13 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     }
 
     final lock = _selectedLock!;
+    final controller = context.read<BleKeyController>();
     setState(() => _busy = true);
     try {
       // A single tap now performs scan + connection when needed, then carries
       // on with authorization and control. Connection failures are surfaced by
       // the common error handler below.
       await _ensureConnected();
-
-      final operationLocation = (await context
-          .read<LocationProvider>()
-          .getEventLocation())
-          ?.toRawPayload();
-      final controller = context.read<BleKeyController>();
 
       // 1) Resolve authorization for the currently selected lock. The app
       // deliberately does not send a task id; the backend selects the active
@@ -441,14 +464,10 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       final decisionAt = AccessDecisionTime.resolveDecisionAt(
         provisioningConfig,
       );
-      final decision = await Api.decideAccess(
+      final decision = await _decideAccess(
         token: token,
-        keyId: widget.keyId,
-        lockId: lock.id,
-        at: DateTime.parse(decisionAt),
-        geofenceSatisfied: true,
-        clientTraceId:
-            'ble_control_${DateTime.now().millisecondsSinceEpoch}_${lock.id}',
+        lock: lock,
+        decisionAt: DateTime.parse(decisionAt),
       );
       if (decision['allowed'] != true) {
         final reasons = decision['reasons'];
@@ -491,55 +510,13 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('已完成在线授权，请保持蓝牙连接并用钥匙操作锁体。')));
-      // 5) Wait for CMD=10 report confirming the switch happened.
-      final report = await controller.waitForOperationResult(
-        expectedOperationName: 'Report',
-        where: _isCmd10SwitchReport,
-        timeout: const Duration(seconds: 90),
-      );
-
-      unawaited(
-        Api.createLockEvent(
-          token: token,
-          payload: _buildSwitchEventPayload(
-            lock: lock,
-            requestedState: nextState,
-            report: report,
-            operationLocation: operationLocation,
-          ),
-        ).catchError((Object error) {
-          if (!mounted) return <String, dynamic>{};
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('开关锁事件上报失败: $error')));
-          return <String, dynamic>{};
-        }),
-      );
-      if (!mounted) return;
-      setState(() {
-        final updatedLock = LockItem(
-          id: lock.id,
-          name: lock.name,
-          number: lock.number,
-          location: lock.location,
-          switchState: nextState,
-          status: lock.status,
-          updatedAt: DateTime.now(),
-        );
-        _selectedLock = updatedLock;
-        _availableLocks = _availableLocks
-            .map((item) => item.id == lock.id ? updatedLock : item)
-            .toList();
-      });
+      setState(() => _authorized = true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            nextState == 'unlocked'
-                ? l10n.keyUnlockUnlockSubmitted
-                : l10n.keyUnlockLockSubmitted,
+            decision['offline'] == true
+                ? '离线授权成功，记录已本地缓存，联网后自动上报。'
+                : '授权成功，现在可持续开关锁，所有记录都会自动上报。',
           ),
         ),
       );
@@ -553,19 +530,170 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     }
   }
 
+  Future<Map<String, dynamic>> _decideAccess({
+    required String token,
+    required LockItem lock,
+    required DateTime decisionAt,
+  }) async {
+    try {
+      return await Api.decideAccess(
+        token: token,
+        keyId: widget.keyId,
+        lockId: lock.id,
+        at: decisionAt,
+        geofenceSatisfied: true,
+        clientTraceId:
+            'ble_control_${DateTime.now().millisecondsSinceEpoch}_${lock.id}',
+      );
+    } on DioException catch (error) {
+      if (error.response != null) rethrow;
+      return decideOfflineAccess(
+        tasks: await OfflineDataStore.readList('tasks'),
+        keyId: widget.keyId,
+        lockId: lock.id,
+        userId: GlobalUser.instance.userId,
+        at: decisionAt.toLocal(),
+      );
+    }
+  }
+
+  void _onSdkEvent(BleKeyEvent event) {
+    final report = event.operationResult;
+    if (event.type != 'operationResult' ||
+        event.operationName != 'Report' ||
+        report == null ||
+        !_isCmd10SwitchReport(report) ||
+        _selectedLock == null) {
+      return;
+    }
+    _reportProcessing = _reportProcessing.then(
+      (_) => _handleSwitchReportSafely(report),
+    );
+  }
+
+  Future<void> _handleSwitchReportSafely(BleKeyOperationResult report) async {
+    try {
+      await _handleSwitchReport(report);
+    } catch (error, stackTrace) {
+      debugPrint('开关锁记录处理失败: $error\n$stackTrace');
+    }
+  }
+
+  Future<void> _handleSwitchReport(BleKeyOperationResult report) async {
+    if (!mounted) return;
+    final lock = _selectedLock;
+    if (lock == null) return;
+    final reportStatus = _extractReportStatus(report.obj);
+    if (reportStatus == null) return;
+    final nextState = reportStatus == 1 ? 'unlocked' : 'locked';
+    final operationLocation =
+        (await context.read<LocationProvider>().getEventLocation())
+            ?.toRawPayload();
+    final payload = _buildSwitchEventPayload(
+      lock: lock,
+      requestedState: nextState,
+      report: report,
+      operationLocation: operationLocation,
+    );
+    await _enqueuePendingEvent(payload);
+    await _syncPendingEvents();
+    if (!mounted) return;
+    setState(() {
+      final updatedLock = LockItem(
+        id: lock.id,
+        name: lock.name,
+        number: lock.number,
+        location: lock.location,
+        switchState: nextState,
+        status: lock.status,
+        updatedAt: DateTime.now(),
+      );
+      _selectedLock = updatedLock;
+      _availableLocks = _availableLocks
+          .map((item) => item.id == lock.id ? updatedLock : item)
+          .toList();
+    });
+  }
+
+  int? _extractReportStatus(Object? value) {
+    if (value is Map) {
+      final map = Map<String, dynamic>.from(value);
+      final direct = _toInt(map['status']) ?? _toInt(map['flag']);
+      if (direct != null) return direct == 0 ? 0 : 1;
+      for (final nested in map.values) {
+        final status = _extractReportStatus(nested);
+        if (status != null) return status;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _loadPendingEventsAndSync() async {
+    final preferences = await SharedPreferences.getInstance();
+    final values = preferences.getStringList(_pendingEventsKey) ?? <String>[];
+    final pending = <Map<String, dynamic>>[];
+    for (final value in values) {
+      try {
+        final decoded = jsonDecode(value);
+        if (decoded is Map) pending.add(Map<String, dynamic>.from(decoded));
+      } catch (_) {}
+    }
+    if (mounted) setState(() => _pendingEvents = pending);
+    await _syncPendingEvents();
+  }
+
+  Future<void> _enqueuePendingEvent(Map<String, dynamic> payload) async {
+    _pendingEvents = <Map<String, dynamic>>[..._pendingEvents, payload];
+    await _savePendingEvents();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _savePendingEvents() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setStringList(
+      _pendingEventsKey,
+      _pendingEvents.map(jsonEncode).toList(),
+    );
+  }
+
+  Future<void> _syncPendingEvents() async {
+    final token = GlobalUser.instance.token;
+    if (token == null ||
+        token.isEmpty ||
+        _pendingEvents.isEmpty ||
+        _syncingPendingEvents) {
+      return;
+    }
+    _syncingPendingEvents = true;
+    try {
+      while (_pendingEvents.isNotEmpty) {
+        await Api.createLockEvent(token: token, payload: _pendingEvents.first);
+        _pendingEvents = _pendingEvents.sublist(1);
+        await _savePendingEvents();
+        if (mounted) setState(() {});
+      }
+    } catch (_) {
+      // Keep the remaining records. Opening this page again, receiving another
+      // report, or tapping retry will resume from the first unsent record.
+    } finally {
+      _syncingPendingEvents = false;
+    }
+  }
+
   Map<String, dynamic> _buildSwitchEventPayload({
     required LockItem lock,
     required String requestedState,
     required BleKeyOperationResult report,
     Map<String, dynamic>? operationLocation,
   }) {
-    final eventTime = DateTime.now().toUtc().toIso8601String();
+    final reportTime = _extractReportTime(report.obj);
+    final eventTime = (reportTime ?? DateTime.now()).toUtc().toIso8601String();
     final command = _extractCommand(report.obj) ?? 10;
     return <String, dynamic>{
       'source': 'flutter_app_ble_key',
       'deviceId': _selectedMac ?? widget.keyId,
       'vendorEventId':
-          'ble_${DateTime.now().millisecondsSinceEpoch}_${lock.id}',
+          'ble_${reportTime?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch}_${lock.number}_$requestedState',
       'lockId': lock.id,
       'keyId': widget.keyId,
       'vendorLockId': lock.number,
@@ -575,7 +703,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       'eventTime': eventTime,
       'result': 'success',
       'rawPayload': <String, dynamic>{
-        if (operationLocation != null) ...operationLocation,
+        ...?operationLocation,
         'flow': 'app_key_control',
         'requestedState': requestedState,
         'previousDisplayState': lock.switchState,
@@ -594,6 +722,21 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         },
       },
     };
+  }
+
+  DateTime? _extractReportTime(Object? value) {
+    if (value is Map) {
+      final map = Map<String, dynamic>.from(value);
+      final milliseconds = _toInt(map['time']);
+      if (milliseconds != null && milliseconds > 0) {
+        return DateTime.fromMillisecondsSinceEpoch(milliseconds);
+      }
+      for (final nested in map.values) {
+        final time = _extractReportTime(nested);
+        if (time != null) return time;
+      }
+    }
+    return null;
   }
 
   Map<String, Object?> _baseSdkArgs({String? keyLocalTime}) {
@@ -618,7 +761,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         token: token,
       ).timeout(const Duration(seconds: 5));
     } catch (_) {
-      return null;
+      return OfflineDataStore.readObject('provisioning_config');
     }
   }
 
@@ -690,7 +833,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
             locks: _availableLocks,
             loading: _locksLoading,
             selected: _selectedLock,
-            onSelect: _busy
+            onSelect: _busy || _authorized
                 ? null
                 : (lock) => setState(() => _selectedLock = lock),
             onRetry: _busy ? null : _loadLocks,
@@ -733,22 +876,21 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: _busy ? null : () => _setSwitchState('unlocked'),
-            icon: const Icon(Icons.lock_open),
-            label: Text(l10n.keyUnlockUnlockAction),
+            onPressed: _busy || _authorized ? null : _authorizeKey,
+            icon: Icon(_authorized ? Icons.verified_user : Icons.key),
+            label: Text(_authorized ? '已授权（持续监听开关锁）' : '授权'),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(60),
             ),
           ),
-          const SizedBox(height: 12),
-          FilledButton.tonalIcon(
-            onPressed: _busy ? null : () => _setSwitchState('locked'),
-            icon: const Icon(Icons.lock_outline),
-            label: Text(l10n.keyUnlockLockAction),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(60),
+          if (_authorized || _pendingEvents.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _EventSyncCard(
+              authorized: _authorized,
+              pendingEvents: _pendingEvents,
+              onRetry: _syncPendingEvents,
             ),
-          ),
+          ],
           if (_busy) ...[
             const SizedBox(height: 16),
             const Center(child: CircularProgressIndicator()),
@@ -756,6 +898,76 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
         ],
       ),
     );
+  }
+}
+
+class _EventSyncCard extends StatelessWidget {
+  const _EventSyncCard({
+    required this.authorized,
+    required this.pendingEvents,
+    required this.onRetry,
+  });
+
+  final bool authorized;
+  final List<Map<String, dynamic>> pendingEvents;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final visibleEvents = pendingEvents.reversed.take(5).toList();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  authorized ? Icons.sensors : Icons.cloud_off,
+                  color: authorized
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    authorized ? '授权状态：持续监听中' : '开关锁记录',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              pendingEvents.isEmpty
+                  ? '所有开关锁记录已上报'
+                  : '待上报 ${pendingEvents.length} 条（网络恢复后自动补传）',
+            ),
+            for (final event in visibleEvents) ...[
+              const Divider(height: 16),
+              Text(
+                '${_eventStateLabel(event)} · ${event['vendorLockId'] ?? '-'} · ${event['eventTime'] ?? '-'}',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+            if (pendingEvents.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => unawaited(onRetry()),
+                icon: const Icon(Icons.sync),
+                label: const Text('立即重试上报'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _eventStateLabel(Map<String, dynamic> event) {
+    return event['status'] == 1 ? '开锁' : '关锁';
   }
 }
 

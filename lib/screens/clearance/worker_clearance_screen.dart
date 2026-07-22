@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../api.dart';
 import '../../l10n/app_localizations.dart';
 import '../../states/global_user.dart';
+import '../../services/offline_data_store.dart';
 import '../../widgets/smart_list.dart';
 import '../home/models.dart';
 import 'clearance_models.dart';
@@ -46,37 +47,46 @@ class _WorkerClearanceScreenState extends State<WorkerClearanceScreen> {
       _error = null;
     });
 
+    final cached = await OfflineDataStore.readList('tasks');
+    if (cached.isNotEmpty) _applyTasks(cached);
+
     try {
       if (GlobalUser.instance.userId == null) {
         await GlobalUser.instance.fetchProfile();
       }
       final response = await Api.listAuthorizationTasks(token: token);
-      final userId = GlobalUser.instance.userId;
-      final tasks = response
-          .map(AuthorizationTaskItem.fromJson)
-          .where((task) => task.isGroup)
-          .where((task) => task.involvesUser(userId))
-          .where((task) => task.status != 'rejected')
-          .toList()
-        ..sort((a, b) {
-          final aTime = a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-          final bTime = b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-          return bTime.compareTo(aTime);
-        });
-
-      if (!mounted) return;
-      setState(() {
-        _tasks = tasks;
-        _loading = false;
-      });
-      _maybeOpenInitialTask(tasks);
+      await OfflineDataStore.saveList('tasks', response);
+      _applyTasks(response);
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = formatRequestError(error);
+        if (_tasks.isEmpty) _error = formatRequestError(error);
       });
     }
+  }
+
+  void _applyTasks(List<Map<String, dynamic>> response) {
+    final userId = GlobalUser.instance.userId;
+    final tasks =
+        response
+            .map(AuthorizationTaskItem.fromJson)
+            .where((task) => task.isGroup)
+            .where((task) => task.involvesUser(userId))
+            .where((task) => task.status != 'rejected')
+            .toList()
+          ..sort((a, b) {
+            final aTime = a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final bTime = b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            return bTime.compareTo(aTime);
+          });
+
+    if (!mounted) return;
+    setState(() {
+      _tasks = tasks;
+      _loading = false;
+    });
+    _maybeOpenInitialTask(tasks);
   }
 
   void _maybeOpenInitialTask(List<AuthorizationTaskItem> tasks) {
@@ -296,9 +306,9 @@ class _WorkerClearanceDetailScreenState
     final l10n = AppLocalizations.of(context)!;
     final token = GlobalUser.instance.token;
     if (token == null || token.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.sessionExpired)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.sessionExpired)));
       return;
     }
 
@@ -322,9 +332,9 @@ class _WorkerClearanceDetailScreenState
       await _loadDetail(silent: true);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(formatRequestError(error))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(formatRequestError(error))));
     } finally {
       if (mounted) setState(() => _acting = false);
     }
@@ -352,7 +362,12 @@ class _WorkerClearanceDetailScreenState
                 padding: const EdgeInsets.all(16),
                 children: [
                   if (_error != null) ...[
-                    Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                   ],
                   Card(
@@ -389,7 +404,8 @@ class _WorkerClearanceDetailScreenState
                             const SizedBox(height: 8),
                             Text(
                               l10n.clearanceUnlockBlocked(
-                                task.groupRequiredCount - task.groupClearedCount,
+                                task.groupRequiredCount -
+                                    task.groupClearedCount,
                               ),
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.error,
@@ -434,9 +450,7 @@ class _WorkerClearanceDetailScreenState
                             userId.isEmpty ? '?' : userId[0].toUpperCase(),
                           ),
                         ),
-                        title: Text(
-                          isMe ? l10n.clearanceYou(userId) : userId,
-                        ),
+                        title: Text(isMe ? l10n.clearanceYou(userId) : userId),
                         subtitle: Text(_workerStatusLabel(l10n, clearance)),
                         trailing: _StatusChip(
                           label: _workerStatusLabel(l10n, clearance),

@@ -45,6 +45,7 @@ class BleKeyController extends ChangeNotifier {
   List<BleKeyDevice> get devices => List.unmodifiable(_devicesByMac.values);
   List<BleKeyLog> get logs => List.unmodifiable(_logs);
   List<String> get operationResults => List.unmodifiable(_operationResults);
+  Stream<BleKeyEvent> get operationEvents => _operationEventController.stream;
 
   Future<void> preparePermissions() async {
     await _run('权限检查', () async {

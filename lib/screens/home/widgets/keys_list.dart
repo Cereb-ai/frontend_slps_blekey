@@ -4,6 +4,7 @@ import '../../../api.dart' hide JsonMap;
 import '../../../l10n/app_localizations.dart';
 import '../../../routes.dart';
 import '../../../states/global_user.dart';
+import '../../../services/offline_data_store.dart';
 import '../../../widgets/smart_list.dart';
 import '../models.dart';
 import 'key_editor_sheet.dart';
@@ -45,8 +46,17 @@ class _KeysListState extends State<KeysList> {
     final token = GlobalUser.instance.token;
     if (token == null || token.isEmpty) return;
     setState(() => _loading = true);
+    final cached = await OfflineDataStore.readList('keys');
+    if (mounted && cached.isNotEmpty) {
+      setState(() {
+        _items
+          ..clear()
+          ..addAll(cached.map(_mapApiKey));
+      });
+    }
     try {
       final response = await Api.listLockKeys(token: token);
+      await OfflineDataStore.saveList('keys', response);
       final mapped = response.map(_mapApiKey).toList();
       if (!mounted) return;
       setState(() {
@@ -56,9 +66,11 @@ class _KeysListState extends State<KeysList> {
       });
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('钥匙列表加载失败: $error')));
+      if (_items.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('钥匙列表加载失败: $error')));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -105,8 +117,14 @@ class _KeysListState extends State<KeysList> {
           onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.cancel)),
-          FilledButton(onPressed: () => Navigator.of(context).pop(controller.text.trim()), child: Text(l10n.rename)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: Text(l10n.rename),
+          ),
         ],
       ),
     );
@@ -114,9 +132,17 @@ class _KeysListState extends State<KeysList> {
     if (name == null || name.isEmpty || name == item.name) return;
     final token = _requireToken();
     if (token == null) return;
-    await Api.updateLockKey(token: token, id: item.id, payload: <String, dynamic>{'name': name});
+    await Api.updateLockKey(
+      token: token,
+      id: item.id,
+      payload: <String, dynamic>{'name': name},
+    );
     await _load();
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.renameSuccess)));
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.renameSuccess)));
+    }
   }
 
   Future<void> _openControl(KeyItem item) async {

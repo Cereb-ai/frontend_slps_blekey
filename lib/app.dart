@@ -148,17 +148,10 @@ class _SplashGateState extends State<_SplashGate> {
   }
 
   Future<void> _validateStoredSession() async {
-    final hasRefreshToken = GlobalUser.instance.refreshToken?.isNotEmpty ?? false;
-    if (hasRefreshToken) {
-      final freshToken = await Api.ensureFreshAccessToken();
-      if (freshToken == null || freshToken.isEmpty) {
-        await GlobalUser.instance.clearLocalSession();
-        return;
-      }
-    }
-
     try {
-      await GlobalUser.instance.fetchProfile();
+      await GlobalUser.instance.fetchProfile().timeout(
+        const Duration(seconds: 3),
+      );
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
         await GlobalUser.instance.clearLocalSession();
