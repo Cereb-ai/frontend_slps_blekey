@@ -12,6 +12,7 @@ import 'providers.dart';
 import 'routes.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/home/app_home_screen.dart';
+import 'services/offline_data_store.dart';
 import 'states/global_user.dart';
 import 'states/locale_store.dart';
 import 'themes/app_theme.dart';
@@ -101,12 +102,69 @@ class _AppState extends State<App> with WidgetsBindingObserver {
             );
           },
           builder: (context, child) {
-            return GestureDetector(
+            final page = GestureDetector(
               behavior: HitTestBehavior.translucent,
               onTap: () => _hideKeyboard(context),
               child: child,
             );
+            return ValueListenableBuilder<bool>(
+              valueListenable: OfflineDataStore.isSyncing,
+              builder: (context, syncing, _) => Stack(
+                children: [
+                  page,
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: SafeArea(
+                      child: IgnorePointer(
+                        ignoring: !syncing,
+                        child: AnimatedSlide(
+                          offset: syncing ? Offset.zero : const Offset(0, -1.2),
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutCubic,
+                          child: AnimatedOpacity(
+                            opacity: syncing ? 1 : 0,
+                            duration: const Duration(milliseconds: 180),
+                            child: const _GlobalSyncBanner(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _GlobalSyncBanner extends StatelessWidget {
+  const _GlobalSyncBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surfaceContainerHigh,
+      elevation: 8,
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            SizedBox(width: 12),
+            Text('正在同步钥匙、锁和授权任务…'),
+          ],
         ),
       ),
     );

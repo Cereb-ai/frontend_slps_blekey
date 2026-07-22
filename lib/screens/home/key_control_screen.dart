@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blekey_sdk/flutter_blekey_sdk.dart';
@@ -77,7 +78,8 @@ class KeyControlScreen extends StatefulWidget {
   State<KeyControlScreen> createState() => _KeyControlScreenState();
 }
 
-class _KeyControlScreenState extends State<KeyControlScreen> {
+class _KeyControlScreenState extends State<KeyControlScreen>
+    with WidgetsBindingObserver {
   static const _pendingEventsKeyPrefix = 'ble_key_pending_lock_events_v1_';
 
   bool _busy = false;
@@ -91,9 +93,11 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
   Completer<void>? _connectionCompleter;
   BleKeyController? _bleController;
   StreamSubscription<BleKeyEvent>? _reportSubscription;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Future<void> _reportProcessing = Future<void>.value();
   bool _authorized = false;
   bool _syncingPendingEvents = false;
+  bool _hasNetworkConnection = true;
   List<Map<String, dynamic>> _pendingEvents = <Map<String, dynamic>>[];
 
   late final TextEditingController _secretController;
@@ -103,6 +107,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _secretController = TextEditingController(text: widget.secret);
     _signController = TextEditingController(text: widget.sign.toString());
     _licController = TextEditingController(text: widget.lic);
@@ -113,6 +118,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
       _bleController = controller;
       controller.addListener(_onBleControllerChanged);
       _reportSubscription = controller.operationEvents.listen(_onSdkEvent);
+      unawaited(_startConnectivityMonitoring());
       unawaited(_loadPendingEventsAndSync());
       _loadLocks();
     });
@@ -120,9 +126,11 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     final controller = _bleController;
     controller?.removeListener(_onBleControllerChanged);
     unawaited(_reportSubscription?.cancel());
+    unawaited(_connectivitySubscription?.cancel());
     if (controller != null) {
       unawaited(_releaseBleResources(controller));
     }
@@ -130,6 +138,13 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     _signController.dispose();
     _licController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshConnectivityAndSync());
+    }
   }
 
   Future<void> _releaseBleResources(BleKeyController controller) async {
@@ -642,6 +657,35 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     await _syncPendingEvents();
   }
 
+  Future<void> _startConnectivityMonitoring() async {
+    final connectivity = Connectivity();
+    _applyConnectivity(await connectivity.checkConnectivity());
+    _connectivitySubscription = connectivity.onConnectivityChanged.listen(
+      _applyConnectivity,
+    );
+  }
+
+  Future<void> _refreshConnectivityAndSync() async {
+    _applyConnectivity(
+      await Connectivity().checkConnectivity(),
+      forceSync: true,
+    );
+  }
+
+  void _applyConnectivity(
+    List<ConnectivityResult> results, {
+    bool forceSync = false,
+  }) {
+    final connected = results.any(
+      (result) => result != ConnectivityResult.none,
+    );
+    _hasNetworkConnection = connected;
+    if (mounted) setState(() {});
+    if (connected && (forceSync || _pendingEvents.isNotEmpty)) {
+      _reportProcessing = _reportProcessing.then((_) => _syncPendingEvents());
+    }
+  }
+
   Future<void> _enqueuePendingEvent(Map<String, dynamic> payload) async {
     _pendingEvents = <Map<String, dynamic>>[..._pendingEvents, payload];
     await _savePendingEvents();
@@ -661,7 +705,8 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
     if (token == null ||
         token.isEmpty ||
         _pendingEvents.isEmpty ||
-        _syncingPendingEvents) {
+        _syncingPendingEvents ||
+        !_hasNetworkConnection) {
       return;
     }
     _syncingPendingEvents = true;
@@ -887,6 +932,7 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
             const SizedBox(height: 12),
             _EventSyncCard(
               authorized: _authorized,
+              networkConnected: _hasNetworkConnection,
               pendingEvents: _pendingEvents,
               onRetry: _syncPendingEvents,
             ),
@@ -904,11 +950,13 @@ class _KeyControlScreenState extends State<KeyControlScreen> {
 class _EventSyncCard extends StatelessWidget {
   const _EventSyncCard({
     required this.authorized,
+    required this.networkConnected,
     required this.pendingEvents,
     required this.onRetry,
   });
 
   final bool authorized;
+  final bool networkConnected;
   final List<Map<String, dynamic>> pendingEvents;
   final Future<void> Function() onRetry;
 
@@ -937,6 +985,20 @@ class _EventSyncCard extends StatelessWidget {
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  networkConnected ? Icons.cloud_done : Icons.cloud_off,
+                  size: 18,
+                  color: networkConnected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.error,
+                ),
+                const SizedBox(width: 8),
+                Text(networkConnected ? '网络已连接' : '当前离线'),
               ],
             ),
             const SizedBox(height: 8),

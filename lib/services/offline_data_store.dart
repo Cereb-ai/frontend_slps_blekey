@@ -12,6 +12,8 @@ import '../states/global_user.dart';
 /// snapshot; a failed request leaves the last known-good snapshot untouched.
 abstract final class OfflineDataStore {
   static const _prefix = 'slps_offline_v1';
+  static final ValueNotifier<bool> isSyncing = ValueNotifier<bool>(false);
+  static int _activeSyncCount = 0;
 
   static String _accountScope() {
     final user = GlobalUser.instance;
@@ -25,23 +27,38 @@ abstract final class OfflineDataStore {
   static Future<void> syncAll({String? token}) async {
     final accessToken = token ?? GlobalUser.instance.token;
     if (accessToken == null || accessToken.isEmpty) return;
-    await Future.wait<void>([
-      _refreshList('keys', () => Api.listLockKeys(token: accessToken)),
-      _refreshList('locks', () => Api.listLockDevices(token: accessToken)),
-      _refreshList(
-        'tasks',
-        () => Api.listAuthorizationTasks(token: accessToken),
-      ),
-      _refreshObject(
-        'provisioning_config',
-        () => Api.getProvisioningConfig(token: accessToken),
-      ),
-    ]);
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(
-      _key('synced_at'),
-      DateTime.now().toUtc().toIso8601String(),
-    );
+    _beginSync();
+    try {
+      await Future.wait<void>([
+        _refreshList('keys', () => Api.listLockKeys(token: accessToken)),
+        _refreshList('locks', () => Api.listLockDevices(token: accessToken)),
+        _refreshList(
+          'tasks',
+          () => Api.listAuthorizationTasks(token: accessToken),
+        ),
+        _refreshObject(
+          'provisioning_config',
+          () => Api.getProvisioningConfig(token: accessToken),
+        ),
+      ]);
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(
+        _key('synced_at'),
+        DateTime.now().toUtc().toIso8601String(),
+      );
+    } finally {
+      _endSync();
+    }
+  }
+
+  static void _beginSync() {
+    _activeSyncCount++;
+    if (_activeSyncCount == 1) isSyncing.value = true;
+  }
+
+  static void _endSync() {
+    if (_activeSyncCount > 0) _activeSyncCount--;
+    if (_activeSyncCount == 0) isSyncing.value = false;
   }
 
   static Future<void> _refreshList(

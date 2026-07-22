@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api.dart';
-import '../services/offline_data_store.dart';
 
 class GlobalUser extends ChangeNotifier {
   GlobalUser._();
@@ -77,8 +76,6 @@ class GlobalUser extends ChangeNotifier {
     try {
       await fetchProfile();
     } catch (_) {}
-
-    await OfflineDataStore.syncAll(token: nextToken);
 
     notifyListeners();
   }
