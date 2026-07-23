@@ -34,6 +34,7 @@ class LocationProvider extends ChangeNotifier {
   AppLocationState state = AppLocationState.idle;
   EventLocation? location;
   Object? error;
+  Future<EventLocation?>? _activeLocationRequest;
 
   bool get loading => state == AppLocationState.checking;
   bool get needsLocationSettings => state == AppLocationState.serviceDisabled;
@@ -42,7 +43,23 @@ class LocationProvider extends ChangeNotifier {
   Future<EventLocation?> getEventLocation({
     Duration timeout = const Duration(seconds: 8),
   }) async {
-    if (loading) return location;
+    final activeRequest = _activeLocationRequest;
+    if (activeRequest != null) return activeRequest;
+
+    final request = _loadEventLocation(timeout: timeout);
+    _activeLocationRequest = request;
+    try {
+      return await request;
+    } finally {
+      if (identical(_activeLocationRequest, request)) {
+        _activeLocationRequest = null;
+      }
+    }
+  }
+
+  Future<EventLocation?> _loadEventLocation({
+    required Duration timeout,
+  }) async {
     _update(AppLocationState.checking);
     error = null;
     try {
