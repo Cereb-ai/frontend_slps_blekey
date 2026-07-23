@@ -548,8 +548,11 @@ class _KeyControlScreenState extends State<KeyControlScreen>
       );
     } catch (error) {
       if (!mounted) return;
+      final message = error is TimeoutException
+          ? l10n.keyUnlockTimedOut
+          : l10n.keyUnlockFailed;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${l10n.keyUnlockFailed}: $error')),
+        SnackBar(content: Text(message)),
       );
     } finally {
       if (mounted) setState(() => _busy = false);

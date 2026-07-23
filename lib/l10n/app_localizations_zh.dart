@@ -350,6 +350,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keyUnlockFailed => '控制失败';
 
   @override
+  String get keyUnlockTimedOut => '操作超时，请确认钥匙已唤醒并靠近手机，然后重试';
+
+  @override
   String get keyUnlockCurrentStatus => '当前状态';
 
   @override
@@ -852,6 +855,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get keyUnlockFailed => '控制失败';
 
   @override
+  String get keyUnlockTimedOut => '操作超时，请确认钥匙已唤醒并靠近手机，然后重试';
+
+  @override
   String get keyUnlockCurrentStatus => '当前状态';
 
   @override
@@ -1352,6 +1358,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get keyUnlockFailed => '控制失敗';
+
+  @override
+  String get keyUnlockTimedOut => '操作逾時，請確認鑰匙已喚醒並靠近手機，然後重試';
 
   @override
   String get keyUnlockCurrentStatus => '當前狀態';

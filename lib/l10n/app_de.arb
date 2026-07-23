@@ -119,6 +119,7 @@
   "keyUnlockUnlockSubmitted": "Entriegelungsbefehl gesendet",
   "keyUnlockLockSubmitted": "Verriegelungsbefehl gesendet",
   "keyUnlockFailed": "Steuerung fehlgeschlagen",
+  "keyUnlockTimedOut": "Zeitüberschreitung. Stellen Sie sicher, dass der Schlüssel aktiv und in der Nähe des Telefons ist, und versuchen Sie es erneut.",
   "keyUnlockCurrentStatus": "Aktueller Status",
   "keyUnlockSdkConfig": "SDK-Steuerungskonfiguration",
   "keyUnlockKeyCount": "{count} Schlussel",

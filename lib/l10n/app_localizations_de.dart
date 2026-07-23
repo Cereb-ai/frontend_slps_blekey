@@ -350,6 +350,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get keyUnlockFailed => 'Steuerung fehlgeschlagen';
 
   @override
+  String get keyUnlockTimedOut =>
+      'Zeitüberschreitung. Stellen Sie sicher, dass der Schlüssel aktiv und in der Nähe des Telefons ist, und versuchen Sie es erneut.';
+
+  @override
   String get keyUnlockCurrentStatus => 'Aktueller Status';
 
   @override

@@ -350,6 +350,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyUnlockFailed => 'Control failed';
 
   @override
+  String get keyUnlockTimedOut =>
+      'Operation timed out. Make sure the key is awake and close to your phone, then try again.';
+
+  @override
   String get keyUnlockCurrentStatus => 'Current Status';
 
   @override

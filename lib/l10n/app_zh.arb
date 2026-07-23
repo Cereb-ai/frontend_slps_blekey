@@ -119,6 +119,7 @@
   "keyUnlockUnlockSubmitted": "开锁指令已提交",
   "keyUnlockLockSubmitted": "关锁指令已提交",
   "keyUnlockFailed": "控制失败",
+  "keyUnlockTimedOut": "操作超时，请确认钥匙已唤醒并靠近手机，然后重试",
   "keyUnlockCurrentStatus": "当前状态",
   "keyUnlockSdkConfig": "SDK 控制配置",
   "keyUnlockKeyCount": "{count} 台钥匙",

@@ -764,6 +764,12 @@ abstract class AppLocalizations {
   /// **'Control failed'**
   String get keyUnlockFailed;
 
+  /// No description provided for @keyUnlockTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation timed out. Make sure the key is awake and close to your phone, then try again.'**
+  String get keyUnlockTimedOut;
+
   /// No description provided for @keyUnlockCurrentStatus.
   ///
   /// In en, this message translates to:

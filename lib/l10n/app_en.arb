@@ -119,6 +119,7 @@
   "keyUnlockUnlockSubmitted": "Unlock command submitted",
   "keyUnlockLockSubmitted": "Lock command submitted",
   "keyUnlockFailed": "Control failed",
+  "keyUnlockTimedOut": "Operation timed out. Make sure the key is awake and close to your phone, then try again.",
   "keyUnlockCurrentStatus": "Current Status",
   "keyUnlockSdkConfig": "SDK Control Configuration",
   "keyUnlockKeyCount": "{count} keys",
