@@ -79,10 +79,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rename => 'Rename';
+
   @override
   String get renameKeyTitle => 'Rename Key';
+
   @override
   String get renameLockTitle => 'Rename Lock';
+
   @override
   String get renameSuccess => 'Name updated successfully';
 
@@ -350,8 +353,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyUnlockFailed => 'Control failed';
 
   @override
-  String get keyUnlockTimedOut =>
-      'Operation timed out. Make sure the key is awake and close to your phone, then try again.';
+  String get keyUnlockTimedOut => 'Operation timed out. Press and hold the key button until the green light starts flashing, then scan and connect again.';
 
   @override
   String get keyUnlockCurrentStatus => 'Current Status';
@@ -404,7 +406,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyUnlockConnectionSection => 'Key Connection';
 
   @override
-  String get keyUnlockScanningKey => 'Scanning for key…';
+  String get keyUnlockScanningKey => 'Scanning for key… Press and hold the key button until the green light starts flashing.';
 
   @override
   String get keyUnlockConnectingKey => 'Connecting to key…';
@@ -413,13 +415,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyUnlockKeyConnected => 'Key connected';
 
   @override
-  String get keyUnlockKeyConnectFailed => 'Key not found or connection failed. Keep the key nearby and retry.';
+  String get keyUnlockKeyConnectFailed => 'Bluetooth key not found or connection failed. Press and hold the key button until the green light starts flashing, then scan again. If the light has turned off, press and hold again to wake the key.';
 
   @override
   String get keyUnlockRetryConnect => 'Scan and connect again';
 
   @override
-  String get keyUnlockReadyToConnect => 'Review advanced settings, then connect the key.';
+  String get keyUnlockReadyToConnect => 'Press and hold the key button until the green light starts flashing, then scan and connect.';
 
   @override
   String get keyUnlockConnectAction => 'Scan and connect';

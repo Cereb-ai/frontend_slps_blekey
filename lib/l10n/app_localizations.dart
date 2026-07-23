@@ -237,9 +237,28 @@ abstract class AppLocalizations {
   /// **'Edit'**
   String get edit;
 
+  /// No description provided for @rename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
   String get rename;
+
+  /// No description provided for @renameKeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Key'**
   String get renameKeyTitle;
+
+  /// No description provided for @renameLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Lock'**
   String get renameLockTitle;
+
+  /// No description provided for @renameSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Name updated successfully'**
   String get renameSuccess;
 
   /// No description provided for @delete.
@@ -767,7 +786,7 @@ abstract class AppLocalizations {
   /// No description provided for @keyUnlockTimedOut.
   ///
   /// In en, this message translates to:
-  /// **'Operation timed out. Make sure the key is awake and close to your phone, then try again.'**
+  /// **'Operation timed out. Press and hold the key button until the green light starts flashing, then scan and connect again.'**
   String get keyUnlockTimedOut;
 
   /// No description provided for @keyUnlockCurrentStatus.
@@ -869,7 +888,7 @@ abstract class AppLocalizations {
   /// No description provided for @keyUnlockScanningKey.
   ///
   /// In en, this message translates to:
-  /// **'Scanning for key…'**
+  /// **'Scanning for key… Press and hold the key button until the green light starts flashing.'**
   String get keyUnlockScanningKey;
 
   /// No description provided for @keyUnlockConnectingKey.
@@ -887,7 +906,7 @@ abstract class AppLocalizations {
   /// No description provided for @keyUnlockKeyConnectFailed.
   ///
   /// In en, this message translates to:
-  /// **'Key not found or connection failed. Keep the key nearby and retry.'**
+  /// **'Bluetooth key not found or connection failed. Press and hold the key button until the green light starts flashing, then scan again. If the light has turned off, press and hold again to wake the key.'**
   String get keyUnlockKeyConnectFailed;
 
   /// No description provided for @keyUnlockRetryConnect.
@@ -899,7 +918,7 @@ abstract class AppLocalizations {
   /// No description provided for @keyUnlockReadyToConnect.
   ///
   /// In en, this message translates to:
-  /// **'Review advanced settings, then connect the key.'**
+  /// **'Press and hold the key button until the green light starts flashing, then scan and connect.'**
   String get keyUnlockReadyToConnect;
 
   /// No description provided for @keyUnlockConnectAction.

@@ -79,10 +79,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get rename => 'Umbenennen';
+
   @override
   String get renameKeyTitle => 'Schlüssel umbenennen';
+
   @override
   String get renameLockTitle => 'Schloss umbenennen';
+
   @override
   String get renameSuccess => 'Name erfolgreich geändert';
 
@@ -350,8 +353,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get keyUnlockFailed => 'Steuerung fehlgeschlagen';
 
   @override
-  String get keyUnlockTimedOut =>
-      'Zeitüberschreitung. Stellen Sie sicher, dass der Schlüssel aktiv und in der Nähe des Telefons ist, und versuchen Sie es erneut.';
+  String get keyUnlockTimedOut => 'Zeitüberschreitung. Halten Sie die Taste am Schlüssel gedrückt, bis das grüne Licht blinkt, und starten Sie dann Scan und Verbindung erneut.';
 
   @override
   String get keyUnlockCurrentStatus => 'Aktueller Status';
@@ -404,7 +406,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get keyUnlockConnectionSection => 'Schlüsselverbindung';
 
   @override
-  String get keyUnlockScanningKey => 'Schlüssel wird gescannt…';
+  String get keyUnlockScanningKey => 'Schlüssel wird gesucht… Halten Sie die Taste gedrückt, bis das grüne Licht blinkt.';
 
   @override
   String get keyUnlockConnectingKey => 'Schlüssel wird verbunden…';
@@ -413,13 +415,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get keyUnlockKeyConnected => 'Schlüssel verbunden';
 
   @override
-  String get keyUnlockKeyConnectFailed => 'Schlüssel nicht gefunden oder Verbindung fehlgeschlagen. Bitte Schlüssel in der Nähe halten und erneut versuchen.';
+  String get keyUnlockKeyConnectFailed => 'Bluetooth-Schlüssel nicht gefunden oder Verbindung fehlgeschlagen. Halten Sie die Taste gedrückt, bis das grüne Licht blinkt, und suchen Sie erneut. Wenn das Licht erloschen ist, halten Sie die Taste erneut gedrückt.';
 
   @override
   String get keyUnlockRetryConnect => 'Erneut scannen und verbinden';
 
   @override
-  String get keyUnlockReadyToConnect => 'Erweiterte Einstellungen prüfen und dann den Schlüssel verbinden.';
+  String get keyUnlockReadyToConnect => 'Halten Sie die Taste am Schlüssel gedrückt, bis das grüne Licht blinkt, und starten Sie dann Scan und Verbindung.';
 
   @override
   String get keyUnlockConnectAction => 'Scannen und verbinden';

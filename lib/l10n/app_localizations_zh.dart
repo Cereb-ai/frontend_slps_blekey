@@ -79,10 +79,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get rename => '改名字';
+
   @override
   String get renameKeyTitle => '修改钥匙名称';
+
   @override
   String get renameLockTitle => '修改锁具名称';
+
   @override
   String get renameSuccess => '名称修改成功';
 
@@ -350,7 +353,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keyUnlockFailed => '控制失败';
 
   @override
-  String get keyUnlockTimedOut => '操作超时，请确认钥匙已唤醒并靠近手机，然后重试';
+  String get keyUnlockTimedOut => '操作超时。请长按钥匙按钮，直到绿灯开始闪烁，再重新扫描连接';
 
   @override
   String get keyUnlockCurrentStatus => '当前状态';
@@ -403,7 +406,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keyUnlockConnectionSection => '钥匙连接';
 
   @override
-  String get keyUnlockScanningKey => '正在扫描钥匙…';
+  String get keyUnlockScanningKey => '正在扫描钥匙…请长按钥匙按钮，直到绿灯开始闪烁';
 
   @override
   String get keyUnlockConnectingKey => '正在连接钥匙…';
@@ -412,13 +415,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get keyUnlockKeyConnected => '钥匙已连接';
 
   @override
-  String get keyUnlockKeyConnectFailed => '未找到或连接失败，请确认钥匙在附近并重试';
+  String get keyUnlockKeyConnectFailed => '未找到蓝牙钥匙或连接失败。请长按钥匙按钮，直到绿灯开始闪烁，再重新扫描；如果绿灯已熄灭，请重新长按唤醒';
 
   @override
   String get keyUnlockRetryConnect => '重新扫描连接';
 
   @override
-  String get keyUnlockReadyToConnect => '请先核对高级设置，然后连接钥匙。';
+  String get keyUnlockReadyToConnect => '请长按钥匙按钮，直到绿灯开始闪烁，然后扫描连接。';
 
   @override
   String get keyUnlockConnectAction => '扫描并连接';
@@ -584,10 +587,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get rename => '改名字';
+
   @override
   String get renameKeyTitle => '修改钥匙名称';
+
   @override
   String get renameLockTitle => '修改锁具名称';
+
   @override
   String get renameSuccess => '名称修改成功';
 
@@ -855,7 +861,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get keyUnlockFailed => '控制失败';
 
   @override
-  String get keyUnlockTimedOut => '操作超时，请确认钥匙已唤醒并靠近手机，然后重试';
+  String get keyUnlockTimedOut => '操作超时。请长按钥匙按钮，直到绿灯开始闪烁，再重新扫描连接';
 
   @override
   String get keyUnlockCurrentStatus => '当前状态';
@@ -908,7 +914,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get keyUnlockConnectionSection => '钥匙连接';
 
   @override
-  String get keyUnlockScanningKey => '正在扫描钥匙…';
+  String get keyUnlockScanningKey => '正在扫描钥匙…请长按钥匙按钮，直到绿灯开始闪烁';
 
   @override
   String get keyUnlockConnectingKey => '正在连接钥匙…';
@@ -917,13 +923,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get keyUnlockKeyConnected => '钥匙已连接';
 
   @override
-  String get keyUnlockKeyConnectFailed => '未找到或连接失败，请确认钥匙在附近并重试';
+  String get keyUnlockKeyConnectFailed => '未找到蓝牙钥匙或连接失败。请长按钥匙按钮，直到绿灯开始闪烁，再重新扫描；如果绿灯已熄灭，请重新长按唤醒';
 
   @override
   String get keyUnlockRetryConnect => '重新扫描连接';
 
   @override
-  String get keyUnlockReadyToConnect => '请先核对高级设置，然后连接钥匙。';
+  String get keyUnlockReadyToConnect => '请长按钥匙按钮，直到绿灯开始闪烁，然后扫描连接。';
 
   @override
   String get keyUnlockConnectAction => '扫描并连接';
@@ -1089,10 +1095,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get rename => '改名字';
+
   @override
   String get renameKeyTitle => '修改鑰匙名稱';
+
   @override
   String get renameLockTitle => '修改鎖具名稱';
+
   @override
   String get renameSuccess => '名稱修改成功';
 
@@ -1360,7 +1369,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get keyUnlockFailed => '控制失敗';
 
   @override
-  String get keyUnlockTimedOut => '操作逾時，請確認鑰匙已喚醒並靠近手機，然後重試';
+  String get keyUnlockTimedOut => '操作逾時。請長按鑰匙按鈕，直到綠燈開始閃爍，再重新掃描連接';
 
   @override
   String get keyUnlockCurrentStatus => '當前狀態';
@@ -1413,7 +1422,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get keyUnlockConnectionSection => '鑰匙連接';
 
   @override
-  String get keyUnlockScanningKey => '正在掃描鑰匙…';
+  String get keyUnlockScanningKey => '正在掃描鑰匙…請長按鑰匙按鈕，直到綠燈開始閃爍';
 
   @override
   String get keyUnlockConnectingKey => '正在連接鑰匙…';
@@ -1422,13 +1431,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get keyUnlockKeyConnected => '鑰匙已連接';
 
   @override
-  String get keyUnlockKeyConnectFailed => '未找到或連接失敗，請確認鑰匙在附近並重試';
+  String get keyUnlockKeyConnectFailed => '找不到藍牙鑰匙或連接失敗。請長按鑰匙按鈕，直到綠燈開始閃爍，再重新掃描；如果綠燈已熄滅，請重新長按喚醒';
 
   @override
   String get keyUnlockRetryConnect => '重新掃描連接';
 
   @override
-  String get keyUnlockReadyToConnect => '請先核對進階設定，然後連接鑰匙。';
+  String get keyUnlockReadyToConnect => '請長按鑰匙按鈕，直到綠燈開始閃爍，然後掃描連接。';
 
   @override
   String get keyUnlockConnectAction => '掃描並連接';
