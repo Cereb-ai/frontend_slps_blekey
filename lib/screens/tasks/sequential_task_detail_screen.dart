@@ -59,7 +59,7 @@ class _SequentialTaskDetailScreenState
         title: Text('确认$operationLabel完成'),
         content: Text(
           '请确认已经对“${step.lockName}”完成$operationLabel操作。'
-          '服务器将校验任务顺序及时间窗口。',
+          '服务器将校验${_task?.executionMode == 'time_window' ? '该步骤' : '任务顺序及'}时间窗口。',
         ),
         actions: [
           TextButton(
@@ -186,7 +186,9 @@ class _SequentialTaskDetailScreenState
   Widget build(BuildContext context) {
     final task = _task;
     return Scaffold(
-      appBar: AppBar(title: const Text('顺序开锁任务')),
+      appBar: AppBar(
+        title: Text(task?.executionMode == 'time_window' ? '时间窗口任务' : '顺序开锁任务'),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : task == null
@@ -218,13 +220,17 @@ class _SequentialTaskDetailScreenState
     final nextPendingIndex = task.steps.indexWhere(
       (step) => step.status == 'pending',
     );
+    final isTimeWindowMode = task.executionMode == 'time_window';
     final widgets = <Widget>[];
     for (var index = 0; index < task.steps.length; index++) {
       if (index > 0) widgets.add(const SizedBox(height: 12));
       widgets.add(
         _StepCard(
           step: task.steps[index],
-          isCurrent: index == nextPendingIndex,
+          isCurrent:
+              task.steps[index].status == 'pending' &&
+              (isTimeWindowMode || index == nextPendingIndex),
+          isTimeWindowMode: isTimeWindowMode,
           acting: _acting,
           onComplete: () => _completeStep(task.steps[index]),
         ),
@@ -238,12 +244,14 @@ class _StepCard extends StatelessWidget {
   const _StepCard({
     required this.step,
     required this.isCurrent,
+    required this.isTimeWindowMode,
     required this.acting,
     required this.onComplete,
   });
 
   final SequentialTaskStep step;
   final bool isCurrent;
+  final bool isTimeWindowMode;
   final bool acting;
   final VoidCallback onComplete;
 
@@ -299,7 +307,9 @@ class _StepCard extends StatelessWidget {
               completed
                   ? '已完成'
                   : isCurrent
-                  ? '当前步骤'
+                  ? isTimeWindowMode
+                        ? '可执行'
+                        : '当前步骤'
                   : '等待中',
             ),
           ],

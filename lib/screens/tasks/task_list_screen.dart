@@ -64,7 +64,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<void> _openTask(AppTaskSummary task) async {
-    if (task.type == AppTaskType.sequentialUnlock) {
+    if (task.type == AppTaskType.sequentialUnlock ||
+        task.type == AppTaskType.timeWindow) {
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
           builder: (_) => SequentialTaskDetailScreen(taskId: task.id),
@@ -128,7 +129,13 @@ class _TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSequential = task.type == AppTaskType.sequentialUnlock;
-    final color = isSequential ? Colors.orange : Colors.blue;
+    final isTimeWindow = task.type == AppTaskType.timeWindow;
+    final isDoorTask = isSequential || isTimeWindow;
+    final color = isTimeWindow
+        ? Colors.green
+        : isSequential
+        ? Colors.orange
+        : Colors.blue;
     final progress = task.total > 0 ? task.completed / task.total : 0.0;
     final schedule = isSequential ? _currentStepSchedule() : null;
 
@@ -144,7 +151,7 @@ class _TaskCard extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    isSequential
+                    isDoorTask
                         ? Icons.format_list_numbered
                         : Icons.group_work_outlined,
                     color: color,
@@ -166,7 +173,11 @@ class _TaskCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      isSequential ? '顺序开锁任务' : '联签任务',
+                      isTimeWindow
+                          ? '时间窗口任务'
+                          : isSequential
+                          ? '顺序开锁任务'
+                          : '联签任务',
                       style: TextStyle(
                         color: color,
                         fontSize: 12,

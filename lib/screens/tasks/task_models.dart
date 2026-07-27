@@ -2,12 +2,15 @@ typedef JsonMap = Map<String, dynamic>;
 
 enum AppTaskType {
   jointClearance,
-  sequentialUnlock;
+  sequentialUnlock,
+  timeWindow;
 
   static AppTaskType fromValue(Object? value) {
-    return value?.toString() == 'sequential_unlock'
-        ? AppTaskType.sequentialUnlock
-        : AppTaskType.jointClearance;
+    return switch (value?.toString()) {
+      'sequential_unlock' => AppTaskType.sequentialUnlock,
+      'time_window' => AppTaskType.timeWindow,
+      _ => AppTaskType.jointClearance,
+    };
   }
 }
 
@@ -94,6 +97,7 @@ class SequentialTaskDetail {
     required this.id,
     required this.name,
     required this.description,
+    required this.executionMode,
     required this.status,
     required this.validFrom,
     required this.validUntil,
@@ -103,6 +107,7 @@ class SequentialTaskDetail {
   final String id;
   final String name;
   final String description;
+  final String executionMode;
   final String status;
   final String validFrom;
   final String validUntil;
@@ -114,6 +119,7 @@ class SequentialTaskDetail {
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
+      executionMode: json['executionMode']?.toString() ?? 'sequential',
       status: json['status']?.toString() ?? 'active',
       validFrom: json['validFrom']?.toString() ?? '',
       validUntil: json['validUntil']?.toString() ?? '',
