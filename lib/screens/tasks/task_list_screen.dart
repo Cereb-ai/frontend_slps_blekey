@@ -130,6 +130,7 @@ class _TaskCard extends StatelessWidget {
     final isSequential = task.type == AppTaskType.sequentialUnlock;
     final color = isSequential ? Colors.orange : Colors.blue;
     final progress = task.total > 0 ? task.completed / task.total : 0.0;
+    final schedule = isSequential ? _currentStepSchedule() : null;
 
     return Card(
       child: InkWell(
@@ -203,7 +204,17 @@ class _TaskCard extends StatelessWidget {
                 children: [
                   Text('状态：${_statusLabel(task.status)}'),
                   const Spacer(),
-                  if (task.updatedAt != null)
+                  if (schedule != null)
+                    Text(
+                      schedule.$1,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: schedule.$2
+                            ? Theme.of(context).colorScheme.error
+                            : null,
+                        fontWeight: schedule.$2 ? FontWeight.w600 : null,
+                      ),
+                    )
+                  else if (task.updatedAt != null)
                     Text(
                       DateFormat('yyyy-MM-dd HH:mm').format(task.updatedAt!),
                       style: Theme.of(context).textTheme.bodySmall,
@@ -231,5 +242,47 @@ class _TaskCard extends StatelessWidget {
       'cancelled' => '已取消',
       _ => status,
     };
+  }
+
+  (String, bool)? _currentStepSchedule() {
+    if (task.status == 'completed') return ('任务已完成', false);
+    final start = task.summary['nextWindowStart']?.toString() ?? '';
+    final end = task.summary['nextWindowEnd']?.toString() ?? '';
+    if (start.isEmpty || end.isEmpty) return ('当前步骤：不限时间', false);
+
+    final now = DateTime.now();
+    final validFrom = DateTime.tryParse(
+      task.summary['validFrom']?.toString() ?? '',
+    );
+    final date =
+        validFrom != null &&
+            DateTime(
+              now.year,
+              now.month,
+              now.day,
+            ).isBefore(DateTime(validFrom.year, validFrom.month, validFrom.day))
+        ? validFrom
+        : now;
+    final startAt = _combineDateAndTime(date, start);
+    final endAt = _combineDateAndTime(date, end);
+    if (startAt == null || endAt == null) {
+      return ('当前步骤：${start.substring(0, 5)}', false);
+    }
+    final adjustedEnd = endAt.isBefore(startAt)
+        ? endAt.add(const Duration(days: 1))
+        : endAt;
+    final overdue = now.isAfter(adjustedEnd);
+    final prefix = overdue ? '已超时' : '当前步骤开始';
+    return ('$prefix：${DateFormat('MM-dd HH:mm').format(startAt)}', overdue);
+  }
+
+  DateTime? _combineDateAndTime(DateTime date, String value) {
+    final parts = value.split(':');
+    if (parts.length < 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    final second = parts.length > 2 ? int.tryParse(parts[2]) ?? 0 : 0;
+    if (hour == null || minute == null) return null;
+    return DateTime(date.year, date.month, date.day, hour, minute, second);
   }
 }

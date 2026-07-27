@@ -95,10 +95,91 @@ class _SequentialTaskDetailScreenState
     } catch (error) {
       if (!mounted) return;
       setState(() => _acting = false);
+      final message = formatRequestError(error);
+      if (message.contains('outside step time window')) {
+        await _showTimeWindowError(step);
+        return;
+      }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(formatRequestError(error))));
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
+  }
+
+  Future<void> _showTimeWindowError(SequentialTaskStep step) async {
+    final now = DateTime.now();
+    final start = _todayAt(step.windowStart);
+    var end = _todayAt(step.windowEnd);
+    if (start != null && end != null && end.isBefore(start)) {
+      end = end.add(const Duration(days: 1));
+    }
+    final hasExpired = end != null && now.isAfter(end);
+    final operationLabel = step.operation == 'lock' ? '上锁' : '开锁';
+    final title = hasExpired
+        ? '当前$operationLabel时间窗口已过'
+        : '当前$operationLabel时间窗口尚未开始';
+    final description = hasExpired
+        ? '该步骤已超过允许的操作时间，请联系管理员调整任务时间或重新创建任务。'
+        : '请在允许的时间窗口内再执行该步骤。';
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          hasExpired ? Icons.event_busy_outlined : Icons.schedule_outlined,
+          color: hasExpired
+              ? Theme.of(context).colorScheme.error
+              : Theme.of(context).colorScheme.primary,
+          size: 36,
+        ),
+        title: Text(title, textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(description, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                children: [
+                  const Text('允许操作时间'),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${step.windowStart} - ${step.windowEnd}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('我知道了'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  DateTime? _todayAt(String value) {
+    final parts = value.split(':');
+    if (parts.length < 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    final second = parts.length > 2 ? int.tryParse(parts[2]) ?? 0 : 0;
+    if (hour == null || minute == null) return null;
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day, hour, minute, second);
   }
 
   @override
@@ -137,15 +218,19 @@ class _SequentialTaskDetailScreenState
     final nextPendingIndex = task.steps.indexWhere(
       (step) => step.status == 'pending',
     );
-    return [
-      for (var index = 0; index < task.steps.length; index++)
+    final widgets = <Widget>[];
+    for (var index = 0; index < task.steps.length; index++) {
+      if (index > 0) widgets.add(const SizedBox(height: 12));
+      widgets.add(
         _StepCard(
           step: task.steps[index],
           isCurrent: index == nextPendingIndex,
           acting: _acting,
           onComplete: () => _completeStep(task.steps[index]),
         ),
-    ];
+      );
+    }
+    return widgets;
   }
 }
 
