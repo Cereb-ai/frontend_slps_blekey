@@ -510,6 +510,131 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get clearanceGoToTasks => '前往联签';
+
+  @override
+  String get tasksTitle => '任务';
+
+  @override
+  String get tasksEmpty => '暂无任务';
+
+  @override
+  String get taskTypeTimeWindow => '时间窗口任务';
+
+  @override
+  String get taskTypeSequentialUnlock => '顺序开锁任务';
+
+  @override
+  String get taskTypeJointClearance => '联签任务';
+
+  @override
+  String get taskOperationLock => '上锁';
+
+  @override
+  String get taskOperationUnlock => '开锁';
+
+  @override
+  String taskConfirmOperationTitle(Object operation) {
+    return '确认$operation完成';
+  }
+
+  @override
+  String taskConfirmOperationBody(Object lockName, Object operation, Object validationScope) {
+    return '请确认已经对“$lockName”完成$operation操作。服务器将校验$validationScope及时间窗口。';
+  }
+
+  @override
+  String get taskValidationStep => '该步骤';
+
+  @override
+  String get taskValidationSequence => '任务顺序';
+
+  @override
+  String get taskConfirmComplete => '确认完成';
+
+  @override
+  String get taskStepCompleted => '步骤已完成';
+
+  @override
+  String taskWindowExpiredTitle(Object operation) {
+    return '当前$operation时间窗口已过';
+  }
+
+  @override
+  String taskWindowNotStartedTitle(Object operation) {
+    return '当前$operation时间窗口尚未开始';
+  }
+
+  @override
+  String get taskWindowExpiredDescription => '该步骤已超过允许的操作时间，请联系管理员调整任务时间或重新创建任务。';
+
+  @override
+  String get taskWindowNotStartedDescription => '请在允许的时间窗口内再执行该步骤。';
+
+  @override
+  String get taskAllowedOperationTime => '允许操作时间';
+
+  @override
+  String get taskGotIt => '我知道了';
+
+  @override
+  String get taskNotFound => '任务不存在';
+
+  @override
+  String taskCompleteOperation(Object operation) {
+    return '完成$operation';
+  }
+
+  @override
+  String get taskStatusCompleted => '已完成';
+
+  @override
+  String get taskStatusExecutable => '可执行';
+
+  @override
+  String get taskStatusCurrentStep => '当前步骤';
+
+  @override
+  String get taskStatusWaiting => '等待中';
+
+  @override
+  String taskStatus(Object status) {
+    return '状态：$status';
+  }
+
+  @override
+  String taskNextStep(Object lockName) {
+    return '下一步：$lockName';
+  }
+
+  @override
+  String get taskStatusPendingExecution => '待执行';
+
+  @override
+  String get taskStatusInProgress => '进行中';
+
+  @override
+  String get taskStatusCancelled => '已取消';
+
+  @override
+  String get taskScheduleCompleted => '任务已完成';
+
+  @override
+  String get taskScheduleNoLimit => '当前步骤：不限时间';
+
+  @override
+  String taskScheduleCurrent(Object time) {
+    return '当前步骤：$time';
+  }
+
+  @override
+  String taskScheduleOverdue(Object time) {
+    return '已超时：$time';
+  }
+
+  @override
+  String taskScheduleStarts(Object time) {
+    return '当前步骤开始：$time';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -1018,6 +1143,131 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get clearanceGoToTasks => '前往联签';
+
+  @override
+  String get tasksTitle => '任务';
+
+  @override
+  String get tasksEmpty => '暂无任务';
+
+  @override
+  String get taskTypeTimeWindow => '时间窗口任务';
+
+  @override
+  String get taskTypeSequentialUnlock => '顺序开锁任务';
+
+  @override
+  String get taskTypeJointClearance => '联签任务';
+
+  @override
+  String get taskOperationLock => '上锁';
+
+  @override
+  String get taskOperationUnlock => '开锁';
+
+  @override
+  String taskConfirmOperationTitle(Object operation) {
+    return '确认$operation完成';
+  }
+
+  @override
+  String taskConfirmOperationBody(Object lockName, Object operation, Object validationScope) {
+    return '请确认已经对“$lockName”完成$operation操作。服务器将校验$validationScope及时间窗口。';
+  }
+
+  @override
+  String get taskValidationStep => '该步骤';
+
+  @override
+  String get taskValidationSequence => '任务顺序';
+
+  @override
+  String get taskConfirmComplete => '确认完成';
+
+  @override
+  String get taskStepCompleted => '步骤已完成';
+
+  @override
+  String taskWindowExpiredTitle(Object operation) {
+    return '当前$operation时间窗口已过';
+  }
+
+  @override
+  String taskWindowNotStartedTitle(Object operation) {
+    return '当前$operation时间窗口尚未开始';
+  }
+
+  @override
+  String get taskWindowExpiredDescription => '该步骤已超过允许的操作时间，请联系管理员调整任务时间或重新创建任务。';
+
+  @override
+  String get taskWindowNotStartedDescription => '请在允许的时间窗口内再执行该步骤。';
+
+  @override
+  String get taskAllowedOperationTime => '允许操作时间';
+
+  @override
+  String get taskGotIt => '我知道了';
+
+  @override
+  String get taskNotFound => '任务不存在';
+
+  @override
+  String taskCompleteOperation(Object operation) {
+    return '完成$operation';
+  }
+
+  @override
+  String get taskStatusCompleted => '已完成';
+
+  @override
+  String get taskStatusExecutable => '可执行';
+
+  @override
+  String get taskStatusCurrentStep => '当前步骤';
+
+  @override
+  String get taskStatusWaiting => '等待中';
+
+  @override
+  String taskStatus(Object status) {
+    return '状态：$status';
+  }
+
+  @override
+  String taskNextStep(Object lockName) {
+    return '下一步：$lockName';
+  }
+
+  @override
+  String get taskStatusPendingExecution => '待执行';
+
+  @override
+  String get taskStatusInProgress => '进行中';
+
+  @override
+  String get taskStatusCancelled => '已取消';
+
+  @override
+  String get taskScheduleCompleted => '任务已完成';
+
+  @override
+  String get taskScheduleNoLimit => '当前步骤：不限时间';
+
+  @override
+  String taskScheduleCurrent(Object time) {
+    return '当前步骤：$time';
+  }
+
+  @override
+  String taskScheduleOverdue(Object time) {
+    return '已超时：$time';
+  }
+
+  @override
+  String taskScheduleStarts(Object time) {
+    return '当前步骤开始：$time';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -1526,4 +1776,129 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get clearanceGoToTasks => '前往聯簽';
+
+  @override
+  String get tasksTitle => '任務';
+
+  @override
+  String get tasksEmpty => '暫無任務';
+
+  @override
+  String get taskTypeTimeWindow => '時間窗口任務';
+
+  @override
+  String get taskTypeSequentialUnlock => '順序開鎖任務';
+
+  @override
+  String get taskTypeJointClearance => '聯簽任務';
+
+  @override
+  String get taskOperationLock => '上鎖';
+
+  @override
+  String get taskOperationUnlock => '開鎖';
+
+  @override
+  String taskConfirmOperationTitle(Object operation) {
+    return '確認$operation完成';
+  }
+
+  @override
+  String taskConfirmOperationBody(Object lockName, Object operation, Object validationScope) {
+    return '請確認已經對「$lockName」完成$operation操作。伺服器將校驗$validationScope及時間窗口。';
+  }
+
+  @override
+  String get taskValidationStep => '該步驟';
+
+  @override
+  String get taskValidationSequence => '任務順序';
+
+  @override
+  String get taskConfirmComplete => '確認完成';
+
+  @override
+  String get taskStepCompleted => '步驟已完成';
+
+  @override
+  String taskWindowExpiredTitle(Object operation) {
+    return '目前$operation時間窗口已過';
+  }
+
+  @override
+  String taskWindowNotStartedTitle(Object operation) {
+    return '目前$operation時間窗口尚未開始';
+  }
+
+  @override
+  String get taskWindowExpiredDescription => '該步驟已超過允許的操作時間，請聯絡管理員調整任務時間或重新建立任務。';
+
+  @override
+  String get taskWindowNotStartedDescription => '請在允許的時間窗口內再執行該步驟。';
+
+  @override
+  String get taskAllowedOperationTime => '允許操作時間';
+
+  @override
+  String get taskGotIt => '我知道了';
+
+  @override
+  String get taskNotFound => '任務不存在';
+
+  @override
+  String taskCompleteOperation(Object operation) {
+    return '完成$operation';
+  }
+
+  @override
+  String get taskStatusCompleted => '已完成';
+
+  @override
+  String get taskStatusExecutable => '可執行';
+
+  @override
+  String get taskStatusCurrentStep => '目前步驟';
+
+  @override
+  String get taskStatusWaiting => '等待中';
+
+  @override
+  String taskStatus(Object status) {
+    return '狀態：$status';
+  }
+
+  @override
+  String taskNextStep(Object lockName) {
+    return '下一步：$lockName';
+  }
+
+  @override
+  String get taskStatusPendingExecution => '待執行';
+
+  @override
+  String get taskStatusInProgress => '進行中';
+
+  @override
+  String get taskStatusCancelled => '已取消';
+
+  @override
+  String get taskScheduleCompleted => '任務已完成';
+
+  @override
+  String get taskScheduleNoLimit => '目前步驟：不限時間';
+
+  @override
+  String taskScheduleCurrent(Object time) {
+    return '目前步驟：$time';
+  }
+
+  @override
+  String taskScheduleOverdue(Object time) {
+    return '已逾時：$time';
+  }
+
+  @override
+  String taskScheduleStarts(Object time) {
+    return '目前步驟開始：$time';
+  }
 }

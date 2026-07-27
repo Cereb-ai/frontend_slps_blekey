@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../api.dart';
+import '../../l10n/app_localizations.dart';
 import '../../states/global_user.dart';
 import '../home/models.dart';
 import 'task_models.dart';
@@ -52,23 +53,31 @@ class _SequentialTaskDetailScreenState
   }
 
   Future<void> _completeStep(SequentialTaskStep step) async {
-    final operationLabel = step.operation == 'lock' ? '上锁' : '开锁';
+    final l10n = AppLocalizations.of(context)!;
+    final operationLabel = step.operation == 'lock'
+        ? l10n.taskOperationLock
+        : l10n.taskOperationUnlock;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('确认$operationLabel完成'),
+        title: Text(l10n.taskConfirmOperationTitle(operationLabel)),
         content: Text(
-          '请确认已经对“${step.lockName}”完成$operationLabel操作。'
-          '服务器将校验${_task?.executionMode == 'time_window' ? '该步骤' : '任务顺序及'}时间窗口。',
+          l10n.taskConfirmOperationBody(
+            step.lockName,
+            operationLabel,
+            _task?.executionMode == 'time_window'
+                ? l10n.taskValidationStep
+                : l10n.taskValidationSequence,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('确认完成'),
+            child: Text(l10n.taskConfirmComplete),
           ),
         ],
       ),
@@ -91,7 +100,7 @@ class _SequentialTaskDetailScreenState
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('步骤已完成')));
+      ).showSnackBar(SnackBar(content: Text(l10n.taskStepCompleted)));
     } catch (error) {
       if (!mounted) return;
       setState(() => _acting = false);
@@ -107,6 +116,7 @@ class _SequentialTaskDetailScreenState
   }
 
   Future<void> _showTimeWindowError(SequentialTaskStep step) async {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final start = _todayAt(step.windowStart);
     var end = _todayAt(step.windowEnd);
@@ -114,13 +124,15 @@ class _SequentialTaskDetailScreenState
       end = end.add(const Duration(days: 1));
     }
     final hasExpired = end != null && now.isAfter(end);
-    final operationLabel = step.operation == 'lock' ? '上锁' : '开锁';
+    final operationLabel = step.operation == 'lock'
+        ? l10n.taskOperationLock
+        : l10n.taskOperationUnlock;
     final title = hasExpired
-        ? '当前$operationLabel时间窗口已过'
-        : '当前$operationLabel时间窗口尚未开始';
+        ? l10n.taskWindowExpiredTitle(operationLabel)
+        : l10n.taskWindowNotStartedTitle(operationLabel);
     final description = hasExpired
-        ? '该步骤已超过允许的操作时间，请联系管理员调整任务时间或重新创建任务。'
-        : '请在允许的时间窗口内再执行该步骤。';
+        ? l10n.taskWindowExpiredDescription
+        : l10n.taskWindowNotStartedDescription;
 
     await showDialog<void>(
       context: context,
@@ -147,7 +159,7 @@ class _SequentialTaskDetailScreenState
               ),
               child: Column(
                 children: [
-                  const Text('允许操作时间'),
+                  Text(l10n.taskAllowedOperationTime),
                   const SizedBox(height: 4),
                   Text(
                     '${step.windowStart} - ${step.windowEnd}',
@@ -164,7 +176,7 @@ class _SequentialTaskDetailScreenState
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('我知道了'),
+            child: Text(l10n.taskGotIt),
           ),
         ],
       ),
@@ -184,15 +196,20 @@ class _SequentialTaskDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final task = _task;
     return Scaffold(
       appBar: AppBar(
-        title: Text(task?.executionMode == 'time_window' ? '时间窗口任务' : '顺序开锁任务'),
+        title: Text(
+          task?.executionMode == 'time_window'
+              ? l10n.taskTypeTimeWindow
+              : l10n.taskTypeSequentialUnlock,
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : task == null
-          ? Center(child: Text(_error ?? '任务不存在'))
+          ? Center(child: Text(_error ?? l10n.taskNotFound))
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
@@ -257,8 +274,11 @@ class _StepCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final completed = step.status == 'completed';
-    final operationLabel = step.operation == 'lock' ? '上锁' : '开锁';
+    final operationLabel = step.operation == 'lock'
+        ? l10n.taskOperationLock
+        : l10n.taskOperationUnlock;
     return Card(
       color: isCurrent
           ? Theme.of(
@@ -297,7 +317,7 @@ class _StepCard extends StatelessWidget {
                       icon: Icon(
                         step.operation == 'lock' ? Icons.lock : Icons.lock_open,
                       ),
-                      label: Text('完成$operationLabel'),
+                      label: Text(l10n.taskCompleteOperation(operationLabel)),
                     ),
                   ],
                 ],
@@ -305,12 +325,12 @@ class _StepCard extends StatelessWidget {
             ),
             Text(
               completed
-                  ? '已完成'
+                  ? l10n.taskStatusCompleted
                   : isCurrent
                   ? isTimeWindowMode
-                        ? '可执行'
-                        : '当前步骤'
-                  : '等待中',
+                        ? l10n.taskStatusExecutable
+                        : l10n.taskStatusCurrentStep
+                  : l10n.taskStatusWaiting,
             ),
           ],
         ),

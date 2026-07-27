@@ -1076,6 +1076,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Go to Clearance'**
   String get clearanceGoToTasks;
+
+  /// No description provided for @tasksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get tasksTitle;
+
+  /// No description provided for @tasksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks'**
+  String get tasksEmpty;
+
+  /// No description provided for @taskTypeTimeWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Time-window task'**
+  String get taskTypeTimeWindow;
+
+  /// No description provided for @taskTypeSequentialUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Sequential unlock task'**
+  String get taskTypeSequentialUnlock;
+
+  /// No description provided for @taskTypeJointClearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Group clearance task'**
+  String get taskTypeJointClearance;
+
+  /// No description provided for @taskOperationLock.
+  ///
+  /// In en, this message translates to:
+  /// **'lock'**
+  String get taskOperationLock;
+
+  /// No description provided for @taskOperationUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'unlock'**
+  String get taskOperationUnlock;
+
+  /// No description provided for @taskConfirmOperationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm {operation} completion'**
+  String taskConfirmOperationTitle(Object operation);
+
+  /// No description provided for @taskConfirmOperationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm that you have completed the {operation} operation on “{lockName}”. The server will validate {validationScope} and the time window.'**
+  String taskConfirmOperationBody(Object lockName, Object operation, Object validationScope);
+
+  /// No description provided for @taskValidationStep.
+  ///
+  /// In en, this message translates to:
+  /// **'this step'**
+  String get taskValidationStep;
+
+  /// No description provided for @taskValidationSequence.
+  ///
+  /// In en, this message translates to:
+  /// **'the task sequence'**
+  String get taskValidationSequence;
+
+  /// No description provided for @taskConfirmComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm completion'**
+  String get taskConfirmComplete;
+
+  /// No description provided for @taskStepCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Step completed'**
+  String get taskStepCompleted;
+
+  /// No description provided for @taskWindowExpiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The current {operation} time window has ended'**
+  String taskWindowExpiredTitle(Object operation);
+
+  /// No description provided for @taskWindowNotStartedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The current {operation} time window has not started'**
+  String taskWindowNotStartedTitle(Object operation);
+
+  /// No description provided for @taskWindowExpiredDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This step is past its allowed operation time. Contact an administrator to adjust the schedule or recreate the task.'**
+  String get taskWindowExpiredDescription;
+
+  /// No description provided for @taskWindowNotStartedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Perform this step during its allowed time window.'**
+  String get taskWindowNotStartedDescription;
+
+  /// No description provided for @taskAllowedOperationTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed operation time'**
+  String get taskAllowedOperationTime;
+
+  /// No description provided for @taskGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get taskGotIt;
+
+  /// No description provided for @taskNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Task not found'**
+  String get taskNotFound;
+
+  /// No description provided for @taskCompleteOperation.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete {operation}'**
+  String taskCompleteOperation(Object operation);
+
+  /// No description provided for @taskStatusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get taskStatusCompleted;
+
+  /// No description provided for @taskStatusExecutable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get taskStatusExecutable;
+
+  /// No description provided for @taskStatusCurrentStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Current step'**
+  String get taskStatusCurrentStep;
+
+  /// No description provided for @taskStatusWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get taskStatusWaiting;
+
+  /// No description provided for @taskStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status: {status}'**
+  String taskStatus(Object status);
+
+  /// No description provided for @taskNextStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {lockName}'**
+  String taskNextStep(Object lockName);
+
+  /// No description provided for @taskStatusPendingExecution.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get taskStatusPendingExecution;
+
+  /// No description provided for @taskStatusInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get taskStatusInProgress;
+
+  /// No description provided for @taskStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get taskStatusCancelled;
+
+  /// No description provided for @taskScheduleCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Task completed'**
+  String get taskScheduleCompleted;
+
+  /// No description provided for @taskScheduleNoLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Current step: no time limit'**
+  String get taskScheduleNoLimit;
+
+  /// No description provided for @taskScheduleCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current step: {time}'**
+  String taskScheduleCurrent(Object time);
+
+  /// No description provided for @taskScheduleOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue: {time}'**
+  String taskScheduleOverdue(Object time);
+
+  /// No description provided for @taskScheduleStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Current step starts: {time}'**
+  String taskScheduleStarts(Object time);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

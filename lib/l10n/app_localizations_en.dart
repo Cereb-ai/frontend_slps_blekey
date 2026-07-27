@@ -510,4 +510,129 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearanceGoToTasks => 'Go to Clearance';
+
+  @override
+  String get tasksTitle => 'Tasks';
+
+  @override
+  String get tasksEmpty => 'No tasks';
+
+  @override
+  String get taskTypeTimeWindow => 'Time-window task';
+
+  @override
+  String get taskTypeSequentialUnlock => 'Sequential unlock task';
+
+  @override
+  String get taskTypeJointClearance => 'Group clearance task';
+
+  @override
+  String get taskOperationLock => 'lock';
+
+  @override
+  String get taskOperationUnlock => 'unlock';
+
+  @override
+  String taskConfirmOperationTitle(Object operation) {
+    return 'Confirm $operation completion';
+  }
+
+  @override
+  String taskConfirmOperationBody(Object lockName, Object operation, Object validationScope) {
+    return 'Confirm that you have completed the $operation operation on “$lockName”. The server will validate $validationScope and the time window.';
+  }
+
+  @override
+  String get taskValidationStep => 'this step';
+
+  @override
+  String get taskValidationSequence => 'the task sequence';
+
+  @override
+  String get taskConfirmComplete => 'Confirm completion';
+
+  @override
+  String get taskStepCompleted => 'Step completed';
+
+  @override
+  String taskWindowExpiredTitle(Object operation) {
+    return 'The current $operation time window has ended';
+  }
+
+  @override
+  String taskWindowNotStartedTitle(Object operation) {
+    return 'The current $operation time window has not started';
+  }
+
+  @override
+  String get taskWindowExpiredDescription => 'This step is past its allowed operation time. Contact an administrator to adjust the schedule or recreate the task.';
+
+  @override
+  String get taskWindowNotStartedDescription => 'Perform this step during its allowed time window.';
+
+  @override
+  String get taskAllowedOperationTime => 'Allowed operation time';
+
+  @override
+  String get taskGotIt => 'Got it';
+
+  @override
+  String get taskNotFound => 'Task not found';
+
+  @override
+  String taskCompleteOperation(Object operation) {
+    return 'Complete $operation';
+  }
+
+  @override
+  String get taskStatusCompleted => 'Completed';
+
+  @override
+  String get taskStatusExecutable => 'Available';
+
+  @override
+  String get taskStatusCurrentStep => 'Current step';
+
+  @override
+  String get taskStatusWaiting => 'Waiting';
+
+  @override
+  String taskStatus(Object status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String taskNextStep(Object lockName) {
+    return 'Next: $lockName';
+  }
+
+  @override
+  String get taskStatusPendingExecution => 'Pending';
+
+  @override
+  String get taskStatusInProgress => 'In progress';
+
+  @override
+  String get taskStatusCancelled => 'Cancelled';
+
+  @override
+  String get taskScheduleCompleted => 'Task completed';
+
+  @override
+  String get taskScheduleNoLimit => 'Current step: no time limit';
+
+  @override
+  String taskScheduleCurrent(Object time) {
+    return 'Current step: $time';
+  }
+
+  @override
+  String taskScheduleOverdue(Object time) {
+    return 'Overdue: $time';
+  }
+
+  @override
+  String taskScheduleStarts(Object time) {
+    return 'Current step starts: $time';
+  }
 }

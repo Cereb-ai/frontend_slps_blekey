@@ -510,4 +510,129 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get clearanceGoToTasks => 'Zur Freigabe';
+
+  @override
+  String get tasksTitle => 'Aufgaben';
+
+  @override
+  String get tasksEmpty => 'Keine Aufgaben';
+
+  @override
+  String get taskTypeTimeWindow => 'Zeitfensteraufgabe';
+
+  @override
+  String get taskTypeSequentialUnlock => 'Sequenzielle Entriegelungsaufgabe';
+
+  @override
+  String get taskTypeJointClearance => 'Gruppenfreigabe';
+
+  @override
+  String get taskOperationLock => 'Verriegeln';
+
+  @override
+  String get taskOperationUnlock => 'Entriegeln';
+
+  @override
+  String taskConfirmOperationTitle(Object operation) {
+    return '$operation als abgeschlossen bestätigen';
+  }
+
+  @override
+  String taskConfirmOperationBody(Object lockName, Object operation, Object validationScope) {
+    return 'Bestätigen Sie, dass Sie „$lockName“ $operation haben. Der Server prüft $validationScope und das Zeitfenster.';
+  }
+
+  @override
+  String get taskValidationStep => 'diesen Schritt';
+
+  @override
+  String get taskValidationSequence => 'die Aufgabenreihenfolge';
+
+  @override
+  String get taskConfirmComplete => 'Abschluss bestätigen';
+
+  @override
+  String get taskStepCompleted => 'Schritt abgeschlossen';
+
+  @override
+  String taskWindowExpiredTitle(Object operation) {
+    return 'Das aktuelle Zeitfenster für $operation ist abgelaufen';
+  }
+
+  @override
+  String taskWindowNotStartedTitle(Object operation) {
+    return 'Das aktuelle Zeitfenster für $operation hat noch nicht begonnen';
+  }
+
+  @override
+  String get taskWindowExpiredDescription => 'Die zulässige Ausführungszeit dieses Schritts ist abgelaufen. Wenden Sie sich an einen Administrator, um den Zeitplan anzupassen oder die Aufgabe neu zu erstellen.';
+
+  @override
+  String get taskWindowNotStartedDescription => 'Führen Sie diesen Schritt innerhalb des zulässigen Zeitfensters aus.';
+
+  @override
+  String get taskAllowedOperationTime => 'Zulässige Ausführungszeit';
+
+  @override
+  String get taskGotIt => 'Verstanden';
+
+  @override
+  String get taskNotFound => 'Aufgabe nicht gefunden';
+
+  @override
+  String taskCompleteOperation(Object operation) {
+    return '$operation abschließen';
+  }
+
+  @override
+  String get taskStatusCompleted => 'Abgeschlossen';
+
+  @override
+  String get taskStatusExecutable => 'Ausführbar';
+
+  @override
+  String get taskStatusCurrentStep => 'Aktueller Schritt';
+
+  @override
+  String get taskStatusWaiting => 'Wartet';
+
+  @override
+  String taskStatus(Object status) {
+    return 'Status: $status';
+  }
+
+  @override
+  String taskNextStep(Object lockName) {
+    return 'Weiter: $lockName';
+  }
+
+  @override
+  String get taskStatusPendingExecution => 'Ausstehend';
+
+  @override
+  String get taskStatusInProgress => 'In Bearbeitung';
+
+  @override
+  String get taskStatusCancelled => 'Abgebrochen';
+
+  @override
+  String get taskScheduleCompleted => 'Aufgabe abgeschlossen';
+
+  @override
+  String get taskScheduleNoLimit => 'Aktueller Schritt: keine Zeitbegrenzung';
+
+  @override
+  String taskScheduleCurrent(Object time) {
+    return 'Aktueller Schritt: $time';
+  }
+
+  @override
+  String taskScheduleOverdue(Object time) {
+    return 'Überfällig: $time';
+  }
+
+  @override
+  String taskScheduleStarts(Object time) {
+    return 'Aktueller Schritt beginnt: $time';
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../api.dart';
+import '../../l10n/app_localizations.dart';
 import '../../states/global_user.dart';
 import '../../widgets/smart_list.dart';
 import '../clearance/clearance_models.dart';
@@ -29,11 +30,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<void> _load() async {
+    final l10n = AppLocalizations.of(context)!;
     final token = GlobalUser.instance.token;
     if (token == null || token.isEmpty) {
       setState(() {
         _loading = false;
-        _error = '登录已过期';
+        _error = l10n.sessionExpired;
       });
       return;
     }
@@ -99,6 +101,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_error != null && _tasks.isEmpty) {
       return Center(
         child: FilledButton.icon(
@@ -111,7 +114,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return SmartList<AppTaskSummary>(
       items: _tasks,
       loading: _loading,
-      emptyText: '暂无任务',
+      emptyText: l10n.tasksEmpty,
       onRefresh: _load,
       reloadKey: _tasks.length,
       itemBuilder: (context, task, index) =>
@@ -128,6 +131,7 @@ class _TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isSequential = task.type == AppTaskType.sequentialUnlock;
     final isTimeWindow = task.type == AppTaskType.timeWindow;
     final isDoorTask = isSequential || isTimeWindow;
@@ -137,7 +141,7 @@ class _TaskCard extends StatelessWidget {
         ? Colors.orange
         : Colors.blue;
     final progress = task.total > 0 ? task.completed / task.total : 0.0;
-    final schedule = isSequential ? _currentStepSchedule() : null;
+    final schedule = isSequential ? _currentStepSchedule(l10n) : null;
 
     return Card(
       child: InkWell(
@@ -174,10 +178,10 @@ class _TaskCard extends StatelessWidget {
                     ),
                     child: Text(
                       isTimeWindow
-                          ? '时间窗口任务'
+                          ? l10n.taskTypeTimeWindow
                           : isSequential
-                          ? '顺序开锁任务'
-                          : '联签任务',
+                          ? l10n.taskTypeSequentialUnlock
+                          : l10n.taskTypeJointClearance,
                       style: TextStyle(
                         color: color,
                         fontSize: 12,
@@ -213,7 +217,7 @@ class _TaskCard extends StatelessWidget {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Text('状态：${_statusLabel(task.status)}'),
+                  Text(l10n.taskStatus(_statusLabel(l10n, task.status))),
                   const Spacer(),
                   if (schedule != null)
                     Text(
@@ -236,7 +240,7 @@ class _TaskCard extends StatelessWidget {
                   task.summary['nextLockName']?.toString().isNotEmpty ==
                       true) ...[
                 const SizedBox(height: 8),
-                Text('下一步：${task.summary['nextLockName']}'),
+                Text(l10n.taskNextStep(task.summary['nextLockName'])),
               ],
             ],
           ),
@@ -245,21 +249,25 @@ class _TaskCard extends StatelessWidget {
     );
   }
 
-  String _statusLabel(String status) {
+  String _statusLabel(AppLocalizations l10n, String status) {
     return switch (status) {
-      'active' => '待执行',
-      'in_progress' => '进行中',
-      'completed' => '已完成',
-      'cancelled' => '已取消',
+      'active' => l10n.taskStatusPendingExecution,
+      'in_progress' => l10n.taskStatusInProgress,
+      'completed' => l10n.taskStatusCompleted,
+      'cancelled' => l10n.taskStatusCancelled,
       _ => status,
     };
   }
 
-  (String, bool)? _currentStepSchedule() {
-    if (task.status == 'completed') return ('任务已完成', false);
+  (String, bool)? _currentStepSchedule(AppLocalizations l10n) {
+    if (task.status == 'completed') {
+      return (l10n.taskScheduleCompleted, false);
+    }
     final start = task.summary['nextWindowStart']?.toString() ?? '';
     final end = task.summary['nextWindowEnd']?.toString() ?? '';
-    if (start.isEmpty || end.isEmpty) return ('当前步骤：不限时间', false);
+    if (start.isEmpty || end.isEmpty) {
+      return (l10n.taskScheduleNoLimit, false);
+    }
 
     final now = DateTime.now();
     final validFrom = DateTime.tryParse(
@@ -277,14 +285,19 @@ class _TaskCard extends StatelessWidget {
     final startAt = _combineDateAndTime(date, start);
     final endAt = _combineDateAndTime(date, end);
     if (startAt == null || endAt == null) {
-      return ('当前步骤：${start.substring(0, 5)}', false);
+      return (l10n.taskScheduleCurrent(start.substring(0, 5)), false);
     }
     final adjustedEnd = endAt.isBefore(startAt)
         ? endAt.add(const Duration(days: 1))
         : endAt;
     final overdue = now.isAfter(adjustedEnd);
-    final prefix = overdue ? '已超时' : '当前步骤开始';
-    return ('$prefix：${DateFormat('MM-dd HH:mm').format(startAt)}', overdue);
+    final formattedStart = DateFormat('MM-dd HH:mm').format(startAt);
+    return (
+      overdue
+          ? l10n.taskScheduleOverdue(formattedStart)
+          : l10n.taskScheduleStarts(formattedStart),
+      overdue,
+    );
   }
 
   DateTime? _combineDateAndTime(DateTime date, String value) {

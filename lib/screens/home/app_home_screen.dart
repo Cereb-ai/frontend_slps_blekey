@@ -43,7 +43,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
     final l10n = AppLocalizations.of(context)!;
     if (_tabIndex == 0) return l10n.keysManagement;
     if (_tabIndex == 1) return l10n.locksManagement;
-    if (_tabIndex == 2) return '任务';
+    if (_tabIndex == 2) return l10n.tasksTitle;
     return l10n.my;
   }
 
@@ -131,7 +131,7 @@ class _AppHomeScreenState extends State<AppHomeScreen> {
           ),
           NavigationDestination(
             icon: const Icon(Icons.assignment_outlined),
-            label: '任务',
+            label: AppLocalizations.of(context)!.tasksTitle,
           ),
           NavigationDestination(
             icon: const Icon(Icons.person_outline),
