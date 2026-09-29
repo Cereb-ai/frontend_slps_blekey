@@ -1,28 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
 import '../../api.dart';
-import '../../l10n/app_localizations.dart';
 import '../../states/global_user.dart';
-import '../../widgets/smart_list.dart';
 import '../clearance/clearance_models.dart';
 import '../clearance/worker_clearance_screen.dart';
-import '../home/models.dart';
-import 'sequential_task_detail_screen.dart';
-import 'task_models.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
-
   @override
   State<TaskListScreen> createState() => _TaskListScreenState();
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-  bool _loading = true;
+  List<Map<String, dynamic>> _tasks = [];
   String? _error;
-  List<AppTaskSummary> _tasks = const <AppTaskSummary>[];
-
+  bool _loading = true;
   @override
   void initState() {
     super.initState();
@@ -30,283 +21,66 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<void> _load() async {
-    final l10n = AppLocalizations.of(context)!;
-    final token = GlobalUser.instance.token;
-    if (token == null || token.isEmpty) {
-      setState(() {
-        _loading = false;
-        _error = l10n.sessionExpired;
-      });
-      return;
-    }
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final response = await Api.listTaskSummaries(token: token);
-      final tasks = response.map(AppTaskSummary.fromJson).toList()
-        ..sort(
-          (a, b) => (b.updatedAt ?? DateTime(1970)).compareTo(
-            a.updatedAt ?? DateTime(1970),
-          ),
-        );
-      if (!mounted) return;
-      setState(() {
-        _tasks = tasks;
-        _loading = false;
-      });
+      final token = GlobalUser.instance.token;
+      if (token == null) throw StateError('请重新登录');
+      final tasks = await Api.listAuthorizationTasks(token: token);
+      if (mounted) setState(() => _tasks = tasks);
     } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = formatRequestError(error);
-      });
-    }
-  }
-
-  Future<void> _openTask(AppTaskSummary task) async {
-    if (task.type == AppTaskType.sequentialUnlock ||
-        task.type == AppTaskType.timeWindow) {
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(
-          builder: (_) => SequentialTaskDetailScreen(taskId: task.id),
-        ),
-      );
-      await _load();
-      return;
-    }
-
-    final token = GlobalUser.instance.token;
-    if (token == null) return;
-    try {
-      final response = await Api.listAuthorizationTasks(token: token);
-      final matches = response
-          .map(AuthorizationTaskItem.fromJson)
-          .where((item) => item.id == task.id);
-      if (matches.isEmpty || !mounted) return;
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(
-          builder: (_) => WorkerClearanceDetailScreen(task: matches.first),
-        ),
-      );
-      await _load();
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(formatRequestError(error))));
+      if (mounted) {
+        setState(() {
+          _error = '任务加载失败：$error';
+          _tasks = [];
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    if (_error != null && _tasks.isEmpty) {
-      return Center(
-        child: FilledButton.icon(
-          onPressed: _load,
-          icon: const Icon(Icons.refresh),
-          label: Text(_error!),
-        ),
-      );
-    }
-    return SmartList<AppTaskSummary>(
-      items: _tasks,
-      loading: _loading,
-      emptyText: l10n.tasksEmpty,
-      onRefresh: _load,
-      reloadKey: _tasks.length,
-      itemBuilder: (context, task, index) =>
-          _TaskCard(task: task, onTap: () => _openTask(task)),
-    );
-  }
-}
-
-class _TaskCard extends StatelessWidget {
-  const _TaskCard({required this.task, required this.onTap});
-
-  final AppTaskSummary task;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final isSequential = task.type == AppTaskType.sequentialUnlock;
-    final isTimeWindow = task.type == AppTaskType.timeWindow;
-    final isDoorTask = isSequential || isTimeWindow;
-    final color = isTimeWindow
-        ? Colors.green
-        : isSequential
-        ? Colors.orange
-        : Colors.blue;
-    final progress = task.total > 0 ? task.completed / task.total : 0.0;
-    final schedule = isSequential ? _currentStepSchedule(l10n) : null;
-
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isDoorTask
-                        ? Icons.format_list_numbered
-                        : Icons.group_work_outlined,
-                    color: color,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      task.name,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      isTimeWindow
-                          ? l10n.taskTypeTimeWindow
-                          : isSequential
-                          ? l10n.taskTypeSequentialUnlock
-                          : l10n.taskTypeJointClearance,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
+  Widget build(BuildContext context) => RefreshIndicator(
+    onRefresh: _load,
+    child: ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (_loading) const LinearProgressIndicator(),
+        if (_error != null) Text(_error!),
+        if (!_loading && _tasks.isEmpty) const Text('暂无授权任务'),
+        for (final task in _tasks)
+          Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ListTile(
+              title: Text(task['name']?.toString() ?? '授权任务'),
+              subtitle: Text(
+                '${task['status']} · ${task['groupMode'] == 'group' ? '联合授权' : '普通授权'}\n'
+                '${task['validFrom']} – ${task['validUntil']}\n'
+                '${(task['timeWindows'] as List? ?? []).map((w) => '${w['start']} – ${w['end']}').join(' / ')}',
               ),
-              if (task.description.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  task.description,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-              if (task.total > 0) ...[
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: progress.clamp(0, 1),
-                        minHeight: 7,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text('${task.completed}/${task.total}'),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Text(l10n.taskStatus(_statusLabel(l10n, task.status))),
-                  const Spacer(),
-                  if (schedule != null)
-                    Text(
-                      schedule.$1,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: schedule.$2
-                            ? Theme.of(context).colorScheme.error
-                            : null,
-                        fontWeight: schedule.$2 ? FontWeight.w600 : null,
-                      ),
-                    )
-                  else if (task.updatedAt != null)
-                    Text(
-                      DateFormat('yyyy-MM-dd HH:mm').format(task.updatedAt!),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                ],
-              ),
-              if (isSequential &&
-                  task.summary['nextLockName']?.toString().isNotEmpty ==
-                      true) ...[
-                const SizedBox(height: 8),
-                Text(l10n.taskNextStep(task.summary['nextLockName'])),
-              ],
-            ],
+              isThreeLine: true,
+              onTap: task['groupMode'] != 'group'
+                  ? null
+                  : () async {
+                      await Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => WorkerClearanceDetailScreen(
+                            task: AuthorizationTaskItem.fromJson(task),
+                          ),
+                        ),
+                      );
+                      if (mounted) await _load();
+                    },
+            ),
           ),
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('请从钥匙详情进入在线授权或下载离线任务。'),
         ),
-      ),
-    );
-  }
-
-  String _statusLabel(AppLocalizations l10n, String status) {
-    return switch (status) {
-      'active' => l10n.taskStatusPendingExecution,
-      'in_progress' => l10n.taskStatusInProgress,
-      'completed' => l10n.taskStatusCompleted,
-      'cancelled' => l10n.taskStatusCancelled,
-      _ => status,
-    };
-  }
-
-  (String, bool)? _currentStepSchedule(AppLocalizations l10n) {
-    if (task.status == 'completed') {
-      return (l10n.taskScheduleCompleted, false);
-    }
-    final start = task.summary['nextWindowStart']?.toString() ?? '';
-    final end = task.summary['nextWindowEnd']?.toString() ?? '';
-    if (start.isEmpty || end.isEmpty) {
-      return (l10n.taskScheduleNoLimit, false);
-    }
-
-    final now = DateTime.now();
-    final validFrom = DateTime.tryParse(
-      task.summary['validFrom']?.toString() ?? '',
-    );
-    final date =
-        validFrom != null &&
-            DateTime(
-              now.year,
-              now.month,
-              now.day,
-            ).isBefore(DateTime(validFrom.year, validFrom.month, validFrom.day))
-        ? validFrom
-        : now;
-    final startAt = _combineDateAndTime(date, start);
-    final endAt = _combineDateAndTime(date, end);
-    if (startAt == null || endAt == null) {
-      return (l10n.taskScheduleCurrent(start.substring(0, 5)), false);
-    }
-    final adjustedEnd = endAt.isBefore(startAt)
-        ? endAt.add(const Duration(days: 1))
-        : endAt;
-    final overdue = now.isAfter(adjustedEnd);
-    final formattedStart = DateFormat('MM-dd HH:mm').format(startAt);
-    return (
-      overdue
-          ? l10n.taskScheduleOverdue(formattedStart)
-          : l10n.taskScheduleStarts(formattedStart),
-      overdue,
-    );
-  }
-
-  DateTime? _combineDateAndTime(DateTime date, String value) {
-    final parts = value.split(':');
-    if (parts.length < 2) return null;
-    final hour = int.tryParse(parts[0]);
-    final minute = int.tryParse(parts[1]);
-    final second = parts.length > 2 ? int.tryParse(parts[2]) ?? 0 : 0;
-    if (hour == null || minute == null) return null;
-    return DateTime(date.year, date.month, date.day, hour, minute, second);
-  }
+      ],
+    ),
+  );
 }

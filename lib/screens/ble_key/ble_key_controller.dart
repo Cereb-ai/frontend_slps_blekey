@@ -154,22 +154,36 @@ class BleKeyController extends ChangeNotifier {
     Duration timeout = const Duration(seconds: 12),
   }) async {
     await ensureReady();
-    final waiting = _operationEventController.stream
-        .firstWhere((event) {
-          return event.type == 'operationResult' &&
-              event.operationName == expectedOperationName &&
-              event.operationResult != null;
-        })
-        .timeout(timeout);
-    await executeVendorOperation(index: index, mac: mac, args: args);
-    final event = await waiting;
-    final result = event.operationResult!;
-    if (!(result.ret || result.code >= 0)) {
-      throw StateError(
-        '${event.operationName} 失败：${result.msg ?? result.code}',
-      );
+    if (!await _requestBluetoothPermissions() ||
+        !await _ensureBluetoothEnabled()) {
+      throw StateError('蓝牙权限或蓝牙状态不可用');
     }
-    return result;
+    final completer = Completer<BleKeyOperationResult>();
+    final subscription = _operationEventController.stream.listen((event) {
+      if (event.type == 'operationResult' &&
+          event.operationName == expectedOperationName &&
+          event.operationResult != null &&
+          !completer.isCompleted) {
+        completer.complete(event.operationResult!);
+      }
+    });
+    try {
+      final sent = await _sdk.executeOperation(
+        index: index,
+        mac: mac,
+        args: args,
+      );
+      if (!sent) throw StateError('$expectedOperationName 下发失败');
+      final result = await completer.future.timeout(timeout);
+      if (!result.ret) {
+        throw StateError(
+          '$expectedOperationName 失败：${result.msg ?? result.code}',
+        );
+      }
+      return result;
+    } finally {
+      await subscription.cancel();
+    }
   }
 
   Future<BleKeyOperationResult> waitForOperationResult({

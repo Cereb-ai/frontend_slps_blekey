@@ -10,7 +10,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../api.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/offline_access_decision.dart';
+import '../../models/current_task_package.dart';
+import '../../services/ble_task_service.dart';
+import '../../services/ble_record.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../services/offline_data_store.dart';
 import '../ble_key/ble_key_controller.dart';
 import '../../states/global_user.dart';
@@ -85,9 +88,19 @@ class _KeyControlScreenState extends State<KeyControlScreen>
   static const _localSyncedAtKey = '_localSyncedAt';
 
   bool _busy = false;
-  bool _locksLoading = false;
+  bool _taskLoading = false;
+  CurrentTaskPackage? _task;
+  Map<String, dynamic>? _taskMetadata;
+  Map<String, dynamic>? _receipt;
+  String? _taskError;
+  String? _historyError;
+  bool _keyVerified = false;
+  bool _readingHistory = false;
+  bool _liveReportDuringHistory = false;
+  late Future<void> _pendingLoaded;
+  BleTaskService get _service =>
+      BleTaskService(_bleController!.executeVendorOperationAndWait);
   String? _selectedMac;
-  List<LockItem> _selectedLocks = <LockItem>[];
   List<LockItem> _availableLocks = <LockItem>[];
   _KeyConnectionPhase _connectionPhase = _KeyConnectionPhase.idle;
   bool _autoConnectInFlight = false;
@@ -121,8 +134,8 @@ class _KeyControlScreenState extends State<KeyControlScreen>
       controller.addListener(_onBleControllerChanged);
       _reportSubscription = controller.operationEvents.listen(_onSdkEvent);
       unawaited(_startConnectivityMonitoring());
-      unawaited(_loadPendingEventsAndSync());
-      _loadLocks();
+      _pendingLoaded = _loadPendingEventsAndSync();
+      unawaited(_loadTask());
     });
   }
 
@@ -251,6 +264,7 @@ class _KeyControlScreenState extends State<KeyControlScreen>
     if (mac == null || mac.isEmpty) return;
 
     _autoConnectInFlight = true;
+    _wasScanning = false;
     if (mounted) {
       setState(() => _connectionPhase = _KeyConnectionPhase.connecting);
     }
@@ -265,11 +279,20 @@ class _KeyControlScreenState extends State<KeyControlScreen>
         args: _baseSdkArgs(),
         timeout: const Duration(seconds: 15),
       );
+      await _service.verifyKey(widget.number);
+      if (!mounted) {
+        _completeConnectionAttempt(StateError('页面已关闭'));
+        return;
+      }
+      _keyVerified = true;
       if (mounted) {
         setState(() => _connectionPhase = _KeyConnectionPhase.connected);
       }
+      await _readHistory();
       _completeConnectionAttempt();
     } catch (error) {
+      _keyVerified = false;
+      await controller.executeVendorOperation(index: 1);
       if (mounted) {
         setState(() => _connectionPhase = _KeyConnectionPhase.failed);
       }
@@ -305,7 +328,7 @@ class _KeyControlScreenState extends State<KeyControlScreen>
     _connectionCompleter = completer;
     unawaited(_beginAutoConnect());
     try {
-      await completer.future.timeout(const Duration(seconds: 35));
+      await completer.future.timeout(const Duration(seconds: 100));
     } finally {
       if (identical(_connectionCompleter, completer)) {
         _connectionCompleter = null;
@@ -352,54 +375,88 @@ class _KeyControlScreenState extends State<KeyControlScreen>
     final vendorKeyId = widget.number.trim();
     if (vendorKeyId.isNotEmpty) {
       for (final device in controller.devices) {
-        final deviceKey = device.key?.trim() ?? '';
-        if (deviceKey.isNotEmpty && deviceKey == vendorKeyId) {
+        if ([device.key, device.keyId].any((id) => id?.trim() == vendorKeyId)) {
           final mac = device.mac;
           if (mac != null && mac.isNotEmpty) return mac;
         }
       }
     }
 
-    if (controller.devices.length == 1) {
-      final mac = controller.devices.first.mac;
-      if (mac != null && mac.isNotEmpty) return mac;
-    }
-
     return null;
   }
 
-  Future<void> _loadLocks() async {
+  Future<CurrentTaskPackage?> _loadTask() async {
     final token = GlobalUser.instance.token;
-    if (token == null || token.isEmpty) return;
-    setState(() => _locksLoading = true);
-    final cached = (await OfflineDataStore.readList(
-      'locks',
-    )).map(_mapApiLock).toList();
-    if (mounted && cached.isNotEmpty) {
-      setState(() => _availableLocks = cached);
-    }
+    if (!mounted) return null;
+    setState(() {
+      _taskLoading = true;
+      _task = null;
+      _taskError = null;
+      _taskMetadata = null;
+    });
     try {
-      final response = await Api.listLockDevices(token: token);
-      final mapped = response.map(_mapApiLock).toList();
-      await OfflineDataStore.saveList('locks', response);
-      if (!mounted) return;
-      setState(() {
-        _availableLocks = mapped;
-        _locksLoading = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _locksLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            cached.isEmpty ? '锁列表加载失败: $error' : '网络不可用，已加载本地缓存的锁列表',
-          ),
-        ),
+      if (token == null || token.isEmpty) throw StateError('请重新登录');
+      final task = CurrentTaskPackage.fromJson(
+        await Api.getCurrentTaskPackage(token: token, keyId: widget.keyId),
       );
+      if (task.vendorKeyId != widget.number) throw StateError('任务包钥匙标识与页面不一致');
+      final key = await Api.getLockKey(token: token, keyId: widget.keyId);
+      final metadata = key['currentTask'] is Map
+          ? Map<String, dynamic>.from(key['currentTask'] as Map)
+          : null;
+      if (_connectionPhase != _KeyConnectionPhase.connected) {
+        _secretController.text = (key['secret'] ?? widget.secret).toString();
+        _signController.text = (key['sign'] ?? widget.sign).toString();
+        _licController.text = (key['lic'] ?? widget.lic).toString();
+      }
+      if (metadata == null ||
+          metadata['id'] != task.taskId ||
+          metadata['geofenceRequired'] is! bool ||
+          DateTime.tryParse(metadata['updatedAt']?.toString() ?? '') !=
+              DateTime.parse(task.taskUpdatedAt)) {
+        throw StateError('无法核实当前任务定位限制或版本，请刷新后重试');
+      }
+      if (task.isOffline && metadata['geofenceRequired'] == true) {
+        throw StateError('此任务要求手机定位，不能下载到离线钥匙');
+      }
+      var locks = <LockItem>[];
+      try {
+        locks = (await Api.listLockDevices(
+          token: token,
+        )).map(_mapApiLock).toList();
+      } catch (_) {
+        if (!task.isOffline) rethrow;
+      }
+      final receipt = await OfflineDataStore.readObject(
+        'key_receipt_${widget.keyId}',
+      );
+      if (!mounted) return null;
+      setState(() {
+        _task = task;
+        _taskMetadata = metadata;
+        _receipt = receipt;
+        _availableLocks = locks;
+      });
+      return task;
+    } catch (error) {
+      if (mounted) setState(() => _taskError = _taskFailure(error));
+      return null;
+    } finally {
+      if (mounted) setState(() => _taskLoading = false);
     }
+  }
+
+  String _taskFailure(Object error) {
+    if (error is DioException) {
+      return switch (error.response?.statusCode) {
+        400 => '设备类型不支持或请求不合法',
+        401 => '登录已过期，请重新登录',
+        403 => '无权使用该任务',
+        404 => '暂无有效任务',
+        _ => '任务加载失败，请联网重试',
+      };
+    }
+    return error.toString();
   }
 
   String get _pendingEventsKey => '$_pendingEventsKeyPrefix${widget.keyId}';
@@ -446,238 +503,213 @@ class _KeyControlScreenState extends State<KeyControlScreen>
   }
 
   Future<void> _authorizeKey() async {
-    final l10n = AppLocalizations.of(context)!;
-    if (_busy) return;
-
-    if (_selectedLocks.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.keyUnlockNoLockSelected)));
-      return;
-    }
-    final token = GlobalUser.instance.token;
-    if (token == null || token.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.sessionExpired)));
-      return;
-    }
-
-    final locks = List<LockItem>.from(_selectedLocks);
-    final controller = context.read<BleKeyController>();
-    setState(() => _busy = true);
+    if (_busy || _taskLoading) return;
+    setState(() {
+      _busy = true;
+      _authorized = false;
+    });
     try {
-      // A single tap now performs scan + connection when needed, then carries
-      // on with authorization and control. Connection failures are surfaced by
-      // the common error handler below.
+      final displayed = _task;
+      final task = await _loadTask();
+      if (task == null) return;
+      // A changed mode/version requires the user to see the new action first.
+      if (displayed == null ||
+          displayed.taskId != task.taskId ||
+          displayed.taskUpdatedAt != task.taskUpdatedAt ||
+          displayed.payloadHash != task.payloadHash) {
+        throw StateError('任务已变化，请核对后再次操作');
+      }
+      final token = GlobalUser.instance.token!;
       await _ensureConnected();
-
-      // 1) Resolve authorization for every selected lock. The app deliberately
-      // does not send a task id; the backend selects the active task for each
-      // key/lock pair.
-      final provisioningConfig = await _getProvisioningConfigSafely(
-        token: token,
-      );
-      final decisionAt = AccessDecisionTime.resolveDecisionAt(
-        provisioningConfig,
-      );
-      var usedOfflineDecision = false;
-      for (final lock in locks) {
-        final decision = await _decideAccess(
-          token: token,
-          lock: lock,
-          decisionAt: DateTime.parse(decisionAt),
-        );
-        usedOfflineDecision =
-            usedOfflineDecision || decision['offline'] == true;
-        if (decision['allowed'] != true) {
-          final reasons = decision['reasons'];
-          final reasonText = reasons is List
-              ? reasons.map((item) => item.toString()).join(', ')
-              : reasons?.toString() ?? l10n.keyUnlockAuthDenied;
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '${lock.name} ${l10n.keyUnlockAuthDenied}: $reasonText',
-              ),
-            ),
+      if (!mounted) return;
+      await _service.verifyKey(task.vendorKeyId);
+      if (!mounted) return;
+      if (!task.isOffline) {
+        bool geofenceSatisfied = false;
+        if (_taskMetadata?['geofenceRequired'] == true) {
+          final location = await context
+              .read<LocationProvider>()
+              .getEventLocation();
+          final fence = _taskMetadata?['geofence'];
+          if (location != null &&
+              fence is Map &&
+              fence['latitude'] is num &&
+              fence['longitude'] is num &&
+              fence['radiusMeters'] is num) {
+            final radius = (fence['radiusMeters'] as num).toDouble();
+            geofenceSatisfied =
+                radius > 0 &&
+                Geolocator.distanceBetween(
+                          location.lat,
+                          location.lng,
+                          (fence['latitude'] as num).toDouble(),
+                          (fence['longitude'] as num).toDouble(),
+                        ) +
+                        location.accuracy <=
+                    radius;
+          }
+        }
+        for (final vendorId in task.lockIds) {
+          final matches = _availableLocks
+              .where((lock) => lock.number == vendorId)
+              .toList();
+          if (matches.length != 1) throw StateError('无法确定锁 $vendorId 的平台 ID');
+          final decision = await Api.decideAccess(
+            token: token,
+            keyId: widget.keyId,
+            lockId: matches.single.id,
+            at: DateTime.now().toUtc(),
+            geofenceSatisfied: geofenceSatisfied,
+            clientTraceId:
+                'ble_control_${DateTime.now().microsecondsSinceEpoch}_${matches.single.id}',
           );
-          return;
+          if (decision['allowed'] != true ||
+              decision['taskId'] != task.taskId) {
+            throw StateError(
+              '锁 $vendorId 未获当前任务授权：${decision['reasons'] ?? '任务已变化'}',
+            );
+          }
         }
       }
-
-      // 2) SetDateTime (use platform timezone from provisioning config)
-      final keyLocalTime = AccessDecisionTime.resolveKeyLocalTime(
-        provisioningConfig,
+      final config = await Api.getProvisioningConfig(token: token);
+      final time = AccessDecisionTime.resolveKeyLocalTime(config);
+      if (time == null) throw StateError('平台未返回钥匙校时时间');
+      if (!mounted || !_keyVerified) return;
+      await _service.writeTask(
+        task,
+        time,
+        isActive: () => mounted && _keyVerified,
       );
-      await controller.executeVendorOperationAndWait(
-        index: 15,
-        expectedOperationName: 'SetDateTime',
-        mac: _selectedMac,
-        args: _sdkArgs(keyLocalTime: keyLocalTime),
-        timeout: const Duration(seconds: 15),
-      );
-      // 3) SetUserKey with all selected vendor lock ids as CSV.
-      await controller.executeVendorOperationAndWait(
-        index: 6,
-        expectedOperationName: 'SetUserKey',
-        mac: _selectedMac,
-        args: _sdkArgs(),
-        timeout: const Duration(seconds: 20),
-      );
-      // 4) SetOnline
-      await controller.executeVendorOperationAndWait(
-        index: 7,
-        expectedOperationName: 'SetOnline',
-        mac: _selectedMac,
-        args: _sdkArgs(),
-        timeout: const Duration(seconds: 20),
-      );
-
-      if (!mounted) return;
-      setState(() => _authorized = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            usedOfflineDecision
-                ? '离线授权成功，记录已本地缓存，联网后自动上报。'
-                : '已授权 ${locks.length} 把锁，现在可连续操作，所有记录都会自动上报。',
+      if (task.isOffline) {
+        final receipt = task.receipt(widget.keyId);
+        await OfflineDataStore.saveObject(
+          'key_receipt_${widget.keyId}',
+          receipt,
+        );
+        if (mounted) setState(() => _receipt = receipt);
+        await _service.disconnect();
+        _keyVerified = false;
+        if (mounted) {
+          setState(() => _connectionPhase = _KeyConnectionPhase.idle);
+        }
+      } else if (mounted) {
+        setState(() => _authorized = true);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              task.isOffline ? '离线任务已写入钥匙，可断开手机使用' : '在线授权成功，请保持蓝牙连接后用钥匙碰锁',
+            ),
           ),
-        ),
-      );
+        );
+      }
     } catch (error) {
-      if (!mounted) return;
-      final message = error is TimeoutException
-          ? l10n.keyUnlockTimedOut
-          : l10n.keyUnlockFailed;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('操作失败：$error')));
+      }
+      if (_keyVerified) {
+        try {
+          await _service.disconnect();
+        } catch (_) {}
+        _keyVerified = false;
+        if (mounted) {
+          setState(() => _connectionPhase = _KeyConnectionPhase.idle);
+        }
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<Map<String, dynamic>> _decideAccess({
-    required String token,
-    required LockItem lock,
-    required DateTime decisionAt,
-  }) async {
-    try {
-      return await Api.decideAccess(
-        token: token,
-        keyId: widget.keyId,
-        lockId: lock.id,
-        at: decisionAt,
-        geofenceSatisfied: true,
-        clientTraceId:
-            'ble_control_${DateTime.now().millisecondsSinceEpoch}_${lock.id}',
-      );
-    } on DioException catch (error) {
-      if (error.response != null) rethrow;
-      return decideOfflineAccess(
-        tasks: await OfflineDataStore.readList('tasks'),
-        keyId: widget.keyId,
-        lockId: lock.id,
-        userId: GlobalUser.instance.userId,
-        at: decisionAt.toLocal(),
-      );
-    }
-  }
-
   void _onSdkEvent(BleKeyEvent event) {
-    final report = event.operationResult;
-    if (event.type != 'operationResult' ||
-        event.operationName != 'Report' ||
-        report == null ||
-        !_isCmd10SwitchReport(report) ||
-        _selectedLocks.isEmpty) {
+    if (event.operationName == 'DisconnectKey') {
+      _wasScanning = false;
+      _keyVerified = false;
+      if (mounted) {
+        setState(() {
+          _authorized = false;
+          _connectionPhase = _KeyConnectionPhase.idle;
+        });
+      }
       return;
     }
-    _reportProcessing = _reportProcessing.then(
-      (_) => _handleSwitchReportSafely(report),
-    );
-  }
-
-  Future<void> _handleSwitchReportSafely(BleKeyOperationResult report) async {
-    try {
-      await _handleSwitchReport(report);
-    } catch (error, stackTrace) {
-      debugPrint('开关锁记录处理失败: $error\n$stackTrace');
+    final report = event.operationResult;
+    if (event.operationName != 'Report' ||
+        report?.obj is! Map ||
+        !_keyVerified) {
+      return;
     }
-  }
-
-  Future<void> _handleSwitchReport(BleKeyOperationResult report) async {
-    if (!mounted) return;
-    final reportLockId = _extractReportLockId(report.obj);
-    final matches = _selectedLocks.where(
-      (lock) => lock.number == reportLockId || lock.id == reportLockId,
-    );
-    final lock =
-        matches.firstOrNull ??
-        (_selectedLocks.length == 1 ? _selectedLocks.first : null);
-    if (lock == null) return;
-    final reportStatus = _extractReportStatus(report.obj);
-    if (reportStatus == null) return;
-    final nextState = reportStatus == 1 ? 'unlocked' : 'locked';
-    final operationLocation =
-        (await context.read<LocationProvider>().getEventLocation())
-            ?.toRawPayload();
-    final payload = _buildSwitchEventPayload(
-      lock: lock,
-      requestedState: nextState,
-      report: report,
-      operationLocation: operationLocation,
-    );
-    await _enqueuePendingEvent(payload);
-    await _syncPendingEvents();
-    if (!mounted) return;
-    setState(() {
-      final updatedLock = LockItem(
-        id: lock.id,
-        name: lock.name,
-        number: lock.number,
-        location: lock.location,
-        switchState: nextState,
-        status: lock.status,
-        updatedAt: DateTime.now(),
-      );
-      _selectedLocks = _selectedLocks
-          .map((item) => item.id == lock.id ? updatedLock : item)
-          .toList();
-      _availableLocks = _availableLocks
-          .map((item) => item.id == lock.id ? updatedLock : item)
-          .toList();
+    if (_readingHistory) _liveReportDuringHistory = true;
+    final raw = Map<String, dynamic>.from(report!.obj as Map);
+    if (raw['cmd'] != 10 && raw['command'] != 10) return;
+    _reportProcessing = _reportProcessing.then((_) async {
+      try {
+        await _pendingLoaded;
+        await _enqueueRecord(raw);
+        await _syncPendingEvents();
+      } catch (error) {
+        if (mounted) setState(() => _historyError = error.toString());
+      }
     });
   }
 
-  int? _extractReportStatus(Object? value) {
-    if (value is Map) {
-      final map = Map<String, dynamic>.from(value);
-      final direct = _toInt(map['status']) ?? _toInt(map['flag']);
-      if (direct != null) return direct == 0 ? 0 : 1;
-      for (final nested in map.values) {
-        final status = _extractReportStatus(nested);
-        if (status != null) return status;
-      }
-    }
-    return null;
+  Future<void> _enqueueRecord(Map<String, dynamic> raw) async {
+    final record = BleRecord(raw);
+    final lock = _availableLocks
+        .where((item) => item.number == record.vendorLockId)
+        .firstOrNull;
+    final payload = record.payload(
+      keyId: widget.keyId,
+      vendorKeyId: widget.number,
+      deviceId: _selectedMac ?? widget.keyId,
+      lockId: lock?.id,
+    );
+    await _enqueuePendingEvent(payload);
   }
 
-  String? _extractReportLockId(Object? value) {
-    if (value is Map) {
-      final map = Map<String, dynamic>.from(value);
-      final direct = map['lockid'] ?? map['lockId'] ?? map['vendorLockId'];
-      if (direct != null && direct.toString().isNotEmpty) {
-        return direct.toString();
+  Future<void> _readHistory() async {
+    if (_readingHistory || !_keyVerified) return;
+    _readingHistory = true;
+    _liveReportDuringHistory = false;
+    try {
+      await _pendingLoaded;
+      final records = await _service.readRecords(
+        _bleController!.operationEvents,
+      );
+      // Preserve non-switch records (e.g. CMD=19); clearRecords erases all records.
+      var allSupported = true;
+      for (final record in records) {
+        if (record['cmd'] != 10 && record['command'] != 10) {
+          allSupported = false;
+          continue;
+        }
+        await _enqueueRecord(record);
       }
-      for (final nested in map.values) {
-        final lockId = _extractReportLockId(nested);
-        if (lockId != null) return lockId;
+      await _reportProcessing;
+      await _syncPendingEvents();
+      final allUploaded = _pendingEvents.every(
+        (event) => event[_localSyncStatusKey] == 'uploaded',
+      );
+      if (mounted &&
+          records.isNotEmpty &&
+          allSupported &&
+          allUploaded &&
+          !_liveReportDuringHistory &&
+          !_authorized &&
+          _keyVerified) {
+        await _service.clearRecords();
       }
+      if (mounted) {
+        setState(() => _historyError = allUploaded ? null : '记录待补传，钥匙记录已保留');
+      }
+    } catch (error) {
+      if (mounted) setState(() => _historyError = '历史记录未完成同步，钥匙记录已保留：$error');
+    } finally {
+      _readingHistory = false;
     }
-    return null;
   }
 
   Future<void> _loadPendingEventsAndSync() async {
@@ -724,6 +756,11 @@ class _KeyControlScreenState extends State<KeyControlScreen>
   }
 
   Future<void> _enqueuePendingEvent(Map<String, dynamic> payload) async {
+    if (_pendingEvents.any(
+      (event) => event['vendorEventId'] == payload['vendorEventId'],
+    )) {
+      return;
+    }
     _pendingEvents = <Map<String, dynamic>>[
       ..._pendingEvents,
       <String, dynamic>{...payload, _localSyncStatusKey: 'pending'},
@@ -734,10 +771,11 @@ class _KeyControlScreenState extends State<KeyControlScreen>
 
   Future<void> _savePendingEvents() async {
     final preferences = await SharedPreferences.getInstance();
-    await preferences.setStringList(
+    final saved = await preferences.setStringList(
       _pendingEventsKey,
       _pendingEvents.map(jsonEncode).toList(),
     );
+    if (!saved) throw StateError('记录未能保存到本机，保留钥匙记录');
   }
 
   Future<void> _syncPendingEvents() async {
@@ -778,136 +816,14 @@ class _KeyControlScreenState extends State<KeyControlScreen>
     }
   }
 
-  Map<String, dynamic> _buildSwitchEventPayload({
-    required LockItem lock,
-    required String requestedState,
-    required BleKeyOperationResult report,
-    Map<String, dynamic>? operationLocation,
-  }) {
-    final reportTime = _extractReportTime(report.obj);
-    final eventTime = (reportTime ?? DateTime.now()).toUtc().toIso8601String();
-    final command = _extractCommand(report.obj) ?? 10;
-    return <String, dynamic>{
-      'source': 'flutter_app_ble_key',
-      'deviceId': _selectedMac ?? widget.keyId,
-      'vendorEventId':
-          'ble_${reportTime?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch}_${lock.number}_$requestedState',
-      'lockId': lock.id,
-      'keyId': widget.keyId,
-      'vendorLockId': lock.number,
-      'vendorKeyId': widget.number,
-      'command': command,
-      'status': requestedState == 'unlocked' ? 1 : 0,
-      'eventTime': eventTime,
-      'result': 'success',
-      'rawPayload': <String, dynamic>{
-        ...?operationLocation,
-        'flow': 'app_key_control',
-        'requestedState': requestedState,
-        'previousDisplayState': lock.switchState,
-        'control': <String, dynamic>{
-          'controlMac': _selectedMac,
-          'controlChannel': 'flutter_blekey_sdk',
-          'controlledAt': DateTime.now().toIso8601String(),
-          'controlledByKeyId': widget.keyId,
-        },
-        'report': <String, dynamic>{
-          'code': report.code,
-          'ret': report.ret,
-          if (report.msg != null) 'msg': report.msg,
-          if (report.obj != null) 'obj': report.obj,
-          if (report.objText != null) 'objText': report.objText,
-        },
-      },
-    };
-  }
-
-  DateTime? _extractReportTime(Object? value) {
-    if (value is Map) {
-      final map = Map<String, dynamic>.from(value);
-      final milliseconds = _toInt(map['time']);
-      if (milliseconds != null && milliseconds > 0) {
-        return DateTime.fromMillisecondsSinceEpoch(milliseconds);
-      }
-      for (final nested in map.values) {
-        final time = _extractReportTime(nested);
-        if (time != null) return time;
-      }
-    }
-    return null;
-  }
-
   Map<String, Object?> _baseSdkArgs({String? keyLocalTime}) {
     return <String, Object?>{
       'secret': _secretController.text.trim(),
       'oldSecret': _secretController.text.trim(),
       'sign': int.tryParse(_signController.text.trim()) ?? 1,
       'lic': _licController.text.trim(),
-      'lockIds': _selectedLocks.map((lock) => lock.number).join(','),
       if (keyLocalTime != null && keyLocalTime.isNotEmpty) 'time': keyLocalTime,
     };
-  }
-
-  Map<String, Object?> _sdkArgs({String? keyLocalTime}) =>
-      _baseSdkArgs(keyLocalTime: keyLocalTime);
-
-  Future<Map<String, dynamic>?> _getProvisioningConfigSafely({
-    required String token,
-  }) async {
-    try {
-      return await Api.getProvisioningConfig(
-        token: token,
-      ).timeout(const Duration(seconds: 5));
-    } catch (_) {
-      return OfflineDataStore.readObject('provisioning_config');
-    }
-  }
-
-  bool _isCmd10SwitchReport(BleKeyOperationResult result) {
-    final cmd = _extractCommand(result.obj);
-    if (cmd == 10) return true;
-    final text = (result.objText ?? result.obj?.toString() ?? '').toLowerCase();
-    return text.contains('cmd=10') ||
-        text.contains('cmd:10') ||
-        text.contains('command=10') ||
-        text.contains('command:10');
-  }
-
-  int? _extractCommand(Object? value) {
-    if (value is Map) {
-      final map = Map<String, dynamic>.from(value);
-      final direct = _toInt(map['cmd']) ?? _toInt(map['command']);
-      if (direct != null) return direct;
-      for (final nested in map.values) {
-        final cmd = _extractCommand(nested);
-        if (cmd != null) return cmd;
-      }
-      return null;
-    }
-    if (value is List) {
-      for (final item in value) {
-        final cmd = _extractCommand(item);
-        if (cmd != null) return cmd;
-      }
-      return null;
-    }
-    if (value == null) return null;
-    final text = value.toString();
-    final match =
-        RegExp(r'cmd\s*[=:]\s*(\d+)', caseSensitive: false).firstMatch(text) ??
-        RegExp(
-          r'command\s*[=:]\s*(\d+)',
-          caseSensitive: false,
-        ).firstMatch(text);
-    if (match == null) return null;
-    return int.tryParse(match.group(1) ?? '');
-  }
-
-  int? _toInt(Object? value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value);
-    return null;
   }
 
   @override
@@ -916,7 +832,7 @@ class _KeyControlScreenState extends State<KeyControlScreen>
     final controller = context.watch<BleKeyController>();
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.keyUnlockTitle)),
+      appBar: AppBar(title: const Text('钥匙授权与任务')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -927,28 +843,46 @@ class _KeyControlScreenState extends State<KeyControlScreen>
             keyType: widget.keyType,
           ),
           const SizedBox(height: 12),
-          _TargetLockCard(
-            locks: _availableLocks,
-            loading: _locksLoading,
-            selected: _selectedLocks,
-            onSelect: _busy || _authorized
-                ? null
-                : (lock) => setState(() {
-                    if (_selectedLocks.any((item) => item.id == lock.id)) {
-                      _selectedLocks = _selectedLocks
-                          .where((item) => item.id != lock.id)
-                          .toList();
-                    } else {
-                      _selectedLocks = <LockItem>[..._selectedLocks, lock];
-                    }
-                  }),
-            onRetry: _busy ? null : _loadLocks,
-            pickLockLabel: l10n.keyUnlockPickLock,
-            selectedLockLabel: l10n.keyUnlockSelectedLock,
-            hintLabel: l10n.keyUnlockPickLockHint,
-            emptyLabel: l10n.keyUnlockNoLockAvailable,
-            loadingLabel: l10n.keyUnlockLoadingLocks,
-            sectionLabel: l10n.keyUnlockTargetLockSection,
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _taskMetadata?['name']?.toString() ?? '当前授权任务',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  if (_taskLoading) const LinearProgressIndicator(),
+                  if (_taskError != null) Text(_taskError!),
+                  if (_task case final task?) ...[
+                    Text(
+                      task.isOffline
+                          ? '离线任务 · 下载后可断开手机使用'
+                          : '在线任务 · 操作期间需保持蓝牙连接',
+                    ),
+                    Text('Task ID: ${task.taskId}'),
+                    Text('授权锁：${task.lockIds.join('、')}'),
+                    Text(task.scheduleLabel),
+                    if (task.isOffline && _receipt != null) ...[
+                      Text(
+                        task.matchesReceipt(_receipt)
+                            ? '已下载 · ${_receipt!['downloadedAt']}'
+                            : '需要更新：钥匙中的任务可能已过期',
+                      ),
+                      const Text('服务端删除任务不会即时撤销钥匙中的离线任务，需重新连接覆盖或等待过期。'),
+                    ],
+                  ],
+                  TextButton.icon(
+                    onPressed: _busy || _authorized || _taskLoading
+                        ? null
+                        : _loadTask,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('刷新当前任务'),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           _KeyConnectionSettingsCard(
@@ -982,13 +916,31 @@ class _KeyControlScreenState extends State<KeyControlScreen>
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: _busy || _authorized ? null : _authorizeKey,
+            onPressed: _busy || _authorized || _taskLoading || _task == null
+                ? null
+                : _authorizeKey,
             icon: Icon(_authorized ? Icons.verified_user : Icons.key),
-            label: Text(_authorized ? '已授权（持续监听开关锁）' : '授权'),
+            label: Text(
+              _authorized
+                  ? '已授权（持续监听开关锁）'
+                  : _task?.isOffline == true
+                  ? (_receipt == null
+                        ? '下载离线任务'
+                        : _task!.matchesReceipt(_receipt)
+                        ? '重新下载离线任务'
+                        : '更新离线任务')
+                  : '在线授权',
+            ),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(60),
             ),
           ),
+          if (_historyError != null) Text(_historyError!),
+          if (_keyVerified)
+            TextButton(
+              onPressed: _busy || _readingHistory ? null : _readHistory,
+              child: const Text('补读并同步钥匙记录'),
+            ),
           if (_authorized || _pendingEvents.isNotEmpty) ...[
             const SizedBox(height: 12),
             _EventSyncCard(
@@ -1138,166 +1090,6 @@ class _KeyInfoCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text('ID: $keyId'),
             ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TargetLockCard extends StatelessWidget {
-  const _TargetLockCard({
-    required this.locks,
-    required this.loading,
-    required this.selected,
-    required this.onSelect,
-    required this.onRetry,
-    required this.pickLockLabel,
-    required this.selectedLockLabel,
-    required this.hintLabel,
-    required this.emptyLabel,
-    required this.loadingLabel,
-    required this.sectionLabel,
-  });
-
-  final List<LockItem> locks;
-  final bool loading;
-  final List<LockItem> selected;
-  final ValueChanged<LockItem>? onSelect;
-  final VoidCallback? onRetry;
-  final String pickLockLabel;
-  final String selectedLockLabel;
-  final String hintLabel;
-  final String emptyLabel;
-  final String loadingLabel;
-  final String sectionLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(sectionLabel, style: theme.textTheme.titleMedium),
-                ),
-                if (onRetry != null)
-                  TextButton.icon(
-                    onPressed: onRetry,
-                    icon: const Icon(Icons.refresh),
-                    label: Text(pickLockLabel),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (selected.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(
-                    alpha: 0.4,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.check_circle_outline),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '$selectedLockLabel ${selected.length} 把: '
-                        '${selected.map((lock) => lock.name).join('、')}',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Text(hintLabel, style: theme.textTheme.bodySmall),
-            const SizedBox(height: 8),
-            if (loading)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(loadingLabel),
-                  ],
-                ),
-              )
-            else if (locks.isEmpty)
-              Text(emptyLabel)
-            else
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 240),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: locks.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 6),
-                  itemBuilder: (context, index) {
-                    final lock = locks[index];
-                    final isSelected = selected.any(
-                      (item) => item.id == lock.id,
-                    );
-                    return Material(
-                      color: isSelected
-                          ? theme.colorScheme.primaryContainer.withValues(
-                              alpha: 0.6,
-                            )
-                          : theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        onTap: onSelect == null ? null : () => onSelect!(lock),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              Icon(
-                                isSelected
-                                    ? Icons.check_box
-                                    : Icons.check_box_outline_blank,
-                                color: isSelected
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      lock.name,
-                                      style: theme.textTheme.titleSmall,
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text('Number: ${lock.number}'),
-                                    if (lock.location.isNotEmpty &&
-                                        lock.location != '-')
-                                      Text('Location: ${lock.location}'),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
           ],
         ),
       ),

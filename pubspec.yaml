@@ -35,12 +35,13 @@ dependencies:
   intl: ^0.20.2
 
   flutter_blekey_sdk:
-    path: /Users/zhuang/Documents/cereb/flutter_blekey_sdk_upgraded
+    path: packages/flutter_blekey_sdk
   permission_handler: ^12.0.1
   geolocator: ^14.0.2
   provider: ^6.1.5
   shared_preferences: ^2.5.3
   connectivity_plus: ^7.3.0
+  crypto: ^3.0.6
   dio: ^5.8.0+1
   url_launcher: ^6.3.1
 

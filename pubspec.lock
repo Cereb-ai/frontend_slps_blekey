@@ -90,7 +90,7 @@ packages:
     source: hosted
     version: "2.1.0"
   crypto:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: crypto
       sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
@@ -177,8 +177,8 @@ packages:
   flutter_blekey_sdk:
     dependency: "direct main"
     description:
-      path: "/Users/zhuang/Documents/cereb/flutter_blekey_sdk_upgraded"
-      relative: false
+      path: "packages/flutter_blekey_sdk"
+      relative: true
     source: path
     version: "0.0.1"
   flutter_launcher_icons:

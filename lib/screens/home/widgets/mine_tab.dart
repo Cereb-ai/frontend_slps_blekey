@@ -159,8 +159,8 @@ class _MineTabState extends State<MineTab> {
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.offline_pin_outlined),
-                title: const Text('离线任务缓存'),
-                subtitle: const Text('查看本机已同步的普通与联签任务'),
+                title: const Text('钥匙任务与下载回执'),
+                subtitle: const Text('查看当前任务和写入钥匙的下载回执'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () =>
                     Navigator.of(context).pushNamed(Routes.offlineTaskCache),

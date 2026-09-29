@@ -458,36 +458,23 @@ abstract final class Api {
     return _extractList(response.data);
   }
 
-  static Future<List<JsonMap>> listTaskSummaries({
+  static Future<JsonMap> getLockKey({
     required String token,
+    required String keyId,
   }) async {
     final response = await dio.get<dynamic>(
-      '/slps/tasks',
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
-    );
-    return _extractList(response.data);
-  }
-
-  static Future<JsonMap> getSequentialUnlockTask({
-    required String token,
-    required String taskId,
-  }) async {
-    final response = await dio.get<dynamic>(
-      '/slps/sequential-unlock-tasks/$taskId',
+      '/slps/keys/$keyId',
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
     return _asJsonMap(response.data);
   }
 
-  static Future<JsonMap> completeSequentialUnlockStep({
+  static Future<JsonMap> getCurrentTaskPackage({
     required String token,
-    required String taskId,
-    required String stepId,
-    required String operation,
+    required String keyId,
   }) async {
-    final response = await dio.post<dynamic>(
-      '/slps/sequential-unlock-tasks/$taskId/complete-step',
-      data: <String, dynamic>{'stepId': stepId, 'operation': operation},
+    final response = await dio.get<dynamic>(
+      '/slps/keys/$keyId/current-task-package',
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
     return _asJsonMap(response.data);
@@ -553,7 +540,7 @@ abstract final class Api {
     String? clientTraceId,
   }) async {
     final payload = <String, dynamic>{'keyId': keyId, 'lockId': lockId};
-    if (at != null) payload['at'] = at.toIso8601String();
+    if (at != null) payload['at'] = at.toUtc().toIso8601String();
     if (geofenceSatisfied != null) {
       payload['geofenceSatisfied'] = geofenceSatisfied;
     }
