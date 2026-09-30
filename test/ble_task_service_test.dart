@@ -165,6 +165,7 @@ void main() {
       'lockid': '202606050002',
       'time': 1782996573000,
       'status': 1,
+      'flag1': 0,
     };
     final live = BleRecord(raw);
     final history = BleRecord({...raw, '__class__': 'RecordInfo'});
@@ -207,7 +208,7 @@ void main() {
         timeout = const Duration(seconds: 30),
       }) async {
         expect(index, 4);
-        expect(args['autoContinue'], true);
+        expect(args['clearAfterRead'], false);
         events.add(
           BleKeyEvent(
             type: 'operationResult',
@@ -217,6 +218,7 @@ void main() {
               code: 0,
               obj: {
                 'total': incomplete ? 2 : 1,
+                'index': 1,
                 'recordInfos': [
                   {'cmd': 10, 'time': 1234},
                 ],

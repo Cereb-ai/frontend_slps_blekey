@@ -794,12 +794,12 @@ class _KeyControlScreenState extends State<KeyControlScreen>
           (event) => event[_localSyncStatusKey] != 'uploaded',
         );
         if (index < 0) break;
-        final payload = Map<String, dynamic>.from(_pendingEvents[index])
+        final payload = BleRecord.normalizePayload(_pendingEvents[index])
           ..remove(_localSyncStatusKey)
           ..remove(_localSyncedAtKey);
         await Api.createLockEvent(token: token, payload: payload);
         final uploaded = <String, dynamic>{
-          ..._pendingEvents[index],
+          ...payload,
           _localSyncStatusKey: 'uploaded',
           _localSyncedAtKey: DateTime.now().toUtc().toIso8601String(),
         };
@@ -1048,7 +1048,19 @@ class _EventSyncCard extends StatelessWidget {
   }
 
   static String _eventStateLabel(Map<String, dynamic> event) {
-    return event['status'] == 1 ? '开锁' : '关锁';
+    try {
+      final normalized = BleRecord.normalizePayload(event);
+      final raw = normalized['rawPayload'];
+      final operation = raw is Map ? raw['operation'] : null;
+      final label = operation == 'unlock'
+          ? '开锁'
+          : operation == 'lock'
+          ? '关锁'
+          : '未知操作';
+      return '$label · ${normalized['result'] == 'success' ? '成功' : '失败'}';
+    } on FormatException {
+      return '记录结果不完整';
+    }
   }
 
   static String _syncStateLabel(Map<String, dynamic> event) {

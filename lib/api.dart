@@ -26,7 +26,7 @@ abstract final class Api {
   static bool _handlingUnauthorized = false;
   static bool _suppressUnauthorizedHandler = false;
   static Future<String?>? _refreshingAccessToken;
-  static bool enableAuthDebugLog = true;
+  static bool enableAuthDebugLog = kDebugMode;
 
   static final Dio _refreshDio =
       Dio(
@@ -596,7 +596,9 @@ abstract final class Api {
 
   static void _authLog(String event, [Map<String, dynamic>? fields]) {
     if (!enableAuthDebugLog) return;
-    _logLine(fields == null ? event : '$event | $fields');
+    _logLine(
+      fields == null ? event : '$event | fields=${fields.keys.join(',')}',
+    );
   }
 
   static void _applyTenantHeader(Map<String, dynamic> headers, String tenant) {
@@ -610,20 +612,15 @@ abstract final class Api {
 
   static String _tokenPreview(String? token) {
     if (token == null || token.isEmpty) return '<empty>';
-    final head = token.length <= 12 ? token : token.substring(0, 12);
-    return '$head...(${token.length})';
+    return '<redacted>';
   }
 
-  static String _short(dynamic value) {
-    final text = value?.toString() ?? 'null';
-    if (text.length <= 220) return text;
-    return '${text.substring(0, 220)}...';
-  }
+  static String _short(dynamic value) => _toLogText(value);
 
   static void _logRequest(RequestOptions options) {
     if (!enableAuthDebugLog) return;
     _logLine(
-      'HTTP REQUEST | method=${options.method} url=${options.uri} '
+      'HTTP REQUEST | method=${options.method} url=${options.path} '
       'query=${_toLogText(options.queryParameters)} '
       'body=${_toLogText(options.data)}',
     );
@@ -634,7 +631,7 @@ abstract final class Api {
     final request = response.requestOptions;
     _logLine(
       'HTTP RESPONSE | status=${response.statusCode} '
-      'method=${request.method} url=${request.uri} '
+      'method=${request.method} url=${request.path} '
       'query=${_toLogText(request.queryParameters)} '
       'body=${_toLogText(response.data)}',
     );
@@ -645,7 +642,7 @@ abstract final class Api {
     final request = error.requestOptions;
     _logLine(
       'HTTP ERROR | status=${error.response?.statusCode} '
-      'method=${request.method} url=${request.uri} '
+      'method=${request.method} url=${request.path} '
       'query=${_toLogText(request.queryParameters)} '
       'requestBody=${_toLogText(request.data)} '
       'responseBody=${_toLogText(error.response?.data)}',
@@ -653,7 +650,7 @@ abstract final class Api {
   }
 
   static String _toLogText(dynamic value) {
-    return value?.toString() ?? 'null';
+    return value == null ? 'null' : '<omitted:${value.runtimeType}>';
   }
 
   static void _logLine(String message) {

@@ -70,6 +70,7 @@ class BleTaskService {
     final records = <Map<String, dynamic>>[];
     Object? pageError;
     int? expectedTotal;
+    final pageIndexes = <int>{};
     final sub = events.listen((event) {
       if (event.operationName != 'ReadKeyRecords') return;
       final result = event.operationResult;
@@ -86,6 +87,10 @@ class BleTaskService {
       } else {
         expectedTotal = total;
       }
+      final index = obj['index'];
+      if (index is! int || index < 0 || !pageIndexes.add(index)) {
+        pageError = StateError('历史记录分页缺失或重复');
+      }
       for (final record in obj['recordInfos'] as List) {
         if (record is! Map) {
           pageError = StateError('历史记录格式无效');
@@ -95,10 +100,25 @@ class BleTaskService {
       }
     });
     try {
-      await _execute(4, 'ReadKeyRecordsComplete', args: {'autoContinue': true});
+      await _execute(
+        4,
+        'ReadKeyRecordsComplete',
+        args: {'clearAfterRead': false},
+      );
       if (pageError != null) throw pageError!;
-      if (expectedTotal != null && expectedTotal != records.length) {
-        throw StateError('历史记录不完整，禁止清除钥匙记录');
+      if (expectedTotal != null) {
+        final indexes = pageIndexes.toList()..sort();
+        final total = expectedTotal!;
+        // Firmware may number packets from zero or one; require a complete,
+        // contiguous set. total counts packets, not individual records.
+        final complete = total == 0
+            ? records.isEmpty && indexes.length == 1 && indexes.first == 0
+            : indexes.length == total &&
+                  (indexes.first == 0 || indexes.first == 1) &&
+                  indexes.last == indexes.first + total - 1;
+        if (!complete) {
+          throw StateError('历史记录不完整，禁止清除钥匙记录');
+        }
       }
       return records;
     } finally {

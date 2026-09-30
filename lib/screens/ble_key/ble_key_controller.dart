@@ -355,11 +355,10 @@ class BleKeyController extends ChangeNotifier {
       case 'operationResult':
         final result = event.operationResult;
         _operationEventController.add(event);
-        final ok = result?.ret == true || (result?.code ?? -1) >= 0;
+        final ok = result?.ret == true;
         _addOperationResult(
           '${event.operationName ?? 'Operation'}：code=${result?.code ?? '-'}'
-          '${result?.msg == null ? '' : '，msg=${result!.msg}'}'
-          '${result?.obj == null ? '' : '，obj=${result!.obj}'}',
+          '，ret=${result?.ret}',
           isError: !ok,
         );
       default:

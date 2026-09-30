@@ -1,0 +1,42 @@
+SLPS BLE 修复验证 2026-09-30
+
+本地修改，基于 dev 885ccc4，未提交、推送、部署或修改线上历史数据。
+
+修复内容
+1. CMD=10 成败按 flag1 判断，成功/失败各自按厂商规则解释 status；缺失或无效 flag1 阻止上传，保留记录。
+2. 历史读取明确传 clearAfterRead=false；Kotlin 不再把 autoContinue 当厂商清除开关。
+3. 按 total 包数和唯一连续 index 校验完整性；拒绝缺页、重复、跳页、总数变化及不完整元数据。
+4. 本地记录显示正确操作和结果。旧版待上传缓存若含 rawPayload.report，在发送前重新解析，同时保留事件 ID；已上传数据不自动重写。
+5. 原生 SDK 参数、回调载荷、扫描原始数据不再写入 wrapper 日志；HTTP 日志省略正文和参数值，release 默认关闭；Dart BLE 操作日志仅保留名称、code、ret。
+
+证据
+厂商文档 docs/蓝牙钥匙SDK使用说明文档-单任务.docx v1.02。
+实际打包 x86_64 libjblekey.so 反汇编：Java_com_x4a574d_blekey_BleKeySdk_read，0x8a850，先 getRecords；结果>0 且入参=1 时调用 clearRecords（0x8a87e）。因此布尔参数确实控制清除，而非分页。
+BleKeySdk$5 字节码：boolean 转 1/0 传给 native read，之后发完成回调。
+实际 getRecords 回调可见总数与当前序号分别传递；J05050001 路径将循环索引+1作为回调 index。
+
+测试
+修复前新增协议测试：24 项失败，记录在本轮临时 slps-red.log。
+最终 flutter test：51 passed（含原24项、新增26项协议/缓存测试及1项HTTP日志测试）。
+flutter analyze：No issues found。
+git diff --check：通过。
+改动审查：已逐项核对 Dart 到 Kotlin 参数、回调顺序、缓存事件ID、后端 CreateEvent 的结果/操作消费方式及日志路径。
+项目要求的 /verify 与 /code-review 技能在本机未找到，执行了上述本地测试、源码审查和 Android release 构建；无独立审查者。
+
+未验证
+ADB 无设备。真实蓝牙回调、不同固件分页、断网补传、实体锁具动作和清除时机须真机验证。
+已经成功上传的旧错误数据不会被修复版自动改写，需单独核对平台历史记录。
+昨天 APK 已备份为同目录 app-release-before-fix.apk。
+
+真机建议顺序
+1. 正常开锁/关锁，核对 App 与平台方向一致。
+2. 无权限等失败场景，确认显示失败且不错误更新锁状态。
+3. 离线产生多条记录，断网读取后重连，确认记录保留并全部补传。
+4. 上传确认后检查清除行为，重复补读不产生重复事件（依赖后端去重）。
+
+发布版构建结果
+flutter build apk --release：通过，耗时98.8秒，63.1 MB。
+apksigner verify：通过。
+修复版文件：slps-blekey-fixed-20260930.apk。
+包名 com.example.frontend_demo_blekey，版本 1.0.0（versionCode 1），沿用项目版本。
+SHA256：45ab6d599cb7d8d7f45c2e40cb60216421181605d52b7facd9344422498bcd02。

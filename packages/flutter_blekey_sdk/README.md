@@ -50,5 +50,7 @@ This vendored wrapper includes the actual `executeOperation` implementation used
 
 - Operation 6 (`SetUserKey`) requires `lockIds: List<String>`, `timeBlocks: List<Map>` with `from`, `to`, and `times[{from,to}]`, and explicit `isOnline: bool`. It preserves all server windows and rejects missing fields. It no longer creates a seven-day default grant.
 - Operation 15 (`SetDateTime`) requires `time: "yyyy-MM-dd HH:mm:ss"` from the platform provisioning config. Date components represent the platform local clock.
-- Operation 4 with `autoContinue=true` emits `ReadKeyRecords` pages followed by `ReadKeyRecordsComplete`; operation 5 clears all device records. Only clear after every supported record has been uploaded, and preserve mixed/partial batches.
+- Operation 4 uses `clearAfterRead` (default `false`), the vendor clear-after-read flag, not a pagination switch. The app always passes `false`. It emits `ReadKeyRecords` pages followed by `ReadKeyRecordsComplete`; operation 5 clears all device records. Only clear after every supported record has been uploaded, and preserve mixed/partial batches.
+- `RecordBean.total` counts packets; validate unique contiguous `index` values, not record count. Missing or duplicate packets prevent clearing.
+- Logs contain operation names and return codes; credential arguments and callback payloads are omitted.
 - Method return only acknowledges dispatch. Wait for the matching operation callback and require `ret=true` for success.

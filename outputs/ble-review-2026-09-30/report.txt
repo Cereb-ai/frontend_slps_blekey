@@ -1,0 +1,47 @@
+SLPS BLE App 协议对照检查
+日期：2026-09-30
+阶段：根因排查。发现缺陷；未修改应用代码，未提交、发布或操作设备。
+
+范围与版本
+当前 dev HEAD：885ccc4；工作树检查前干净。
+本地 APK：build/app/outputs/flutter-apk/app-release.apk，2026-09-29 15:09，63147829 bytes。
+SHA256：8529b88cf617756d986ff2e16df729624261c3bbb35b38037e79a5226a601483。
+APK 早于当前提交时间（15:20），尚不能证明 APK 与当前源码完全一致，亦未取得同事手中的文件核对。
+依据：docs/蓝牙钥匙SDK使用说明文档-单任务.docx v1.02、第6.8、6.9、7.12节；打包 JBleKey.jar；相邻后端当前代码。
+已读取 live Cereb Runbook 容器及 V2 Bugfix Runbook。本轮为检查报告。
+
+1. 高：失败记录被上报为成功，成功开关方向相反（代码复现确认）
+lib/services/ble_record.dart:41-45 仅按 status=0/1 判断 success，忽略 flag1，且 status=1 映射 unlock。
+文档：flag1<=2 成功；成功时 status=0 开锁、1 关锁；失败时 status 指示未改变的锁状态，尝试方向相反。
+复现：dart outputs/ble-review-2026-09-30/record_probe.dart（使用本机 Flutter 3.44.1 内置 Dart）。
+实测 flag1=0,status=0 => success lock；预期 success unlock。
+实测 flag1=48,status=1 => success unlock；预期 failed unlock。
+实测 flag1=67,status=0 => success lock；预期 failed lock。
+影响：实时上报和历史回传共用 BleRecord。backend-project-slps/internal/service/service.go:1043 的 CreateEvent 接收 result/rawPayload，1073 按其更新锁状态，因此错误可传入平台状态。后端 ekRecordOutcome 已按厂商规则实现，但此通用事件路径未调用它。
+建议：统一按 flag1+status 解析，覆盖成功、失败及缺失字段；可选择 App 修正并为后端增加一致性校验，或由后端统一规范化厂商记录。前者适合最小修复，后者涉及接口责任调整。
+
+2. 高：读取记录传入清除标记，可能在持久化与上传前删除钥匙记录（文档与调用链确认，设备行为待验）
+lib/services/ble_task_service.dart:98 传 autoContinue=true；Kotlin 插件 operation 4 原样传给 sdk.readKeyRecords(boolean)。
+文档7.12明确定义 boolean 为 clearFlag（读取成功后是否清除数据），并非自动分页。
+JAR 反编译显示 boolean 在 BleKeySdk$5 中转为 1/0，直接传 native read(int)，没有 Java 层自动分页逻辑。具体 native/固件擦除时机未实测。
+_readHistory 在读取完成后才入本地待上传队列，不能用之后显式 clearRecords 的条件保护提前清除。
+建议：按厂商契约关闭读取时清除，完整持久化且服务器确认后再显式清除；以断网/崩溃恢复实物用例确认，勿在唯一真实记录上试验。
+
+3. 中：总包数与记录条数比较，正常多记录分页可能被拒绝（文档契约确认）
+lib/services/ble_task_service.dart:81-100 把 RecordBean.total 与 records.length 比较。
+文档6.9定义 total 为总包数、index 为当前包数。若一包两条记录：total=1、records.length=2，则抛历史记录不完整。
+代码没有利用 index 检查缺包或重复包。现有测试仅构造一包一条，无法识别语义错误。
+建议：基于实际厂商版本核对分页编号与完成语义，按包索引校验完整性，另计算记录数。
+
+4. 中：SDK 调试日志未脱敏（源码确认）
+packages/flutter_blekey_sdk/android/src/main/kotlin/com/cereb/flutter_blekey_sdk/FlutterBlekeySdkPlugin.kt：onMethodCall 输出 call.arguments；toSafeLogString 原样输出值；maskForLog()直接返回 this。
+连接密钥和下载指纹特征等参数可能进入 logcat；本轮未打印实际用户密钥。
+建议：参数白名单与真实脱敏，避免在发布版打印原始认证/生物特征参数。
+
+验证
+flutter test：24 passed。
+flutter analyze：No issues found。
+record_probe.dart：8组合运行，确认第1项。
+adb devices：无设备；蓝牙连接、固件清除行为、物理开关锁未验证。
+没有具体同事故障步骤；本报告不能断言这就是同事所指问题。
+后续：修复协议解析与读取标记、补失败/分页回归测试，再用对应 APK 和实物钥匙验证。

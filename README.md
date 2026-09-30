@@ -139,3 +139,11 @@ flutter build apk --debug
 配套后端修改位于独立工作目录 `../backend-slps-android-ble-task-safety`（分支 `fix/android-ble-task-safety`）：拒绝 Offline + geofence，并对 `source=android_app` 的相同 `vendorEventId` 用事务锁串行去重，重试返回原事件，无数据库迁移。后端未部署前，不能宣称断网重试可端到端去重。
 
 真机需验证：断开 App 后授权锁在时间窗内可开关，非授权锁/日期外/时间窗外拒绝；重连补读、网络失败后重试；403/404 清空任务；校时和写入失败不记成功；新增钥匙 ReadKeyInfo 和新增锁 CMD=19 回归。服务端删除任务不能即时撤销已写入的离线授权。
+
+### BLE 记录协议修正（2026-09-30）
+
+- CMD=10 按 `flag1` 判断结果：0–2 成功，其余失败。成功时 `status=0` 为开锁、`1` 为关锁；失败时方向相反。缺少有效 `flag1` 的记录保留，不上报为成功。
+- 历史读取使用 `clearAfterRead=false`，SDK 不在读取后自动清除；`total` 是包数，校验分页 `index` 完整且不重复后才允许进入上传及清除流程。
+- 旧版尚未上传且含原始 `report` 的缓存，在重试时重新计算结果和操作方向，保留原事件 ID。已经上传的历史数据不会自动改写。
+- SDK 日志省略凭证和原始回调内容；HTTP 日志省略请求/响应正文，发布版默认关闭 HTTP 调试日志。
+- 协议回归测试：`flutter test test/ble_protocol_test.dart`。设备回归仍需验证失败开锁、离线记录、多记录分页、断网补传及上传后清除。

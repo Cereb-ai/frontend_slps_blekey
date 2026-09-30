@@ -67,7 +67,7 @@ class FlutterBlekeySdkPlugin: FlutterPlugin, MethodCallHandler, EventChannel.Str
   }
 
   override fun onMethodCall(call: MethodCall, result: Result) {
-    Log.d(TAG, "method in method=${call.method} args=${call.arguments}")
+    Log.d(TAG, "method in method=${call.method} args=${(call.arguments as? Map<*, *>)?.toSafeLogString()}")
     when (call.method) {
       "getPlatformVersion" -> {
         val version = "Android ${android.os.Build.VERSION.RELEASE}"
@@ -122,7 +122,7 @@ class FlutterBlekeySdkPlugin: FlutterPlugin, MethodCallHandler, EventChannel.Str
         }
       }
       else -> {
-        Log.w(TAG, "method out method=${call.method} result=notImplemented args=${call.arguments}")
+        Log.w(TAG, "method out method=${call.method} result=notImplemented args=${(call.arguments as? Map<*, *>)?.toSafeLogString()}")
         result.notImplemented()
       }
     }
@@ -147,12 +147,12 @@ class FlutterBlekeySdkPlugin: FlutterPlugin, MethodCallHandler, EventChannel.Str
   }
 
   override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-    Log.d(TAG, "event listen args=$arguments")
+    Log.d(TAG, "event listen args=<omitted>")
     eventSink = events
   }
 
   override fun onCancel(arguments: Any?) {
-    Log.d(TAG, "event cancel args=$arguments")
+    Log.d(TAG, "event cancel args=<omitted>")
     eventSink = null
   }
 
@@ -174,7 +174,7 @@ class FlutterBlekeySdkPlugin: FlutterPlugin, MethodCallHandler, EventChannel.Str
     if (index == null) {
       Log.e(
         TAG,
-        "operation error method=${call.method} code=blekey_missing_operation message=Missing operation index args=${call.arguments}",
+        "operation error method=${call.method} code=blekey_missing_operation message=Missing operation index args=${(call.arguments as? Map<*, *>)?.toSafeLogString()}",
       )
       result.error("blekey_missing_operation", "Missing operation index", null)
       return
@@ -198,7 +198,7 @@ class FlutterBlekeySdkPlugin: FlutterPlugin, MethodCallHandler, EventChannel.Str
           val secret = stringArg(args, "secret", DEFAULT_SECRET)
           val sign = intArg(args, "sign", 0)
           val lic = stringArg(args, "lic", DEFAULT_LIC)
-          Log.d(TAG, "sdk call in connectToKey mac=$mac secret=${secret.maskForLog()} sign=$sign lic=$lic")
+          Log.d(TAG, "sdk call in connectToKey mac=$mac secret=${secret.maskForLog()} sign=$sign lic=${lic.maskForLog()}")
           sdk.connectToKey(mac, secret, sign, lic)
           Log.d(TAG, "sdk call out connectToKey")
         }
@@ -211,7 +211,7 @@ class FlutterBlekeySdkPlugin: FlutterPlugin, MethodCallHandler, EventChannel.Str
           sdk.setKeySecret(SecretInfo(oldSecret, newSecret))
           Log.d(TAG, "sdk call out setKeySecret")
         }
-        4 -> logSdkCall("readKeyRecords") { sdk.readKeyRecords(boolArg(args, "autoContinue", false)) }
+        4 -> logSdkCall("readKeyRecords") { sdk.readKeyRecords(boolArg(args, "clearAfterRead", false)) }
         5 -> logSdkCall("clearRecords") { sdk.clearRecords() }
         6 -> logSdkCall("setUserKey") {
           val online = args["isOnline"] as? Boolean
@@ -623,20 +623,20 @@ class FlutterBlekeySdkPlugin: FlutterPlugin, MethodCallHandler, EventChannel.Str
 
   private fun Map<*, *>.toSafeLogString(): String {
     return entries.joinToString(prefix = "{", postfix = "}") { entry ->
-      "${entry.key}=${entry.value}"
+      "${entry.key}=<redacted>"
     }
   }
 
-  private fun String.maskForLog(): String = this
+  private fun String.maskForLog(): String = "<redacted>"
 
   private fun BleDevice.toSafeLogString(): String {
-    return "name=$name mac=$mac key=$key keyId=$keyId rssi=$rssi " +
-      "scanRecord=${scanRecord?.joinToString("") { "%02X".format(it.toInt() and 0xFF) }} " +
+    return "name=$name mac=$mac key=<redacted> keyId=$keyId rssi=$rssi " +
+      "scanRecord=<omitted> " +
       "timestampNanos=$timestampNanos"
   }
 
   private fun BleKeyResult<*>.toSafeLogString(): String {
-    return "ret=$isRet code=$code msg=$msg obj=${serializeValue(obj)} objText=${obj?.toString()}"
+    return "ret=$isRet code=$code objType=${obj?.javaClass?.simpleName}"
   }
 
   private fun csv(value: String): List<String> {
