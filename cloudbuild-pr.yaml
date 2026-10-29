@@ -23,17 +23,17 @@ steps:
         apt-get install -y -qq --no-install-recommends ca-certificates curl git xz-utils tar
         rm -rf /var/lib/apt/lists/*
         FLUTTER_REL=3.44.9
-        FLUTTER_TARBALL="flutter_linux_${FLUTTER_REL}-stable.tar.xz"
+        FLUTTER_TARBALL="flutter_linux_$${FLUTTER_REL}-stable.tar.xz"
         FLUTTER_SUM=a9120fa4a01048bdef438ddc3a2d4b7389662ea98a95db86eeaf10382bc4efcb
-        FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/${FLUTTER_TARBALL}"
-        curl -fsSL -o /tmp/${FLUTTER_TARBALL} "${FLUTTER_URL}"
-        echo "${FLUTTER_SUM}  /tmp/${FLUTTER_TARBALL}" | sha256sum -c -
+        FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/$${FLUTTER_TARBALL}"
+        curl -fsSL -o /tmp/$${FLUTTER_TARBALL} "$${FLUTTER_URL}"
+        echo "$${FLUTTER_SUM}  /tmp/$${FLUTTER_TARBALL}" | sha256sum -c -
         mkdir -p /opt/flutter-sdk /opt/pub-cache
-        tar -xf /tmp/${FLUTTER_TARBALL} -C /opt/flutter-sdk
-        rm -f /tmp/${FLUTTER_TARBALL}
-        export PATH="/opt/flutter-sdk/flutter/bin:${PATH}"
+        tar -xf /tmp/$${FLUTTER_TARBALL} -C /opt/flutter-sdk
+        rm -f /tmp/$${FLUTTER_TARBALL}
+        export PATH="/opt/flutter-sdk/flutter/bin:$${PATH}"
         export PUB_CACHE=/opt/pub-cache
-        echo "HOME=$HOME"; echo "PATH=$PATH"; id
+        echo "HOME=$$HOME"; echo "PATH=$$PATH"; id
         flutter --version
         dart --version
         flutter pub get --enforce-lockfile
@@ -58,7 +58,7 @@ steps:
         apt-get update -qq
         apt-get install -y -qq --no-install-recommends git ca-certificates
         rm -rf /var/lib/apt/lists/*
-        export PATH="/opt/flutter-sdk/flutter/bin:${PATH}"
+        export PATH="/opt/flutter-sdk/flutter/bin:$${PATH}"
         export PUB_CACHE=/opt/pub-cache
         dart --version
         dart analyze --fatal-infos --fatal-warnings
