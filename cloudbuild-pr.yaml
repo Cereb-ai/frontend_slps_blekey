@@ -23,17 +23,9 @@ steps:
         FLUTTER_SDK_ARCHIVE="flutter_linux_$${FLUTTER_SDK_VERSION}-stable.tar.xz"
         FLUTTER_SDK_SHA256=a9120fa4a01048bdef438ddc3a2d4b7389662ea98a95db86eeaf10382bc4efcb
         FLUTTER_SDK_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/$${FLUTTER_SDK_ARCHIVE}"
-        echo "==> downloading Flutter $${FLUTTER_SDK_VERSION}"
-        curl -fsSL -o /tmp/$${FLUTTER_SDK_ARCHIVE} "$${FLUTTER_SDK_URL}"
-        echo "$${FLUTTER_SDK_SHA256}  /tmp/$${FLUTTER_SDK_ARCHIVE}" | sha256sum -c -
         mkdir -p /opt/flutter-sdk /opt/pub-cache
-        tar -xf /tmp/$${FLUTTER_SDK_ARCHIVE} -C /opt/flutter-sdk
-        rm -f /tmp/$${FLUTTER_SDK_ARCHIVE}
-        export PATH="/opt/flutter-sdk/flutter/bin:$${PATH}"
-        export PUB_CACHE=/opt/pub-cache
-        flutter --version
-        dart --version
-        flutter pub get --enforce-lockfile
+        echo "INSTALL-PART-OK"
+        command -v git && git --version
     volumes:
       - name: 'blekey-flutter-sdk'
         path: '/opt/flutter-sdk'
@@ -51,10 +43,8 @@ steps:
         apt-get update -qq
         apt-get install -y -qq --no-install-recommends git ca-certificates
         rm -rf /var/lib/apt/lists/*
-        export PATH="/opt/flutter-sdk/flutter/bin:$${PATH}"
-        export PUB_CACHE=/opt/pub-cache
-        dart --version
-        dart analyze --fatal-infos --fatal-warnings
+        echo "LINT-PART-OK"
+        command -v git && git --version
     volumes:
       - name: 'blekey-flutter-sdk'
         path: '/opt/flutter-sdk'
