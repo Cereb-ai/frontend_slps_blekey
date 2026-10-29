@@ -40,6 +40,27 @@ steps:
       - name: 'blekey-pub-cache'
         path: '/opt/pub-cache'
     waitFor: ['-']
+  - name: 'ubuntu:24.04'
+    id: 'lint'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -qq
+        apt-get install -y -qq --no-install-recommends git ca-certificates
+        rm -rf /var/lib/apt/lists/*
+        export PATH="/opt/flutter-sdk/flutter/bin:$${PATH}"
+        export PUB_CACHE=/opt/pub-cache
+        dart --version
+        dart analyze --fatal-infos --fatal-warnings
+    volumes:
+      - name: 'blekey-flutter-sdk'
+        path: '/opt/flutter-sdk'
+      - name: 'blekey-pub-cache'
+        path: '/opt/pub-cache'
+    waitFor: ['install']
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
