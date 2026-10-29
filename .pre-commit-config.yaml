@@ -1,0 +1,62 @@
+# Cereb shared pre-commit hooks — frontend_slps_blekey (Flutter / Dart)
+# Source: https://github.com/Cereb-ai/infra-k8s-setup/blob/v1.2.0/.pre-commit-hooks.yaml
+# Spec:  Cereb 项目静态检查通用规范 v1.12 (wiki FCy7jdCm8t) §Pre-commit Hook / §「新增」判定方法
+# Ticket: CP-3802 (Phase 2④ — frontend_slps_blekey 接入 pre-commit + CI PR 门禁)
+#
+# 本仓形态 = **非 Go 仓**（Flutter/Dart）→ 直接引共享仓根 manifest 的两条 hook：
+#   1. cereb-flutter-lint  — entry: `dart analyze --fatal-infos --fatal-warnings`
+#      （manifest v1.2.0 固定 entry；language: system → 走 PATH 里的 dart SDK）
+#   2. cereb-secret-scan   — entry: `gitleaks protect --staged --redact=100 --no-banner`
+#      （语言无关；language: system + pass_filenames=false，走 git index --staged）
+#
+# 判据对齐（规范 v1.12 §「新增」判定方法）：
+#   Flutter/Dart 落地形态 = 本地 hook（staged 文件）与 CI 全量
+#   `dart analyze --fatal-infos --fatal-warnings` **同判据** ——
+#   `--fatal-infos` / `--fatal-warnings` 把 info / warning 升为 error，
+#   ⇒ 本地拦得住的新增 issue，CI 必然也拦；本地放过的存量，CI 不得因跑全量而红。
+#   本仓存量已清零（见 cloudbuild-pr.yaml 的 analyzer exclude 口径 + §技术债清单记录），
+#   故本地增量口径与 CI 全量口径在「新增」判定上等价。
+#
+# 依赖（镜像 / devcontainer 侧预装，system hook 不装依赖）：
+#   - dart SDK（含 `dart analyze`）。本仓 pubspec.lock 的 `sdks` 段要求
+#     `dart: ">=3.12.1 <4.0.0"` / `flutter: ">=3.44.0"` → 需 Dart ≥ 3.12.1
+#     （Flutter 3.44.1+ / Dart 3.12.1+；Flutter 3.47.x 配 Dart 3.13.x 亦满足）。
+#     低于该版本的 dart SDK 会直接拒绝解析本仓 pubspec.lock。
+#   - gitleaks v8.20.x（镜像层已 bake 到 /usr/local/bin/gitleaks，v8.20.0）。
+#     ≤8.18 的 `--redact` 是 bool 语义 → 报 unknown flag 失败，故必须 v8.20.x。
+#
+# 安装：
+#   - 镜像环境：已 bake `core.hooksPath=/home/node/.cereb-githooks` → 提交自动触发，无需手动 install。
+#   - 非镜像环境：`pip install pre-commit && pre-commit install && pre-commit run --all-files`。
+#
+# caveat（不属本票范围，只记录）：
+#   - `cereb-flutter-lint` 的 entry 调 PATH 里的 `dart`，而 `dart analyze` 需要本仓
+#     `.dart_tool/package_config.json` 已就绪（即先跑过 `flutter pub get`），
+#     否则 analyzer 报 "Target of URI doesn't exist" / 无法解析依赖。
+#     首次 clone 后请先 `flutter pub get --enforce-lockfile`。
+#   - `cereb-secret-scan` 命中仅阻断 commit（exit 1），不修复、不轮转；
+#     历史密钥清理归技术债票流程（per 规范 §历史债处理策略）。
+#
+# 不设 Makefile —— 工具入口收敛两处（本地 pre-commit hook + CI cloudbuild-pr.yaml），
+# per 规范 v1.12 §集成方式。
+# 0 业务代码 / 0 prod：仅新增本文件。
+repos:
+  - repo: https://github.com/Cereb-ai/infra-k8s-setup
+    rev: v1.2.0
+    hooks:
+      - id: cereb-flutter-lint
+        # 存量豁免（CP-3802，只豁免不修复 —— per 规范 v1.12 §历史债处理策略）:
+        #   outputs/ 是 2026-09-30 BLE review 的一次性探针产物目录（apk 二进制 +
+        #   record_probe.dart 探针脚本），其 import 指向已不存在的绝对路径
+        #   /Users/zhuang/Documents/cereb/frontend_slps_blekey/lib/services/ble_record.dart
+        #   → dart analyze 报 2 个 error（uri_does_not_exist / undefined_function）。
+        #   该目录非 Flutter 业务源码，不参与编译/打包。
+        #   为什么这里必须显式 exclude：共享 hook 的 entry 把 **staged 文件名** 传给
+        #   `dart analyze`，而 dart analyze 对**显式传入的文件**不套用
+        #   analysis_options.yaml 的 analyzer.exclude（只有整树分析才套用）→
+        #   `pre-commit run --all-files` 会把 outputs/record_probe.dart 一并传入 →
+        #   存量 error 恒红。exclude = 与 CI 侧 analysis_options.yaml 的
+        #   analyzer.exclude 同源的存量豁免，两端口径一致。
+        #   反向控制：lib/ test/ packages/ 下的文件不受此 exclude 影响（见 AC2 实证）。
+        exclude: '^outputs/'
+      - id: cereb-secret-scan

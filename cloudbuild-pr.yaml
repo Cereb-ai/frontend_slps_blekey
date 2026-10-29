@@ -1,0 +1,190 @@
+# Cloud Build PR check pipeline for frontend_slps_blekey (Flutter / Dart)
+#
+# Ticket:  CP-3802 (Phase 2④ — frontend_slps_blekey 接入 pre-commit + CI PR 门禁)
+# Spec:    Cereb 项目静态检查通用规范 v1.12 (wiki FCy7jdCm8t) §CI 通用片段 / §「新增」判定方法
+# Trigger: pr-checks-frontend-slps-blekey (CP-3813 [ops] 已建，2nd gen repo-event trigger,
+#          filename=cloudbuild-pr.yaml, SA=cloudbuild-worker@cereb-platform-v2, COMMENTS_DISABLED)
+#
+# ── 所复用的「仓内已验证镜像与命令」说明（AC4 强制）────────────────────────
+# 本仓**无 cloudbuild.yaml**（执行期实测：`git ls-tree -r dev | grep cloudbuild` = 空；
+# 全仓 git 历史 `git log --all --diff-filter=A -- "*cloudbuild*"` = 空）→ 没有可复用的
+# 仓内 cloudbuild.yaml 镜像/命令。因此本 pipeline 的运行时改为**复用本仓已实测验证的
+# Flutter SDK 版本**（仓内 pubspec.lock 的 `sdks` 段即版本锚），而非凭空指定镜像：
+#
+#   仓内版本锚（pubspec.lock，commit f912eef）:
+#     sdks:
+#       dart:   ">=3.12.1 <4.0.0"
+#       flutter: ">=3.44.0"
+#
+#   选用 Flutter 3.44.9 / Dart 3.12.2 的理由（本地实测，非凭空指定）:
+#     - Flutter 3.44.9 = 当前 **stable** 线，且满足仓内 flutter >= 3.44.0 约束；
+#       其自带 Dart 3.12.2 满足仓内 dart >= 3.12.1 约束。
+#     - 实测 `flutter pub get --enforce-lockfile` 在 3.44.9 上 **exit 0**（lockfile 零漂移）；
+#       而更高版本（Flutter 3.47.8 / Dart 3.13.7）会要求升级 5 个依赖
+#       （intl / matcher / meta / test_api / vector_math），lockfile 不再自洽 → 不能用。
+#     - 官方 release 校验和（Flutter 官方 releases_linux.json，实测 sha256 一致）:
+#         archive : stable/linux/flutter_linux_3.44.9-stable.tar.xz
+#         sha256  : a9120fa4a01048bdef438ddc3a2d4b7389662ea98a95db86eeaf10382bc4efcb
+#         dart_sdk: 3.12.2   flutter git rev: 6b182d2c7585eba26d4edce0f97630effd256c33
+#       ⇒ 采用**官方上游 artifact + 钉版 sha256**，不用第三方社区镜像（供应链未验证）。
+#
+# ── 步骤设计（对齐规范 §CI 通用片段）────────────────────────────────────────
+#   1. secret-scan  — gitleaks v8.20.1（固定 tag，Docker Hub 唯一 v8.20.x），**fetch-free**
+#                     全树扫描 + 仓级 .gitleaks.toml 存量/构建产物豁免
+#   2. install      — 安装钉版 Flutter SDK + `flutter pub get --enforce-lockfile`
+#   3. lint         — `dart analyze --fatal-infos --fatal-warnings`（全量，与本地 hook 同判据）
+#
+#   ⚠️ Cloud Build 每 step 一个全新容器，**只有挂载卷存活**（/workspace + HOME）。
+#      SDK / pub-cache **不放 /workspace**（实测根因，详见 install step 注释）：放进去会被
+#      并行跑的 secret-scan 扫到 SDK 自带 test fixture 假密钥（107 leaks）且拖慢扫描 3m14s。
+#      ⇒ 用**具名卷**（volumes 段，per CB v1 Build 惯例；与 backend-project-werealize-us
+#      cloudbuild-pr.yaml 的 'cereb-go-cache' 具名卷同款）把 SDK + pub-cache 挂到
+#      **/workspace 之外**的 /opt/flutter-sdk 与 /opt/pub-cache：
+#        - 跨 step 存活（install 装好的 SDK，lint step 直接复用，不重复下 1.5GB）
+#        - **不在** /workspace → gitleaks 全树扫描与 dart analyze 整树分析都碰不到 SDK
+#      .dart_tool/package_config.json 落在 /workspace → lint step 直接复用（analyzer 需要）。
+#
+#   ⚠️ **每 step 都要自备 git**：Flutter 的 bin/dart wrapper source bin/internal/shared.sh，
+#      其中强制检查 PATH 里有没有 git（无 → "Error: Unable to find git in your PATH." exit 1）。
+#      CB 每 step 一个全新容器 → install step 装的 git 不带进 lint step
+#      ⇒ lint step 自己再 apt-get install git。
+#
+#   ⚠️ secret-scan 与 install 并行（waitFor: ['-']）→ install 期间 /workspace 会被写入
+#      .dart_tool/（含 package_config.json）。故 .gitleaks.toml 已豁免 .dart_tool/ 与
+#      .flutter-plugins-dependencies（构建产物豁免，per 规范 v1.11 §CI 通用片段）。
+#
+#   ⚠️ 禁 `|| true` 吞退出码（规范 §「新增」判定方法：新增 warning 一律阻塞，不得换假绿）。
+#      禁在 step 内 git fetch（CB PR-trigger = depth=1 浅克隆 + step 内无 github.com 凭据
+#      → 必 exit 128，per 规范 v1.9 §CI 通用片段 / CP-3426 实测）。
+#
+# PR check 不推 artifact（无 images 段 / 无 GCS 上传步骤），只跑门禁。
+
+steps:
+  # ─── Secret scan (gitleaks v8.20.1, fetch-free) ─────────────────────────
+  # per 规范 v1.12 §CI 通用片段：全树扫描 + 仓级存量豁免（仓根 .gitleaks.toml）。
+  #   - 范围更敏感：PR 新增密钥无论在哪个文件都拦。
+  #   - 命中 → gitleaks exit 1 → step FAILURE → build FAILURE → 阻塞 merge。
+  #   - 与其它 step 并行（waitFor: ['-']），互不阻。
+  #   - 版本固定 v8.20.1（≤8.18 的 --redact 是 bool 语义 → 报 unknown flag 失败）。
+  - name: 'zricethezav/gitleaks:v8.20.1'
+    id: 'secret-scan'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        gitleaks dir . --config .gitleaks.toml --redact=100 --no-banner --exit-code 1
+    waitFor: ['-']
+
+  # ─── Install pinned Flutter SDK + locked dependencies ────────────────────
+  # 官方 Flutter SDK artifact（钉版 + sha256 校验），装到 /workspace（挂载卷 → 跨 step 存活）。
+  # `flutter pub get --enforce-lockfile`：lockfile 不一致直接非零退出（不静默改 lockfile）。
+  - name: 'ubuntu:24.04'
+    id: 'install'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        apt-get update -qq
+        apt-get install -y -qq --no-install-recommends ca-certificates curl git xz-utils tar
+        rm -rf /var/lib/apt/lists/*
+
+        FLUTTER_SDK_VERSION=3.44.9
+        FLUTTER_SDK_ARCHIVE="flutter_linux_$${FLUTTER_SDK_VERSION}-stable.tar.xz"
+        # 注: 变量名刻意不含 "KEY" 字面量 —— gitleaks 的 generic-api-key 规则
+        # 会把 `*_SHA256=<64位hex>` 误判为 API key（实测命中, 词法命中 "KEY" + 高熵值）。
+        # 修法 = 改变量名（不把 cloudbuild-pr.yaml 加进 .gitleaks.toml 豁免清单 ——
+        # 那会整文件免扫 = 门禁假绿）。此处仅为版本校验和，非任何凭据。
+        FLUTTER_SDK_SHA256=a9120fa4a01048bdef438ddc3a2d4b7389662ea98a95db86eeaf10382bc4efcb
+        FLUTTER_SDK_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/$${FLUTTER_SDK_ARCHIVE}"
+
+        echo "==> downloading Flutter $${FLUTTER_SDK_VERSION} (official release artifact)"
+        curl -fsSL -o /tmp/$${FLUTTER_SDK_ARCHIVE} "$${FLUTTER_SDK_URL}"
+        echo "$${FLUTTER_SDK_SHA256}  /tmp/$${FLUTTER_SDK_ARCHIVE}" | sha256sum -c -
+        # ⚠️ SDK 与 pub-cache 必须装在 /workspace **之外**（/opt + /opt/pub-cache）。
+        #   根因（CP-3802 实测，build 4154b00a 失败）: 若把 SDK 解到 /workspace，
+        #   则 secret-scan step（waitFor:['-']，与 install **并行**）会扫到 SDK 自带的
+        #   test fixture 假密钥 → 本地复现 **107 leaks / 0 条来自仓源码**
+        #   （48 条来自 .flutter-sdk/flutter/{dev,examples,packages,engine} + DEPS，
+        #    59 条来自 .pub-cache/hosted/pub.dev/*），且扫描耗时 3m14s（1.5GB 树）。
+        #   同理，dart analyze 整树分析也会扫进 SDK 树。
+        #   ⇒ SDK/pub-cache 一律放 /opt（**不在** /workspace 挂载卷内）→ 两端都干净。
+        # /opt/flutter-sdk + /opt/pub-cache 是**具名卷**（volumes 段声明）→ 跨 step 存活。
+        mkdir -p /opt/flutter-sdk /opt/pub-cache
+        tar -xf /tmp/$${FLUTTER_SDK_ARCHIVE} -C /opt/flutter-sdk
+        rm -f /tmp/$${FLUTTER_SDK_ARCHIVE}
+
+        export PATH="/opt/flutter-sdk/flutter/bin:$${PATH}"
+        export PUB_CACHE=/opt/pub-cache
+        # ⚠️ 必须 git config --global --add safe.directory /opt/flutter-sdk/flutter
+        #   根因（CP-3802 实测，build e7f1f575 日志实证）: SDK 由 tar 以 **root** 身份解压
+        #   （文件 uid=0），而 git 跑在非 root 用户下 → git 报
+        #       "fatal: detected dubious ownership in repository at '/opt/flutter-sdk/flutter'"
+        #   → Flutter 的 bin/flutter 内部要 `git -C <SDK_ROOT> rev-parse HEAD` 取版本，
+        #     被 git 拒绝 → flutter 工具启动失败（连带 dart wrapper 报
+        #     "Setting VM flags failed: Unrecognized flags: resolved_executable_name"，
+        #     因为它拿不到 SDK 版本号）。
+        #   ⚠️ 注释里也不能出现裸的 substitution 占位符（形如美元符号 + 花括号 + 名字）
+        #      —— Cloud Build 的 substitution 解析**不区分注释与脚本**，注释里的占位符
+        #      同样会触发 "key in the template ... is not a valid built-in substitution"。
+        #   修法 = 把 SDK 目录登记为 safe.directory（git 官方对「目录属主与当前用户不一致」
+        #   的标准放行方式；仅放行本仓自装的 SDK 目录，不放宽其它目录）。
+        git config --global --add safe.directory /opt/flutter-sdk/flutter
+        flutter --version
+        dart --version
+
+        echo "==> flutter pub get --enforce-lockfile (lockfile 不一致即失败，不静默升级)"
+        flutter pub get --enforce-lockfile
+    volumes:
+      - name: 'blekey-flutter-sdk'
+        path: '/opt/flutter-sdk'
+      - name: 'blekey-pub-cache'
+        path: '/opt/pub-cache'
+    waitFor: ['-']
+
+  # ─── Static analysis gate (dart analyze --fatal-infos --fatal-warnings) ───
+  # 规范 v1.12 §「新增」判定方法：Flutter 侧本地 hook（staged 文件）与 CI 全量同判据 ——
+  # `--fatal-infos` / `--fatal-warnings` 把 info / warning 升为 error
+  # ⇒ 新增 issue 一律阻塞 PR / merge；存量豁免见仓根 analysis_options.yaml 的
+  #    analyzer.exclude（只豁免不修复，per §历史债处理策略 + §技术债清单记录）。
+  # 复用 install step 装好的 SDK 与 /workspace/.pub-cache（挂载卷）。
+  - name: 'ubuntu:24.04'
+    id: 'lint'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        # ⚠️ 必须装 git —— Flutter 的 bin/dart wrapper 会 source bin/internal/shared.sh,
+        #   其中 **强制检查 PATH 里是否有 git**（"Error: Unable to find git in your PATH."
+        #   → exit 1），否则连 `dart --version` 都跑不起来。
+        #   根因（CP-3802 实测，build 800dc7f2 失败）: CB **每 step 一个全新容器**,
+        #   lint step 的 ubuntu:24.04 里**没有** git（install step 的 apt-get 只作用于该 step）,
+        #   而 lint step 用的正是 install step 装好的 SDK（/opt/flutter-sdk 具名卷）。
+        #   ⇒ lint step 必须自己装 git。
+        apt-get update -qq
+        apt-get install -y -qq --no-install-recommends git ca-certificates
+        rm -rf /var/lib/apt/lists/*
+        # SDK / pub-cache 装在 /opt（不在 /workspace）—— 与 install step 同路径。
+        # /workspace 内只留仓源码 + .dart_tool（package_config.json，analyzer 需要）。
+        export PATH="/opt/flutter-sdk/flutter/bin:$${PATH}"
+        export PUB_CACHE=/opt/pub-cache
+        # 同 install step：SDK 由 root 解压 → git dubious ownership → 必须登记 safe.directory。
+        # （每 step 一个全新容器，git config 不共享，故 lint step 也要自己设。）
+        git config --global --add safe.directory /opt/flutter-sdk/flutter
+        dart --version
+        echo "==> dart analyze --fatal-infos --fatal-warnings"
+        dart analyze --fatal-infos --fatal-warnings
+    volumes:
+      - name: 'blekey-flutter-sdk'
+        path: '/opt/flutter-sdk'
+      - name: 'blekey-pub-cache'
+        path: '/opt/pub-cache'
+    waitFor: ['install']
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+
+timeout: '1800s'
