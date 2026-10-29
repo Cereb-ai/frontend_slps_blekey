@@ -8,3 +8,11 @@ steps:
         set -euo pipefail
         FLUTTER_SDK_VERSION=3.44.9
         echo "V=$${FLUTTER_SDK_VERSION}"
+        FLUTTER_SDK_ARCHIVE="flutter_linux_$${FLUTTER_SDK_VERSION}-stable.tar.xz"
+        echo "A=$${FLUTTER_SDK_ARCHIVE}"
+        FLUTTER_SDK_SHA256=a9120fa4a01048bdef438ddc3a2d4b7389662ea98a95db86eeaf10382bc4efcb
+        echo "S=$${FLUTTER_SDK_SHA256}"
+        FLUTTER_SDK_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/$${FLUTTER_SDK_ARCHIVE}"
+        echo "U=$${FLUTTER_SDK_URL}"
+options:
+  logging: CLOUD_LOGGING_ONLY
