@@ -76,19 +76,23 @@ steps:
         apt-get install -y -qq --no-install-recommends ca-certificates curl git xz-utils tar
         rm -rf /var/lib/apt/lists/*
 
-        FLUTTER_VERSION=3.44.9
-        FLUTTER_ARCHIVE="flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
-        FLUTTER_SHA256=a9120fa4a01048bdef438ddc3a2d4b7389662ea98a95db86eeaf10382bc4efcb
-        FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/${FLUTTER_ARCHIVE}"
+        FLUTTER_SDK_VERSION=3.44.9
+        FLUTTER_SDK_ARCHIVE="flutter_linux_$${FLUTTER_SDK_VERSION}-stable.tar.xz"
+        # 注: 变量名刻意不含 "KEY" 字面量 —— gitleaks 的 generic-api-key 规则
+        # 会把 `*_SHA256=<64位hex>` 误判为 API key（实测命中, 词法命中 "KEY" + 高熵值）。
+        # 修法 = 改变量名（不把 cloudbuild-pr.yaml 加进 .gitleaks.toml 豁免清单 ——
+        # 那会整文件免扫 = 门禁假绿）。此处仅为版本校验和，非任何凭据。
+        FLUTTER_SDK_SHA256=a9120fa4a01048bdef438ddc3a2d4b7389662ea98a95db86eeaf10382bc4efcb
+        FLUTTER_SDK_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/$${FLUTTER_SDK_ARCHIVE}"
 
-        echo "==> downloading Flutter ${FLUTTER_VERSION} (official release artifact)"
-        curl -fsSL -o /tmp/${FLUTTER_ARCHIVE} "${FLUTTER_URL}"
-        echo "${FLUTTER_SHA256}  /tmp/${FLUTTER_ARCHIVE}" | sha256sum -c -
+        echo "==> downloading Flutter $${FLUTTER_SDK_VERSION} (official release artifact)"
+        curl -fsSL -o /tmp/$${FLUTTER_SDK_ARCHIVE} "$${FLUTTER_SDK_URL}"
+        echo "$${FLUTTER_SDK_SHA256}  /tmp/$${FLUTTER_SDK_ARCHIVE}" | sha256sum -c -
         mkdir -p /workspace/.flutter-sdk
-        tar -xf /tmp/${FLUTTER_ARCHIVE} -C /workspace/.flutter-sdk
-        rm -f /tmp/${FLUTTER_ARCHIVE}
+        tar -xf /tmp/$${FLUTTER_SDK_ARCHIVE} -C /workspace/.flutter-sdk
+        rm -f /tmp/$${FLUTTER_SDK_ARCHIVE}
 
-        export PATH="/workspace/.flutter-sdk/flutter/bin:${PATH}"
+        export PATH="/workspace/.flutter-sdk/flutter/bin:$${PATH}"
         # PUB_CACHE 放 /workspace → 跨 step 存活（CB 每 step 新容器，仅挂载卷存活）
         export PUB_CACHE=/workspace/.pub-cache
         flutter --version
@@ -111,7 +115,7 @@ steps:
       - '-c'
       - |
         set -euo pipefail
-        export PATH="/workspace/.flutter-sdk/flutter/bin:${PATH}"
+        export PATH="/workspace/.flutter-sdk/flutter/bin:$${PATH}"
         export PUB_CACHE=/workspace/.pub-cache
         dart --version
         echo "==> dart analyze --fatal-infos --fatal-warnings"
