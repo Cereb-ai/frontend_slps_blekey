@@ -121,10 +121,13 @@ steps:
         #   根因（CP-3802 实测，build e7f1f575 日志实证）: SDK 由 tar 以 **root** 身份解压
         #   （文件 uid=0），而 git 跑在非 root 用户下 → git 报
         #       "fatal: detected dubious ownership in repository at '/opt/flutter-sdk/flutter'"
-        #   → Flutter 的 bin/flutter 内部要 `git -C $FLUTTER_ROOT rev-parse HEAD` 取版本，
+        #   → Flutter 的 bin/flutter 内部要 `git -C <SDK_ROOT> rev-parse HEAD` 取版本，
         #     被 git 拒绝 → flutter 工具启动失败（连带 dart wrapper 报
         #     "Setting VM flags failed: Unrecognized flags: resolved_executable_name"，
         #     因为它拿不到 SDK 版本号）。
+        #   ⚠️ 注释里也不能出现裸的 substitution 占位符（形如美元符号 + 花括号 + 名字）
+        #      —— Cloud Build 的 substitution 解析**不区分注释与脚本**，注释里的占位符
+        #      同样会触发 "key in the template ... is not a valid built-in substitution"。
         #   修法 = 把 SDK 目录登记为 safe.directory（git 官方对「目录属主与当前用户不一致」
         #   的标准放行方式；仅放行本仓自装的 SDK 目录，不放宽其它目录）。
         git config --global --add safe.directory /opt/flutter-sdk/flutter
