@@ -44,6 +44,11 @@
 #        - **不在** /workspace → gitleaks 全树扫描与 dart analyze 整树分析都碰不到 SDK
 #      .dart_tool/package_config.json 落在 /workspace → lint step 直接复用（analyzer 需要）。
 #
+#   ⚠️ **每 step 都要自备 git**：Flutter 的 bin/dart wrapper source bin/internal/shared.sh，
+#      其中强制检查 PATH 里有没有 git（无 → "Error: Unable to find git in your PATH." exit 1）。
+#      CB 每 step 一个全新容器 → install step 装的 git 不带进 lint step
+#      ⇒ lint step 自己再 apt-get install git。
+#
 #   ⚠️ secret-scan 与 install 并行（waitFor: ['-']）→ install 期间 /workspace 会被写入
 #      .dart_tool/（含 package_config.json）。故 .gitleaks.toml 已豁免 .dart_tool/ 与
 #      .flutter-plugins-dependencies（构建产物豁免，per 规范 v1.11 §CI 通用片段）。
@@ -137,6 +142,16 @@ steps:
       - '-c'
       - |
         set -euo pipefail
+        # ⚠️ 必须装 git —— Flutter 的 bin/dart wrapper 会 source bin/internal/shared.sh,
+        #   其中 **强制检查 PATH 里是否有 git**（"Error: Unable to find git in your PATH."
+        #   → exit 1），否则连 `dart --version` 都跑不起来。
+        #   根因（CP-3802 实测，build 800dc7f2 失败）: CB **每 step 一个全新容器**,
+        #   lint step 的 ubuntu:24.04 里**没有** git（install step 的 apt-get 只作用于该 step）,
+        #   而 lint step 用的正是 install step 装好的 SDK（/opt/flutter-sdk 具名卷）。
+        #   ⇒ lint step 必须自己装 git。
+        apt-get update -qq
+        apt-get install -y -qq --no-install-recommends git ca-certificates
+        rm -rf /var/lib/apt/lists/*
         # SDK / pub-cache 装在 /opt（不在 /workspace）—— 与 install step 同路径。
         # /workspace 内只留仓源码 + .dart_tool（package_config.json，analyzer 需要）。
         export PATH="/opt/flutter-sdk/flutter/bin:$${PATH}"
