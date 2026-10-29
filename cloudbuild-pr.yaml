@@ -35,9 +35,18 @@
 #   3. lint         — `dart analyze --fatal-infos --fatal-warnings`（全量，与本地 hook 同判据）
 #
 #   ⚠️ Cloud Build 每 step 一个全新容器，**只有挂载卷存活**（/workspace + HOME）。
-#      故 SDK 装到 /workspace/.flutter-sdk、PUB_CACHE 设 /workspace/.pub-cache
-#      → install 与 lint 两 step 共享同一份 SDK 与依赖缓存（避免重复下 1.5GB SDK）。
-#      .dart_tool/package_config.json 同样在 /workspace → lint step 直接复用。
+#      SDK / pub-cache **不放 /workspace**（实测根因，详见 install step 注释）：放进去会被
+#      并行跑的 secret-scan 扫到 SDK 自带 test fixture 假密钥（107 leaks）且拖慢扫描 3m14s。
+#      ⇒ 用**具名卷**（volumes 段，per CB v1 Build 惯例；与 backend-project-werealize-us
+#      cloudbuild-pr.yaml 的 'cereb-go-cache' 具名卷同款）把 SDK + pub-cache 挂到
+#      **/workspace 之外**的 /opt/flutter-sdk 与 /opt/pub-cache：
+#        - 跨 step 存活（install 装好的 SDK，lint step 直接复用，不重复下 1.5GB）
+#        - **不在** /workspace → gitleaks 全树扫描与 dart analyze 整树分析都碰不到 SDK
+#      .dart_tool/package_config.json 落在 /workspace → lint step 直接复用（analyzer 需要）。
+#
+#   ⚠️ secret-scan 与 install 并行（waitFor: ['-']）→ install 期间 /workspace 会被写入
+#      .dart_tool/（含 package_config.json）。故 .gitleaks.toml 已豁免 .dart_tool/ 与
+#      .flutter-plugins-dependencies（构建产物豁免，per 规范 v1.11 §CI 通用片段）。
 #
 #   ⚠️ 禁 `|| true` 吞退出码（规范 §「新增」判定方法：新增 warning 一律阻塞，不得换假绿）。
 #      禁在 step 内 git fetch（CB PR-trigger = depth=1 浅克隆 + step 内无 github.com 凭据
@@ -88,18 +97,31 @@ steps:
         echo "==> downloading Flutter $${FLUTTER_SDK_VERSION} (official release artifact)"
         curl -fsSL -o /tmp/$${FLUTTER_SDK_ARCHIVE} "$${FLUTTER_SDK_URL}"
         echo "$${FLUTTER_SDK_SHA256}  /tmp/$${FLUTTER_SDK_ARCHIVE}" | sha256sum -c -
-        mkdir -p /workspace/.flutter-sdk
-        tar -xf /tmp/$${FLUTTER_SDK_ARCHIVE} -C /workspace/.flutter-sdk
+        # ⚠️ SDK 与 pub-cache 必须装在 /workspace **之外**（/opt + /opt/pub-cache）。
+        #   根因（CP-3802 实测，build 4154b00a 失败）: 若把 SDK 解到 /workspace，
+        #   则 secret-scan step（waitFor:['-']，与 install **并行**）会扫到 SDK 自带的
+        #   test fixture 假密钥 → 本地复现 **107 leaks / 0 条来自仓源码**
+        #   （48 条来自 .flutter-sdk/flutter/{dev,examples,packages,engine} + DEPS，
+        #    59 条来自 .pub-cache/hosted/pub.dev/*），且扫描耗时 3m14s（1.5GB 树）。
+        #   同理，dart analyze 整树分析也会扫进 SDK 树。
+        #   ⇒ SDK/pub-cache 一律放 /opt（**不在** /workspace 挂载卷内）→ 两端都干净。
+        # /opt/flutter-sdk + /opt/pub-cache 是**具名卷**（volumes 段声明）→ 跨 step 存活。
+        mkdir -p /opt/flutter-sdk /opt/pub-cache
+        tar -xf /tmp/$${FLUTTER_SDK_ARCHIVE} -C /opt/flutter-sdk
         rm -f /tmp/$${FLUTTER_SDK_ARCHIVE}
 
-        export PATH="/workspace/.flutter-sdk/flutter/bin:$${PATH}"
-        # PUB_CACHE 放 /workspace → 跨 step 存活（CB 每 step 新容器，仅挂载卷存活）
-        export PUB_CACHE=/workspace/.pub-cache
+        export PATH="/opt/flutter-sdk/flutter/bin:$${PATH}"
+        export PUB_CACHE=/opt/pub-cache
         flutter --version
         dart --version
 
         echo "==> flutter pub get --enforce-lockfile (lockfile 不一致即失败，不静默升级)"
         flutter pub get --enforce-lockfile
+    volumes:
+      - name: 'blekey-flutter-sdk'
+        path: '/opt/flutter-sdk'
+      - name: 'blekey-pub-cache'
+        path: '/opt/pub-cache'
     waitFor: ['-']
 
   # ─── Static analysis gate (dart analyze --fatal-infos --fatal-warnings) ───
@@ -115,11 +137,18 @@ steps:
       - '-c'
       - |
         set -euo pipefail
-        export PATH="/workspace/.flutter-sdk/flutter/bin:$${PATH}"
-        export PUB_CACHE=/workspace/.pub-cache
+        # SDK / pub-cache 装在 /opt（不在 /workspace）—— 与 install step 同路径。
+        # /workspace 内只留仓源码 + .dart_tool（package_config.json，analyzer 需要）。
+        export PATH="/opt/flutter-sdk/flutter/bin:$${PATH}"
+        export PUB_CACHE=/opt/pub-cache
         dart --version
         echo "==> dart analyze --fatal-infos --fatal-warnings"
         dart analyze --fatal-infos --fatal-warnings
+    volumes:
+      - name: 'blekey-flutter-sdk'
+        path: '/opt/flutter-sdk'
+      - name: 'blekey-pub-cache'
+        path: '/opt/pub-cache'
     waitFor: ['install']
 
 options:
