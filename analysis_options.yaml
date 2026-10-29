@@ -7,6 +7,26 @@
 
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
+analyzer:
+  # 存量豁免（CP-3802，只豁免不修复 —— per 静态检查规范 v1.12 §历史债处理策略）:
+  #   outputs/ 是 2026-09-30 BLE review 的**一次性探针产物目录**（含 apk 二进制 +
+  #   record_probe.dart 探针脚本），其 import 指向已不存在的绝对路径
+  #   /Users/zhuang/Documents/cereb/frontend_slps_blekey/lib/services/ble_record.dart
+  #   → dart analyze 报 2 个 error (uri_does_not_exist / undefined_function)。
+  #   该目录非 Flutter 业务源码，不参与编译/打包（不在 pubspec assets / 源码路径内），
+  #   故按「存量豁免」处理；债务记录见迁移进度文档 §技术债清单。
+  #   其余 build/** 与各平台目录为 flutter pub get 自动追加的标准排除项
+  #   （写入本块后 flutter pub get 不再自动改写本文件 → pub get 幂等）。
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+    - outputs/**
+
 include: package:flutter_lints/flutter.yaml
 
 linter:

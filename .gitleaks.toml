@@ -1,0 +1,62 @@
+# gitleaks config — frontend_slps_blekey (Flutter / Dart)
+# 2026-10-29 (CP-3802): 仓级存量豁免 + 构建产物豁免。
+# 走规范 v1.12 口径「全树扫描 + 仓级存量豁免」：
+#   - CI 侧 step = `gitleaks dir . --config .gitleaks.toml --redact=100 --no-banner --exit-code 1`
+#     （fetch-free；CB PR-trigger workspace = depth=1 浅克隆 + step 内无 github.com 凭据 →
+#      step 内 git fetch 必 exit 128，per 规范 v1.9 §CI 通用片段 / CP-3426 实测）
+#   - 本地侧 hook = `gitleaks protect --staged --redact=100 --no-banner`（共享 manifest
+#     rev v1.2.0 的 cereb-secret-scan，language: system + pass_filenames=false）
+#   - 命中仅阻断（exit 1 → step FAILURE → 阻塞 merge / commit），**不修复、不轮转**
+#     （per 规范 §历史债处理策略：规范化票只做接入，不修历史债）
+#
+# 维护注记：
+# - gitleaks v8.20.x 仅识别旧式全局 [allowlist]；新式 [[allowlists]] + targetRules
+#   实测不生效（本地 8.20.0 + CB 8.20.1 双验）。升级 gitleaks 时须同步迁移。
+# - 豁免必须**精确到文件/目录**（禁全仓 `.*`）：否则新增密钥落在豁免区也不会红 = 门禁假绿。
+# - 豁免前提 = 从**仓根**调用 `gitleaks dir .`（root-anchor 按仓根相对路径匹配）。
+#
+# ── 存量豁免（CP-3802 实测基线）────────────────────────────────────────
+# 复现基线（本地 gitleaks v8.20.0，`gitleaks dir . --no-banner --redact=100`，
+# 仓根 commit f912eef）：**1 leaks / 1 file**
+#   - docs/api(1).md:114  rule=generic-api-key
+#     match=`keyId": "fb413bad-423e-4270-816c-21654d1471e5"`
+#     → 该值是接口文档里的**示例响应体字段**（vendorLockId / keyId / vendorKeyId
+#       同段并列，均为 demo 事件数据），非真实凭据；随仓历史提交带入，本票不改
+#       （不改文档 = 不越界；清理归技术债票流程）。
+#   精确豁免到该文件（不是全仓），并保留同目录其它内容的扫描能力。
+#
+# ── 构建产物豁免（规范 v1.11 §CI 通用片段）───────────────────────────────
+# gitleaks **不读 .gitignore**、默认只豁免 node_modules → Flutter 侧的构建/依赖产物
+# 必须显式 root-anchor 豁免，否则 CI secret-scan（waitFor:['-']，与 install 并行）
+# 扫到产物自带的假密钥 → 非确定性误红（per WTO-3489 / 规范 v1.11 实测口径）。
+# 本仓 Flutter 侧产物：
+#   - build/          — flutter build 产物（仓根 .gitignore 已忽略 /build/，但 gitleaks 不读）
+#   - .dart_tool/     — dart 工具产物（package_config.json / build 缓存）
+#   - .flutter-plugins-dependencies — flutter 生成的插件依赖清单
+#   - android/ios/linux/macos/windows/web 平台目录下的构建产物
+#     （android/app/build/、ios/Flutter/ephemeral/、**/ephemeral/ 等）
+# 注：本仓 pub 依赖装在 ~/.pub-cache（PUB_CACHE），不在 /workspace 仓内，
+# 故不像 pnpm 仓那样需要豁免 .pnpm-store；但 .dart_tool/ 内会落 package_config.json
+# 等构建期文件，仍需豁免。
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "CP-3802 存量豁免: 接口文档示例响应体里的 demo keyId（非真实凭据）+ Flutter 构建产物目录"
+paths = [
+  # ── 存量（精确到文件；同目录其它内容仍受扫描）────────────────────────
+  '''^docs/api\(1\)\.md$''',
+  # ── 构建产物（root-anchor，仅豁免仓根 / 各平台子目录下的产物）────────
+  '''^build/''',
+  '''^\.dart_tool/''',
+  '''^\.flutter-plugins-dependencies$''',
+  '''^android/.*/build/''',
+  '''^android/build/''',
+  '''^ios/Flutter/ephemeral/''',
+  '''^linux/flutter/ephemeral/''',
+  '''^macos/Flutter/ephemeral/''',
+  '''^windows/flutter/ephemeral/''',
+  '''^web/flutter/ephemeral/''',
+  '''^packages/[^/]+/\.dart_tool/''',
+]
