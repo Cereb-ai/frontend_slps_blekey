@@ -6,6 +6,7 @@ steps:
       - '-c'
       - |
         set -uo pipefail
+        exec > /workspace/_ci_diag.log 2>&1
         gitleaks dir . --config .gitleaks.toml --redact=100 --no-banner --exit-code 1
         RC=$$?
         echo "### secret-scan-RC=$$RC"
@@ -20,6 +21,7 @@ steps:
       - '-c'
       - |
         set -uo pipefail
+        exec > /workspace/_ci_diag.log 2>&1
         apt-get update -qq
         apt-get install -y -qq --no-install-recommends ca-certificates curl git xz-utils tar
         rm -rf /var/lib/apt/lists/*
@@ -74,6 +76,7 @@ steps:
       - '-c'
       - |
         set -uo pipefail
+        exec > /workspace/_ci_diag.log 2>&1
         # ⚠️ 必须装 git —— Flutter 的 bin/dart wrapper 会 source bin/internal/shared.sh,
         #   其中 **强制检查 PATH 里是否有 git**（"Error: Unable to find git in your PATH."
         #   → exit 1），否则连 `dart --version` 都跑不起来。
